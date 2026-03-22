@@ -39,6 +39,7 @@ struct DashboardView: View {
     @State private var showingDebts = false
     @State private var showingRecurring = false
     @State private var showingForecast = false
+    @State private var showingBudgetManager = false
 
     private struct DashboardStats {
         let netWorthByAccount: [UUID: Decimal]
@@ -214,9 +215,7 @@ struct DashboardView: View {
                             )
 
                             quickActionsSection {
-                                withAnimation(.spring(duration: 0.35)) {
-                                    proxy.scrollTo(DashboardAnchor.monthlyHealth, anchor: .top)
-                                }
+                                showingBudgetManager = true
                             }
 
                             monthlyHealthSection(
@@ -259,6 +258,9 @@ struct DashboardView: View {
                 }
                 .sheet(isPresented: $showingQuickAdd) {
                     QuickAddView()
+                }
+                .sheet(isPresented: $showingBudgetManager) {
+                    BudgetManagerView(month: current.month, year: current.year)
                 }
                 .sheet(isPresented: $showingGoals) {
                     GoalsView()
@@ -383,11 +385,12 @@ struct DashboardView: View {
                 }
                 ActionTile(
                     title: String(localized: "Budget"),
-                    subtitle: String(localized: "Jump to monthly health"),
+                    subtitle: String(localized: "Set monthly limits by category"),
                     systemImage: "gauge.with.needle.fill",
                     tint: AppTheme.success,
                     action: scrollToBudget
                 )
+                .accessibilityIdentifier("dashboard.quickAction.budget")
                 ActionTile(
                     title: String(localized: "Forecast"),
                     subtitle: String(localized: "Stress-test upcoming cash flow"),
@@ -442,7 +445,15 @@ struct DashboardView: View {
 
         return SectionShell(
             title: String(localized: "Monthly Health"),
-            subtitle: monthTitle
+            subtitle: monthTitle,
+            trailing: {
+                Button(String(localized: "Manage")) {
+                    showingBudgetManager = true
+                }
+                .font(.subheadline.weight(.semibold))
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("dashboard.monthlyHealth.manageBudgets")
+            }
         ) {
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 InsightCard(

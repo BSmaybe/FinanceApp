@@ -65,6 +65,7 @@
 		F1H002000000000000000002 /* WhatIfView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1H001000000000000000001 /* WhatIfView.swift */; };
 		F1I002000000000000000002 /* DailyBudgetActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1I001000000000000000001 /* DailyBudgetActivity.swift */; };
 		F1I004000000000000000004 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1I003000000000000000003 /* LiveActivityManager.swift */; };
+		F1J002000000000000000002 /* BudgetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1J001000000000000000001 /* BudgetManagerView.swift */; };
 		F2B100000000000000000001 /* FinanceAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000001 /* FinanceAppUITests.swift */; };
 		F2B100000000000000000002 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000003 /* XCTest.framework */; };
 /* End PBXBuildFile section */
@@ -163,6 +164,7 @@
 		F1H001000000000000000001 /* WhatIfView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WhatIfView.swift; sourceTree = "<group>"; };
 		F1I001000000000000000001 /* DailyBudgetActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyBudgetActivity.swift; sourceTree = "<group>"; };
 		F1I003000000000000000003 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
+		F1J001000000000000000001 /* BudgetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetManagerView.swift; sourceTree = "<group>"; };
 		F2A100000000000000000001 /* FinanceAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceAppUITests.swift; sourceTree = "<group>"; };
 		F2A100000000000000000002 /* FinanceAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FinanceAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2A100000000000000000003 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
@@ -298,6 +300,7 @@
 				F1C002000000000000000002 /* DebtDetailView.swift */,
 				F1A021000000000000000021 /* ExportView.swift */,
 				F1A002000000000000000002 /* SetBudgetView.swift */,
+				F1J001000000000000000001 /* BudgetManagerView.swift */,
 				F1H001000000000000000001 /* WhatIfView.swift */,
 			);
 			path = Views;
@@ -539,6 +542,7 @@
 				F1C001000000000000000001 /* DebtDetailView.swift in Sources */,
 				F1B020000000000000000020 /* ExportService.swift in Sources */,
 				F1B021000000000000000021 /* ExportView.swift in Sources */,
+				F1J002000000000000000002 /* BudgetManagerView.swift in Sources */,
 				F1B022000000000000000022 /* SubscriptionNotificationHelper.swift in Sources */,
 				F1B023000000000000000023 /* AppTheme.swift in Sources */,
 				F1B025000000000000000025 /* WidgetDataProvider.swift in Sources */,

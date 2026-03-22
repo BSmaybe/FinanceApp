@@ -131,6 +131,24 @@ final class FinanceAppUITests: XCTestCase {
         XCTAssertTrue(detailedButton.waitForExistence(timeout: 8))
     }
 
+    func testDashboardBudgetQuickActionOpensBudgetManager() {
+        let app = makeApp()
+        app.launch()
+
+        let dashboardTab = app.tabBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(dashboardTab.waitForExistence(timeout: 8))
+        dashboardTab.tap()
+
+        let budgetAction = app.buttons["dashboard.quickAction.budget"]
+        XCTAssertTrue(budgetAction.waitForExistence(timeout: 8))
+        budgetAction.tap()
+
+        let budgetManager = app.descendants(matching: .any)
+            .matching(identifier: "budgetManager.screen")
+            .firstMatch
+        XCTAssertTrue(budgetManager.waitForExistence(timeout: 8))
+    }
+
     func testCanCreateTransactionFromDetailedForm() {
         let app = makeApp()
         app.launch()
