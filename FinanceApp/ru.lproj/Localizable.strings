@@ -1,0 +1,432 @@
+/* Tab titles */
+"Transactions" = "Транзакции";
+"Accounts" = "Счета";
+"Summary" = "Итоги";
+"Categories" = "Категории";
+
+/* Navigation titles */
+"Add Transaction" = "Добавить транзакцию";
+"Edit Transaction" = "Редактировать транзакцию";
+"Add Account" = "Добавить счёт";
+"Edit Account" = "Редактировать счёт";
+"New Category" = "Новая категория";
+
+/* Transaction types */
+"Income" = "Доход";
+"Expense" = "Расход";
+"Transfer" = "Перевод";
+
+/* Account types */
+"Checking" = "Расчётный";
+"Savings" = "Накопительный";
+"Cash" = "Наличные";
+"Card" = "Карта";
+"Deposit" = "Депозит";
+"Crypto" = "Крипто";
+
+/* Form labels / section headers */
+"Name" = "Название";
+"Note" = "Заметка";
+"Amount" = "Сумма";
+"Date" = "Дата";
+"Account" = "Счёт";
+"From Account" = "Со счёта";
+"To Account" = "На счёт";
+"Category" = "Категория";
+"Type" = "Тип";
+"Balance" = "Баланс";
+"Color" = "Цвет";
+"Overview" = "Обзор";
+
+/* Buttons */
+"Save" = "Сохранить";
+"Cancel" = "Отмена";
+"Delete" = "Удалить";
+"Done" = "Готово";
+
+/* Empty states */
+"No Transactions" = "Нет транзакций";
+"No accounts yet." = "Нет счетов.";
+"No income categories." = "Нет категорий доходов.";
+"No expense categories." = "Нет категорий расходов.";
+"Uncategorized" = "Без категории";
+
+/* Placeholders */
+"Account name" = "Название счёта";
+"Category name" = "Название категории";
+"Optional note" = "Заметка (необязательно)";
+"Select account" = "Выберите счёт";
+"None" = "Нет";
+
+/* Summary */
+"Total Income" = "Доходы";
+"Total Expense" = "Расходы";
+"Net" = "Итого";
+"Expenses by Category" = "Расходы по категориям";
+
+/* Alerts */
+"Delete Account" = "Удалить счёт";
+"Delete Category" = "Удалить категорию";
+"Deleting this account will also delete all its transactions." = "Удаление счёта также удалит все его транзакции.";
+"Transactions in this category will become uncategorized." = "Транзакции этой категории станут без категории.";
+
+/* Inline messages */
+"No accounts. Add one in Accounts tab." = "Нет счетов. Добавьте счёт на вкладке «Счета».";
+"No categories available." = "Нет доступных категорий.";
+"Tap + to add your first transaction." = "Нажмите +, чтобы добавить транзакцию.";
+"No transactions recorded for this month." = "В этом месяце транзакций нет.";
+
+/* TransactionRow */
+"Transfer: %@ → %@" = "Перевод: %@ → %@";
+"Unknown" = "Неизвестно";
+"Unknown account" = "Неизвестный счёт";
+
+/* Note: "Income" and "Expense" keys are defined above under Transaction types and are reused for section headers */
+
+/* Tags */
+"Tags" = "Теги";
+"Add tags..." = "Добавить теги...";
+
+/* Charts / new sections */
+"Spending by Category" = "Расходы по категориям";
+"Monthly Overview" = "По месяцам";
+"Balance History" = "История баланса";
+"Recent Transactions" = "Последние транзакции";
+"No data" = "Нет данных";
+
+/* Budgets */
+"Budgets" = "Бюджеты";
+"Set Budget" = "Установить бюджет";
+"Budget Limit" = "Лимит бюджета";
+"Spent" = "Потрачено";
+"Remaining" = "Остаток";
+"No budget set" = "Бюджет не задан";
+"Over budget" = "Превышен бюджет";
+
+/* Quick Add */
+"Quick Add" = "Быстрое добавление";
+"Detailed" = "Подробно";
+"Note..." = "Заметка...";
+
+/* Recurring transactions */
+"Recurring" = "Повторяющиеся";
+"Recurring Transactions" = "Повторяющиеся транзакции";
+"Add Recurring" = "Добавить повторяющуюся";
+"Frequency" = "Периодичность";
+"Start Date" = "Дата начала";
+"daily" = "Ежедневно";
+"weekly" = "Еженедельно";
+"monthly" = "Ежемесячно";
+"yearly" = "Ежегодно";
+"Active" = "Активна";
+"Title" = "Название";
+
+/* Net worth / summary */
+"Net Worth" = "Общий капитал";
+"vs last month" = "к прошлому месяцу";
+
+/* Budget daily allowance */
+"Daily Allowance" = "Дневной лимит";
+"%lld days left" = "осталось %lld дн.";
+
+/* Settings */
+"Settings" = "Настройки";
+"Manage Categories" = "Управление категориями";
+"Rollover unused budget" = "Переносить остаток бюджета";
+
+/* Transactions repeat */
+"Repeat" = "Повторить";
+
+/* Search and Filter */
+"Search transactions" = "Поиск транзакций";
+"Filter" = "Фильтр";
+"All Accounts" = "Все счета";
+"All Categories" = "Все категории";
+"All Types" = "Все типы";
+"Clear Filters" = "Сбросить";
+"Apply" = "Применить";
+"Active filters" = "Активные фильтры";
+"No results" = "Нет результатов";
+"Try changing your search or filters." = "Попробуйте изменить поиск или фильтры.";
+"Showing %lld of %lld" = "Показано %1$lld из %2$lld";
+
+/* Goals */
+"Goals" = "Цели";
+"No Goals" = "Нет целей";
+"Tap + to add a financial goal." = "Нажмите +, чтобы добавить финансовую цель.";
+"New Goal" = "Новая цель";
+"Edit Goal" = "Редактировать цель";
+"Target Amount" = "Целевая сумма";
+"Current Amount" = "Текущая сумма";
+
+/* Forecast */
+"Forecast" = "Прогноз";
+"End-of-Month Projection" = "Прогноз на конец месяца";
+"Projected Net" = "Прогноз итога";
+"Projected Expense" = "Прогноз расходов";
+"Based on %lld days" = "На основе %lld дн.";
+
+/* Smart Tips */
+"Insights" = "Советы";
+"above your 3-month average" = "выше среднего за 3 мес.";
+"below your 3-month average" = "ниже среднего за 3 мес.";
+"of total spending" = "от всех расходов";
+
+/* Dashboard */
+"Dashboard" = "Обзор";
+"Free to Spend" = "Свободно";
+"This Month" = "Этот месяц";
+"Spent: %@" = "Потрачено: %@";
+"No expenses" = "Нет расходов";
+"Remaining: %@" = "Осталось: %@";
+"used" = "использовано";
+
+/* Subscriptions */
+"Subscriptions" = "Подписки";
+"No Subscriptions" = "Нет подписок";
+"Tap + to add your first subscription." = "Нажмите +, чтобы добавить подписку.";
+"Monthly" = "Ежемесячно";
+"Yearly" = "Ежегодно";
+"/mo" = "/мес";
+"Cancel Subscription" = "Отменить подписку";
+"Reactivate" = "Возобновить";
+"Add Subscription" = "Добавить подписку";
+"Edit Subscription" = "Редактировать подписку";
+"Subscription name" = "Название подписки";
+"Next Billing Date" = "Следующий платёж";
+"Notes" = "Примечания";
+"Cancelled" = "Отменённые";
+
+/* Debts */
+"Debts" = "Долги";
+"Total Debt" = "Общий долг";
+"Monthly Payments" = "Ежемесячные платежи";
+"No debts — tap + to add" = "Нет долгов — нажмите + для добавления";
+"Paid Off" = "Погашено";
+"New Debt" = "Новый долг";
+"Edit Debt" = "Редактировать долг";
+"Details" = "Подробности";
+"Amounts" = "Суммы";
+"Total" = "Всего";
+"Payment" = "Платёж";
+"Interest Rate (%)" = "Процентная ставка (%)";
+"Minimum Payment" = "Минимальный платёж";
+"Due Day" = "День оплаты";
+"Payoff Calculator" = "Калькулятор погашения";
+
+/* Debt Types */
+"Loan" = "Кредит";
+"Credit Card" = "Кредитная карта";
+"Mortgage" = "Ипотека";
+"Installment" = "Рассрочка";
+"Installments are typically interest-free (0%)." = "Рассрочка обычно без процентов (0%).";
+"Other" = "Другое";
+
+/* Debt Detail */
+"Payment Schedule" = "График платежей";
+"Remaining Payments" = "Осталось платежей";
+"Payoff Date" = "Дата погашения";
+"Next Payment" = "Следующий платёж";
+"Total Cost" = "Итоговая стоимость";
+"Principal" = "Основной долг";
+"Interest" = "Проценты";
+"No payment data" = "Нет данных о платежах";
+"Paid" = "Оплачено";
+"%@ paid" = "Оплачено %@";
+"payments left" = "платежей осталось";
+
+/* Debt Payoff */
+"Strategy" = "Стратегия";
+"Method" = "Метод";
+"Extra Monthly" = "Доп. ежемесячно";
+"Debt-free in" = "Без долгов через";
+"30+ years" = "30+ лет";
+"yr" = "г.";
+"mo" = "мес";
+"Total Interest" = "Общие проценты";
+"Payoff Order" = "Порядок погашения";
+"Add debts first" = "Сначала добавьте долги";
+"Payoff:" = "Погашение:";
+"Interest:" = "Проценты:";
+"Snowball: pay smallest balance first. Builds momentum." = "Снежный ком: сначала наименьший долг. Набирает темп.";
+"Avalanche: pay highest interest rate first. Saves money." = "Лавина: сначала самый высокий процент. Экономит деньги.";
+
+/* Cash Flow Forecast */
+"Cash Flow Forecast" = "Прогноз денежного потока";
+"Today" = "Сегодня";
+"In 30 days" = "Через 30 дней";
+"30-Day Projection" = "Прогноз на 30 дней";
+"Upcoming Events" = "Ближайшие события";
+"No scheduled events in the next 30 days" = "Нет запланированных событий в ближайшие 30 дней";
+
+/* Export */
+"Export Data" = "Экспорт данных";
+"Import CSV" = "Импорт CSV";
+"Import Result" = "Результат импорта";
+"Imported: %lld" = "Импортировано: %lld";
+"Skipped: %lld" = "Пропущено: %lld";
+
+/* Appearance */
+"Appearance" = "Внешний вид";
+"Finance Blue" = "Finance Blue";
+"Midnight Green" = "Midnight Green";
+"Sunset" = "Закат";
+"Lavender" = "Лаванда";
+"Midnight" = "Полночь";
+
+/* Backup */
+"Backup" = "Резервная копия";
+"Create Backup" = "Создать копию";
+"Restore from Backup" = "Восстановить из копии";
+"Restore Backup?" = "Восстановить данные?";
+"Restore" = "Восстановить";
+"This will replace all current data. This cannot be undone." = "Все текущие данные будут заменены. Это нельзя отменить.";
+"Backup Restored" = "Данные восстановлены";
+"All data has been restored successfully." = "Все данные успешно восстановлены.";
+"Cannot access file" = "Нет доступа к файлу";
+"Invalid backup file: %@" = "Неверный файл копии: %@";
+"Auto-Backup" = "Автокопирование";
+"Last Auto-Backup" = "Последняя автокопия";
+"Off" = "Выключено";
+"Daily" = "Ежедневно";
+"Weekly" = "Еженедельно";
+"Date Range" = "Период";
+"From" = "С";
+"To" = "По";
+"Format" = "Формат";
+"Preview" = "Предпросмотр";
+"Expenses" = "Расходы";
+"Export" = "Экспорт";
+"Transaction Report" = "Отчёт по транзакциям";
+"Total transactions" = "Всего транзакций";
+
+/* Charts — period switcher & comparison */
+"Week" = "Неделя";
+"Year" = "Год";
+"Period Comparison" = "Сравнение периодов";
+"Current" = "Текущий";
+"Previous" = "Прошлый";
+"Last Year" = "Прошлый год";
+"vs Previous" = "vs прошлый";
+"vs Last Year" = "vs прошлый год";
+"Monthly Expenses" = "Расходы по месяцам";
+
+/* Yearly Overview */
+"Yearly Overview" = "Годовой обзор";
+"Best Month" = "Лучший месяц";
+"Worst Month" = "Худший месяц";
+"Top Categories" = "Топ категорий";
+"of expenses" = "от расходов";
+"No data for this year" = "Нет данных за этот год";
+
+/* Charts */
+"Daily Expenses" = "Ежедневные расходы";
+"No expenses this month" = "В этом месяце расходов нет";
+"No transactions yet" = "Транзакций пока нет";
+"Income vs Expenses" = "Доходы и расходы";
+"Top Spending" = "Топ расходов";
+"Savings Rate" = "Доля накоплений";
+"No income data yet" = "Данных о доходах пока нет";
+"Net Worth Trend" = "Динамика капитала";
+"Net Worth History" = "История капитала";
+"Budget vs Actual" = "Бюджет и факт";
+"Budget" = "Бюджет";
+"Actual" = "Факт";
+"Analytics" = "Аналитика";
+
+/* Settings extras */
+"Manage" = "Управление";
+"Data" = "Данные";
+"Home Screen" = "Домашний экран";
+"Quick Add on Home Screen" = "Быстрое добавление на домашнем экране";
+"Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen" = "Откройте «Быстрые команды» → нажмите + → найдите «Add Transaction» → «На экран Домой»";
+"Edit Category" = "Редактировать категорию";
+"Icon" = "Иконка";
+
+/* Live Activity */
+"Live Activity" = "Live Activity";
+"Daily Budget in Dynamic Island" = "Бюджет дня в Dynamic Island";
+"Shows today's spending progress in Dynamic Island and Lock Screen." = "Показывает расходы дня в Dynamic Island и на экране блокировки.";
+"Daily Budget" = "Дневной бюджет";
+
+/* Notifications */
+"Notifications" = "Уведомления";
+"Budget alerts" = "Предупреждения о бюджете";
+"Subscription reminders" = "Напоминания о подписках";
+"Debt payment reminders" = "Напоминания о платежах по долгам";
+"Enable in Settings" = "Включить в Настройках";
+"Budget exceeded!" = "Бюджет превышен!";
+"Budget warning: %d%%" = "Предупреждение: %d%%";
+"Subscription reminder" = "Напоминание о подписке";
+"Tomorrow: %@ — %@" = "Завтра: %@ — %@";
+"Payment due in 3 days: %@" = "Платёж через 3 дня: %@";
+
+/* Category suggestions */
+"Suggested:" = "Предлагаем:";
+
+/* What-If Scenarios */
+"What If..." = "Что если...";
+"What-If Scenarios" = "Сценарии «Что если»";
+"Save More" = "Копить больше";
+"Spend Less" = "Тратить меньше";
+"Extra Payment" = "Доп. платёж";
+"Monthly Savings" = "Экономия в месяц";
+"Months to Goal" = "Месяцев до цели";
+"Annual Savings" = "Экономия в год";
+"Months Saved" = "Сэкономлено месяцев";
+"Interest Saved" = "Сэкономлено процентов";
+"Original Payoff" = "Исходная дата погашения";
+"New Payoff" = "Новая дата погашения";
+"Reduction" = "Снижение";
+"Enter amount" = "Введите сумму";
+"Select a debt" = "Выберите долг";
+"No debts added" = "Долгов нет";
+"Estimated Date" = "Ожидаемая дата";
+"Total Saved" = "Итого накоплено";
+"Goal Amount (optional)" = "Сумма цели (необязательно)";
+"Debt Details" = "Параметры долга";
+"Remaining Balance" = "Остаток долга";
+"Annual Interest Rate (%)" = "Годовая ставка (%)";
+"Minimum Payment" = "Минимальный платёж";
+"Manual Entry" = "Ввести вручную";
+"Min Payment" = "Мин. платёж";
+"Use actual" = "Использовать факт";
+"Enter a monthly savings amount" = "Введите сумму ежемесячных накоплений";
+"Enter debt details above" = "Введите параметры долга выше";
+"Scenario" = "Сценарий";
+"Current Monthly Expense" = "Расходы за месяц";
+"Results" = "Результаты";
+
+/* Capture / Apple Pay */
+"Apple Pay" = "Apple Pay";
+"Shortcut Capture" = "Захват через Shortcut";
+"Deep Link Capture" = "Захват через deep link";
+"Possible duplicate" = "Возможный дубль";
+"Save Anyway" = "Сохранить всё равно";
+"Possible duplicate found" = "Найден возможный дубль";
+"A similar transaction already exists." = "Похожая транзакция уже существует.";
+"No note" = "Без заметки";
+
+/* Auto-capture settings */
+"Auto-Capture Purchases" = "Автозапись покупок";
+"Open Shortcuts" = "Открыть Shortcuts";
+"Run Capture Test" = "Запустить тест capture";
+"1) In Shortcuts create Personal Automation with Transaction trigger." = "1) В Shortcuts создайте Personal Automation с триггером Transaction.";
+"2) Select cards and map Amount/Merchant/Date/Currency to URL query fields." = "2) Выберите карты и сопоставьте Amount/Merchant/Date/Currency с параметрами URL.";
+"3) Use URL financeapp://capture and run a test payment flow." = "3) Используйте URL financeapp://capture и выполните тестовый платеж.";
+"Capture Diagnostics" = "Диагностика capture";
+"Last Received" = "Последний полученный";
+"Last Opened in Quick Add" = "Последний открыт в Quick Add";
+"Source" = "Источник";
+"Merchant" = "Мерчант";
+"No merchant" = "Мерчант не указан";
+"Payment Date" = "Дата платежа";
+"No captures yet" = "Capture-событий пока нет";
+"Pending capture is waiting to be opened" = "Ожидающий capture готов к открытию";
+"Refresh Diagnostics" = "Обновить диагностику";
+"Never" = "Никогда";
+
+/* Debt total payments */
+"Total Payments" = "Всего платежей";
+"Auto" = "Авто";
+"Auto (%lld)" = "Авто (%lld)";

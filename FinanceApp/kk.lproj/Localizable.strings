@@ -1,0 +1,418 @@
+/* Tab titles */
+"Transactions" = "Транзакциялар";
+"Accounts" = "Шоттар";
+"Summary" = "Қорытынды";
+"Categories" = "Санаттар";
+"Dashboard" = "Басты бет";
+"Analytics" = "Талдау";
+"Settings" = "Баптаулар";
+
+/* Navigation titles */
+"Add Transaction" = "Транзакция қосу";
+"Edit Transaction" = "Транзакцияны өңдеу";
+"Add Account" = "Шот қосу";
+"Edit Account" = "Шотты өңдеу";
+"New Category" = "Жаңа санат";
+"Edit Category" = "Санатты өңдеу";
+
+/* Transaction types */
+"Income" = "Кіріс";
+"Expense" = "Шығыс";
+"Transfer" = "Аударым";
+
+/* Account types */
+"Checking" = "Ағымдағы";
+"Savings" = "Жинақ";
+"Cash" = "Қолма-қол";
+"Card" = "Карта";
+"Deposit" = "Депозит";
+"Crypto" = "Крипто";
+
+/* Form labels / section headers */
+"Name" = "Атауы";
+"Note" = "Ескертпе";
+"Amount" = "Сома";
+"Date" = "Күні";
+"Account" = "Шот";
+"From Account" = "Қай шоттан";
+"To Account" = "Қай шотқа";
+"Category" = "Санат";
+"Type" = "Түрі";
+"Balance" = "Қалдық";
+"Color" = "Түс";
+"Overview" = "Шолу";
+"Icon" = "Белгіше";
+"Title" = "Тақырып";
+
+/* Buttons */
+"Save" = "Сақтау";
+"Cancel" = "Болдырмау";
+"Delete" = "Жою";
+"Done" = "Дайын";
+"Edit" = "Өңдеу";
+"Apply" = "Қолдану";
+
+/* Empty states */
+"No Transactions" = "Транзакция жоқ";
+"No accounts yet." = "Шоттар жоқ.";
+"No income categories." = "Кіріс санаттары жоқ.";
+"No expense categories." = "Шығыс санаттары жоқ.";
+"Uncategorized" = "Санатсыз";
+
+/* Placeholders */
+"Account name" = "Шот атауы";
+"Category name" = "Санат атауы";
+"Optional note" = "Ескертпе (міндетті емес)";
+"Select account" = "Шотты таңдаңыз";
+"None" = "Жоқ";
+"Note..." = "Ескертпе...";
+
+/* Summary */
+"Total Income" = "Жалпы кіріс";
+"Total Expense" = "Жалпы шығыс";
+"Net" = "Таза";
+"Expenses by Category" = "Санат бойынша шығыстар";
+"This Month" = "Осы ай";
+"Net Worth" = "Жалпы капитал";
+"Free to Spend" = "Жұмсауға болады";
+
+/* Alerts */
+"Delete Account" = "Шотты жою";
+"Delete Category" = "Санатты жою";
+"Deleting this account will also delete all its transactions." = "Бұл шотты жою барлық транзакцияларын да жояды.";
+"Transactions in this category will become uncategorized." = "Бұл санаттағы транзакциялар санатсыз болады.";
+
+/* Inline messages */
+"No accounts. Add one in Accounts tab." = "Шот жоқ. «Шоттар» бетінде қосыңыз.";
+"No categories available." = "Қолжетімді санаттар жоқ.";
+"Tap + to add your first transaction." = "Алғашқы транзакцияңызды қосу үшін + басыңыз.";
+"No transactions recorded for this month." = "Бұл айда транзакция жоқ.";
+
+/* TransactionRow */
+"Transfer: %@ → %@" = "Аударым: %@ → %@";
+"Unknown" = "Белгісіз";
+"Unknown account" = "Белгісіз шот";
+
+/* Tags */
+"Tags" = "Тегтер";
+"Add tags..." = "Тег қосу...";
+
+/* Charts — period switcher & comparison */
+"Week" = "Апта";
+"Year" = "Жыл";
+"Period Comparison" = "Кезеңдерді салыстыру";
+"Current" = "Ағымдағы";
+"Previous" = "Алдыңғы";
+"Last Year" = "Өткен жыл";
+"vs Previous" = "алдыңғымен";
+"vs Last Year" = "өткен жылмен";
+"Monthly Expenses" = "Ай сайынғы шығыстар";
+
+/* Yearly Overview */
+"Yearly Overview" = "Жылдық шолу";
+"Best Month" = "Ең жақсы ай";
+"Worst Month" = "Ең нашар ай";
+"Top Categories" = "Топ санаттар";
+"of expenses" = "шығыстардан";
+"No data for this year" = "Бұл жыл үшін деректер жоқ";
+
+/* Charts / Analytics */
+"Spending by Category" = "Санат бойынша шығыстар";
+"Monthly Overview" = "Ай бойынша шолу";
+"Balance History" = "Қалдық тарихы";
+"Recent Transactions" = "Соңғы транзакциялар";
+"No data" = "Деректер жоқ";
+"Daily Expenses" = "Күнделікті шығыстар";
+"No expenses this month" = "Бұл айда шығыс жоқ";
+"No transactions yet" = "Транзакциялар жоқ";
+"Income vs Expenses" = "Кіріс пен шығыс";
+"Top Spending" = "Негізгі шығыстар";
+"Savings Rate" = "Жинақтау мөлшерлемесі";
+"No income data yet" = "Кіріс деректері жоқ";
+"Net Worth Trend" = "Капитал динамикасы";
+"Net Worth History" = "Капитал тарихы";
+"Budget vs Actual" = "Бюджет пен нақты";
+"Budget" = "Бюджет";
+"Actual" = "Нақты";
+
+/* Budgets */
+"Budgets" = "Бюджеттер";
+"Set Budget" = "Бюджет белгілеу";
+"Budget Limit" = "Бюджет шегі";
+"Spent" = "Жұмсалды";
+"Remaining" = "Қалдық";
+"No budget set" = "Бюджет белгіленбеген";
+"Over budget" = "Бюджет асырылды";
+"Daily Allowance" = "Күнделікті лимит";
+"%lld days left" = "%lld күн қалды";
+"Spent: %@" = "Жұмсалды: %@";
+"No expenses" = "Шығыс жоқ";
+"Remaining: %@" = "Қалдық: %@";
+"used" = "пайдаланылды";
+
+/* Quick Add */
+"Quick Add" = "Жылдам қосу";
+"Detailed" = "Толық";
+
+/* Recurring transactions */
+"Recurring" = "Қайталанатын";
+"Recurring Transactions" = "Қайталанатын транзакциялар";
+"Add Recurring" = "Қайталанатын қосу";
+"Frequency" = "Жиілік";
+"Start Date" = "Басталу күні";
+"daily" = "Күн сайын";
+"weekly" = "Апта сайын";
+"monthly" = "Ай сайын";
+"yearly" = "Жыл сайын";
+"Active" = "Белсенді";
+
+/* Budget / Settings */
+"Rollover unused budget" = "Қалдық бюджетті ауыстыру";
+"Manage Categories" = "Санаттарды басқару";
+"Manage" = "Басқару";
+"Data" = "Деректер";
+"Home Screen" = "Бас экран";
+"Quick Add on Home Screen" = "Бас экранда жылдам қосу";
+"Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen" = "Shortcuts қосымшасын ашыңыз → + басыңыз → \"Add Transaction\" іздеңіз → «Бас экранға қосу» түймесін басыңыз";
+
+/* Transactions repeat */
+"Repeat" = "Қайталау";
+
+/* Search and Filter */
+"Search transactions" = "Транзакцияларды іздеу";
+"Filter" = "Сүзгі";
+"All Accounts" = "Барлық шоттар";
+"All Categories" = "Барлық санаттар";
+"All Types" = "Барлық түрлер";
+"Clear Filters" = "Сүзгіні тазалау";
+"Active filters" = "Белсенді сүзгілер";
+"No results" = "Нәтиже жоқ";
+"Try changing your search or filters." = "Іздеуді немесе сүзгіні өзгертіп көріңіз.";
+"Showing %lld of %lld" = "%1$lld / %2$lld көрсетілуде";
+
+/* Goals */
+"Goals" = "Мақсаттар";
+"No Goals" = "Мақсат жоқ";
+"Tap + to add a financial goal." = "Қаржылық мақсат қосу үшін + басыңыз.";
+"New Goal" = "Жаңа мақсат";
+"Edit Goal" = "Мақсатты өңдеу";
+"Target Amount" = "Мақсатты сома";
+"Current Amount" = "Ағымдағы сома";
+
+/* Forecast */
+"Forecast" = "Болжам";
+"End-of-Month Projection" = "Ай соңындағы болжам";
+"Projected Net" = "Болжамды қорытынды";
+"Projected Expense" = "Болжамды шығыс";
+"Based on %lld days" = "%lld күн негізінде";
+"Cash Flow Forecast" = "Ақша ағыны болжамы";
+"Today" = "Бүгін";
+"In 30 days" = "30 күнде";
+"30-Day Projection" = "30 күндік болжам";
+"Upcoming Events" = "Алдағы оқиғалар";
+"No scheduled events in the next 30 days" = "Жақын 30 күнде жоспарланған оқиғалар жоқ";
+
+/* Smart Tips */
+"Insights" = "Кеңестер";
+"above your 3-month average" = "3 айлық орташадан жоғары";
+"below your 3-month average" = "3 айлық орташадан төмен";
+"of total spending" = "жалпы шығыстың";
+
+/* Subscriptions */
+"Subscriptions" = "Жазылымдар";
+"No Subscriptions" = "Жазылым жоқ";
+"Tap + to add your first subscription." = "Алғашқы жазылымыңызды қосу үшін + басыңыз.";
+"Monthly" = "Ай сайын";
+"Yearly" = "Жыл сайын";
+"/mo" = "/ай";
+"Cancel Subscription" = "Жазылымды тоқтату";
+"Reactivate" = "Қайта іске қосу";
+"Add Subscription" = "Жазылым қосу";
+"Edit Subscription" = "Жазылымды өңдеу";
+"Subscription name" = "Жазылым атауы";
+"Next Billing Date" = "Келесі төлем күні";
+"Notes" = "Ескертпелер";
+"Cancelled" = "Тоқтатылған";
+
+/* Debts */
+"Debts" = "Қарыздар";
+"Total Debt" = "Жалпы қарыз";
+"Monthly Payments" = "Ай сайынғы төлемдер";
+"No debts — tap + to add" = "Қарыз жоқ — қосу үшін + басыңыз";
+"Paid Off" = "Өтелген";
+"New Debt" = "Жаңа қарыз";
+"Edit Debt" = "Қарызды өңдеу";
+"Details" = "Мәліметтер";
+"Amounts" = "Сомалар";
+"Total" = "Жалпы";
+"Payment" = "Төлем";
+"Interest Rate (%)" = "Пайыз мөлшерлемесі (%)";
+"Minimum Payment" = "Ең аз төлем";
+"Due Day" = "Төлем күні";
+"Payoff Calculator" = "Өтеу калькуляторы";
+
+/* Debt Types */
+"Loan" = "Несие";
+"Credit Card" = "Несие картасы";
+"Mortgage" = "Ипотека";
+"Installment" = "Бөліп төлеу";
+"Installments are typically interest-free (0%)." = "Бөліп төлеу әдетте пайызсыз (0%).";
+"Other" = "Басқа";
+
+/* Debt Detail */
+"Payment Schedule" = "Төлем кестесі";
+"Remaining Payments" = "Қалған төлемдер";
+"Payoff Date" = "Өтеу күні";
+"Next Payment" = "Келесі төлем";
+"Total Cost" = "Жалпы құны";
+"Principal" = "Негізгі қарыз";
+"Interest" = "Пайыз";
+"No payment data" = "Төлем деректері жоқ";
+"Paid" = "Төленді";
+"%@ paid" = "%@ төленді";
+"payments left" = "төлем қалды";
+
+/* Debt Payoff */
+"Strategy" = "Стратегия";
+"Method" = "Әдіс";
+"Extra Monthly" = "Қосымша ай сайын";
+"Debt-free in" = "Қарыздан босайсыз";
+"30+ years" = "30+ жыл";
+"yr" = "ж.";
+"mo" = "ай";
+"Total Interest" = "Жалпы пайыз";
+"Payoff Order" = "Өтеу кезегі";
+"Add debts first" = "Алдымен қарыз қосыңыз";
+"Payoff:" = "Өтеу:";
+"Interest:" = "Пайыз:";
+"Snowball: pay smallest balance first. Builds momentum." = "Кардар: алдымен ең аз қалдықты өтеңіз.";
+"Avalanche: pay highest interest rate first. Saves money." = "Көшкін: алдымен ең жоғары пайызды өтеңіз. Ақша үнемдейді.";
+
+/* Export */
+"Export Data" = "Деректерді экспорттау";
+"Import CSV" = "CSV импорттау";
+"Import Result" = "Импорт нәтижесі";
+"Imported: %lld" = "Импортталды: %lld";
+"Skipped: %lld" = "Өткізілді: %lld";
+
+/* Appearance */
+"Appearance" = "Сыртқы көрініс";
+"Finance Blue" = "Finance Blue";
+"Midnight Green" = "Midnight Green";
+"Sunset" = "Күн батысы";
+"Lavender" = "Лаванда";
+"Midnight" = "Түнгі";
+
+/* Backup */
+"Backup" = "Сақтық көшірме";
+"Create Backup" = "Көшірме жасау";
+"Restore from Backup" = "Көшірмеден қалпына келтіру";
+"Restore Backup?" = "Деректерді қалпына келтіру?";
+"Restore" = "Қалпына келтіру";
+"This will replace all current data. This cannot be undone." = "Барлық ағымдағы деректер ауыстырылады. Бұл әрекетті кері қайтару мүмкін емес.";
+"Backup Restored" = "Деректер қалпына келтірілді";
+"All data has been restored successfully." = "Барлық деректер сәтті қалпына келтірілді.";
+"Cannot access file" = "Файлға қол жетімсіз";
+"Invalid backup file: %@" = "Жарамсыз сақтық көшірме файлы: %@";
+"Auto-Backup" = "Автосақтық көшірме";
+"Last Auto-Backup" = "Соңғы автокөшірме";
+"Off" = "Өшірулі";
+"Daily" = "Күн сайын";
+"Weekly" = "Апта сайын";
+"Date Range" = "Күн аралығы";
+"From" = "Бастап";
+"To" = "Дейін";
+"Format" = "Формат";
+"Preview" = "Алдын ала қарау";
+"Expenses" = "Шығыстар";
+"Export" = "Экспорттау";
+"Transaction Report" = "Транзакция есебі";
+"Total transactions" = "Барлық транзакциялар";
+
+/* Live Activity */
+"Live Activity" = "Live Activity";
+"Daily Budget in Dynamic Island" = "Күнлік бюджет Dynamic Island-та";
+"Shows today's spending progress in Dynamic Island and Lock Screen." = "Бүгінгі шығыстарды Dynamic Island мен құлыптау экранында көрсетеді.";
+"Daily Budget" = "Күнделікті бюджет";
+
+/* Notifications */
+"Notifications" = "Хабарландырулар";
+"Budget alerts" = "Бюджет ескертулері";
+"Subscription reminders" = "Жазылым еске салулары";
+"Debt payment reminders" = "Қарыз төлемдері туралы еске салу";
+"Enable in Settings" = "Параметрлерде қосу";
+"Budget exceeded!" = "Бюджет асып кетті!";
+"Budget warning: %d%%" = "Бюджет ескертуі: %d%%";
+"Subscription reminder" = "Жазылым еске салу";
+"Tomorrow: %@ — %@" = "Ертең: %@ — %@";
+"Payment due in 3 days: %@" = "3 күннен кейін төлем: %@";
+
+/* Category suggestions */
+"Suggested:" = "Ұсынылады:";
+
+/* Capture / Apple Pay */
+"Apple Pay" = "Apple Pay";
+"Shortcut Capture" = "Shortcut арқылы жазу";
+"Deep Link Capture" = "Deep link арқылы жазу";
+"Possible duplicate" = "Мүмкін қайталау";
+"Save Anyway" = "Бәрібір сақтау";
+"Possible duplicate found" = "Мүмкін қайталанған транзакция табылды";
+"A similar transaction already exists." = "Ұқсас транзакция бұрыннан бар.";
+"No note" = "Ескертпе жоқ";
+
+/* What-If Scenarios */
+"What If..." = "Егер...";
+"What-If Scenarios" = "«Егер» сценарийлері";
+"Save More" = "Көбірек жинақтау";
+"Spend Less" = "Азырақ жұмсау";
+"Extra Payment" = "Қосымша төлем";
+"Monthly Savings" = "Айлық үнем";
+"Months to Goal" = "Мақсатқа дейін айлар";
+"Annual Savings" = "Жылдық үнем";
+"Months Saved" = "Үнемделген айлар";
+"Interest Saved" = "Үнемделген пайыз";
+"Original Payoff" = "Бастапқы өтеу күні";
+"New Payoff" = "Жаңа өтеу күні";
+"Reduction" = "Азайту";
+"Enter amount" = "Сомасын енгізіңіз";
+"Select a debt" = "Қарызды таңдаңыз";
+"No debts added" = "Қарыздар жоқ";
+"Estimated Date" = "Болжамды күн";
+"Total Saved" = "Барлығы жинақталды";
+"Goal Amount (optional)" = "Мақсат сомасы (міндетті емес)";
+"Debt Details" = "Қарыз мәліметтері";
+"Remaining Balance" = "Қалдық қарыз";
+"Annual Interest Rate (%)" = "Жылдық пайыз мөлшерлемесі (%)";
+"Minimum Payment" = "Ең аз төлем";
+"Manual Entry" = "Қолмен енгізу";
+"Min Payment" = "Мин. төлем";
+"Use actual" = "Нақты пайдалану";
+"Enter a monthly savings amount" = "Айлық жинақ сомасын енгізіңіз";
+"Enter debt details above" = "Жоғарыдан қарыз мәліметтерін енгізіңіз";
+"Scenario" = "Сценарий";
+"Current Monthly Expense" = "Ай сайынғы шығыстар";
+"Results" = "Нәтижелер";
+
+/* Auto-capture settings */
+"Auto-Capture Purchases" = "Сатып алуды автожазу";
+"Open Shortcuts" = "Shortcuts ашу";
+"Run Capture Test" = "Capture тестін іске қосу";
+"1) In Shortcuts create Personal Automation with Transaction trigger." = "1) Shortcuts ішінде Transaction триггерімен Personal Automation жасаңыз.";
+"2) Select cards and map Amount/Merchant/Date/Currency to URL query fields." = "2) Карталарды таңдап, Amount/Merchant/Date/Currency өрістерін URL параметрлеріне сәйкестендіріңіз.";
+"3) Use URL financeapp://capture and run a test payment flow." = "3) financeapp://capture URL қолданып, тест төлемін іске қосыңыз.";
+"Capture Diagnostics" = "Capture диагностикасы";
+"Last Received" = "Соңғы қабылданған";
+"Last Opened in Quick Add" = "Quick Add-та соңғы ашылған";
+"Source" = "Дереккөз";
+"Merchant" = "Сауда орны";
+"No merchant" = "Сауда орны көрсетілмеген";
+"Payment Date" = "Төлем күні";
+"No captures yet" = "Capture оқиғалары әлі жоқ";
+"Pending capture is waiting to be opened" = "Күтудегі capture ашылуын күтіп тұр";
+"Refresh Diagnostics" = "Диагностиканы жаңарту";
+"Never" = "Ешқашан";
+
+/* Debt total payments */
+"Total Payments" = "Жалпы төлемдер";
+"Auto" = "Авто";
+"Auto (%lld)" = "Авто (%lld)";

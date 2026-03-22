@@ -1,0 +1,433 @@
+/* Tab titles */
+"Transactions" = "Transactions";
+"Accounts" = "Accounts";
+"Summary" = "Summary";
+"Categories" = "Categories";
+
+/* Navigation titles */
+"Add Transaction" = "Add Transaction";
+"Edit Transaction" = "Edit Transaction";
+"Add Account" = "Add Account";
+"Edit Account" = "Edit Account";
+"New Category" = "New Category";
+
+/* Transaction types */
+"Income" = "Income";
+"Expense" = "Expense";
+"Transfer" = "Transfer";
+
+/* Account types */
+"Checking" = "Checking";
+"Savings" = "Savings";
+"Cash" = "Cash";
+"Card" = "Card";
+"Deposit" = "Deposit";
+"Crypto" = "Crypto";
+
+/* Form labels / section headers */
+"Name" = "Name";
+"Note" = "Note";
+"Amount" = "Amount";
+"Date" = "Date";
+"Account" = "Account";
+"From Account" = "From Account";
+"To Account" = "To Account";
+"Category" = "Category";
+"Type" = "Type";
+"Balance" = "Balance";
+"Color" = "Color";
+"Overview" = "Overview";
+
+/* Buttons */
+"Save" = "Save";
+"Cancel" = "Cancel";
+"Delete" = "Delete";
+"Done" = "Done";
+
+/* Empty states */
+"No Transactions" = "No Transactions";
+"No accounts yet." = "No accounts yet.";
+"No income categories." = "No income categories.";
+"No expense categories." = "No expense categories.";
+"Uncategorized" = "Uncategorized";
+
+/* Placeholders */
+"Account name" = "Account name";
+"Category name" = "Category name";
+"Optional note" = "Optional note";
+"Select account" = "Select account";
+"None" = "None";
+
+/* Summary */
+"Total Income" = "Total Income";
+"Total Expense" = "Total Expense";
+"Net" = "Net";
+"Income" = "Income";
+"Expenses by Category" = "Expenses by Category";
+
+/* Alerts */
+"Delete Account" = "Delete Account";
+"Delete Category" = "Delete Category";
+"Deleting this account will also delete all its transactions." = "Deleting this account will also delete all its transactions.";
+"Transactions in this category will become uncategorized." = "Transactions in this category will become uncategorized.";
+
+/* Inline messages */
+"No accounts. Add one in Accounts tab." = "No accounts. Add one in Accounts tab.";
+"No categories available." = "No categories available.";
+"Tap + to add your first transaction." = "Tap + to add your first transaction.";
+"No transactions recorded for this month." = "No transactions recorded for this month.";
+
+/* TransactionRow */
+"Transfer: %@ → %@" = "Transfer: %@ → %@";
+"Unknown" = "Unknown";
+"Unknown account" = "Unknown account";
+
+/* Note: "Income" and "Expense" keys are defined above under Transaction types and are reused for section headers */
+
+/* Tags */
+"Tags" = "Tags";
+"Add tags..." = "Add tags...";
+
+/* Charts / new sections */
+"Spending by Category" = "Spending by Category";
+"Monthly Overview" = "Monthly Overview";
+"Balance History" = "Balance History";
+"Recent Transactions" = "Recent Transactions";
+"No data" = "No data";
+
+/* Budgets */
+"Budgets" = "Budgets";
+"Set Budget" = "Set Budget";
+"Budget Limit" = "Budget Limit";
+"Spent" = "Spent";
+"Remaining" = "Remaining";
+"No budget set" = "No budget set";
+"Over budget" = "Over budget";
+
+/* Quick Add */
+"Quick Add" = "Quick Add";
+"Detailed" = "Detailed";
+"Note..." = "Note...";
+
+/* Recurring transactions */
+"Recurring" = "Recurring";
+"Recurring Transactions" = "Recurring Transactions";
+"Add Recurring" = "Add Recurring";
+"Frequency" = "Frequency";
+"Start Date" = "Start Date";
+"daily" = "Daily";
+"weekly" = "Weekly";
+"monthly" = "Monthly";
+"yearly" = "Yearly";
+"Active" = "Active";
+"Title" = "Title";
+
+/* Net worth / summary */
+"Net Worth" = "Net Worth";
+"vs last month" = "vs last month";
+
+/* Budget daily allowance */
+"Daily Allowance" = "Daily Allowance";
+"%lld days left" = "%lld days left";
+
+/* Settings */
+"Settings" = "Settings";
+"Manage Categories" = "Manage Categories";
+"Rollover unused budget" = "Rollover unused budget";
+
+/* Transactions repeat */
+"Repeat" = "Repeat";
+
+/* Search and Filter */
+"Search transactions" = "Search transactions";
+"Filter" = "Filter";
+"All Accounts" = "All Accounts";
+"All Categories" = "All Categories";
+"All Types" = "All Types";
+"Clear Filters" = "Clear Filters";
+"Apply" = "Apply";
+"Active filters" = "Active filters";
+"No results" = "No results";
+"Try changing your search or filters." = "Try changing your search or filters.";
+"Showing %lld of %lld" = "Showing %1$lld of %2$lld";
+
+/* Goals */
+"Goals" = "Goals";
+"No Goals" = "No Goals";
+"Tap + to add a financial goal." = "Tap + to add a financial goal.";
+"New Goal" = "New Goal";
+"Edit Goal" = "Edit Goal";
+"Target Amount" = "Target Amount";
+"Current Amount" = "Current Amount";
+
+/* Forecast */
+"Forecast" = "Forecast";
+"End-of-Month Projection" = "End-of-Month Projection";
+"Projected Net" = "Projected Net";
+"Projected Expense" = "Projected Expense";
+"Based on %lld days" = "Based on %lld days";
+
+/* Smart Tips */
+"Insights" = "Insights";
+"above your 3-month average" = "above your 3-month average";
+"below your 3-month average" = "below your 3-month average";
+"of total spending" = "of total spending";
+
+/* Dashboard */
+"Dashboard" = "Dashboard";
+"Free to Spend" = "Free to Spend";
+"This Month" = "This Month";
+"Spent: %@" = "Spent: %@";
+"No expenses" = "No expenses";
+"Remaining: %@" = "Remaining: %@";
+"used" = "used";
+
+/* Subscriptions */
+"Subscriptions" = "Subscriptions";
+"No Subscriptions" = "No Subscriptions";
+"Tap + to add your first subscription." = "Tap + to add your first subscription.";
+"Monthly" = "Monthly";
+"Yearly" = "Yearly";
+"/mo" = "/mo";
+"Cancel Subscription" = "Cancel Subscription";
+"Reactivate" = "Reactivate";
+"Add Subscription" = "Add Subscription";
+"Edit Subscription" = "Edit Subscription";
+"Subscription name" = "Subscription name";
+"Next Billing Date" = "Next Billing Date";
+"Notes" = "Notes";
+"Cancelled" = "Cancelled";
+
+/* Debts */
+"Debts" = "Debts";
+"Total Debt" = "Total Debt";
+"Monthly Payments" = "Monthly Payments";
+"No debts — tap + to add" = "No debts — tap + to add";
+"Paid Off" = "Paid Off";
+"New Debt" = "New Debt";
+"Edit Debt" = "Edit Debt";
+"Details" = "Details";
+"Amounts" = "Amounts";
+"Total" = "Total";
+"Payment" = "Payment";
+"Interest Rate (%)" = "Interest Rate (%)";
+"Minimum Payment" = "Minimum Payment";
+"Due Day" = "Due Day";
+"Payoff Calculator" = "Payoff Calculator";
+
+/* Debt Types */
+"Loan" = "Loan";
+"Credit Card" = "Credit Card";
+"Mortgage" = "Mortgage";
+"Installment" = "Installment";
+"Installments are typically interest-free (0%)." = "Installments are typically interest-free (0%).";
+"Other" = "Other";
+
+/* Debt Detail */
+"Payment Schedule" = "Payment Schedule";
+"Remaining Payments" = "Remaining Payments";
+"Payoff Date" = "Payoff Date";
+"Next Payment" = "Next Payment";
+"Total Cost" = "Total Cost";
+"Principal" = "Principal";
+"Interest" = "Interest";
+"No payment data" = "No payment data";
+"Paid" = "Paid";
+"%@ paid" = "%@ paid";
+"payments left" = "payments left";
+
+/* Debt Payoff */
+"Strategy" = "Strategy";
+"Method" = "Method";
+"Extra Monthly" = "Extra Monthly";
+"Debt-free in" = "Debt-free in";
+"30+ years" = "30+ years";
+"yr" = "yr";
+"mo" = "mo";
+"Total Interest" = "Total Interest";
+"Payoff Order" = "Payoff Order";
+"Add debts first" = "Add debts first";
+"Payoff:" = "Payoff:";
+"Interest:" = "Interest:";
+"Snowball: pay smallest balance first. Builds momentum." = "Snowball: pay smallest balance first. Builds momentum.";
+"Avalanche: pay highest interest rate first. Saves money." = "Avalanche: pay highest interest rate first. Saves money.";
+
+/* Cash Flow Forecast */
+"Cash Flow Forecast" = "Cash Flow Forecast";
+"Today" = "Today";
+"In 30 days" = "In 30 days";
+"30-Day Projection" = "30-Day Projection";
+"Upcoming Events" = "Upcoming Events";
+"No scheduled events in the next 30 days" = "No scheduled events in the next 30 days";
+
+/* Export */
+"Export Data" = "Export Data";
+"Import CSV" = "Import CSV";
+"Import Result" = "Import Result";
+"Imported: %lld" = "Imported: %lld";
+"Skipped: %lld" = "Skipped: %lld";
+
+/* Appearance */
+"Appearance" = "Appearance";
+"Finance Blue" = "Finance Blue";
+"Midnight Green" = "Midnight Green";
+"Sunset" = "Sunset";
+"Lavender" = "Lavender";
+"Midnight" = "Midnight";
+
+/* Backup */
+"Backup" = "Backup";
+"Create Backup" = "Create Backup";
+"Restore from Backup" = "Restore from Backup";
+"Restore Backup?" = "Restore Backup?";
+"Restore" = "Restore";
+"This will replace all current data. This cannot be undone." = "This will replace all current data. This cannot be undone.";
+"Backup Restored" = "Backup Restored";
+"All data has been restored successfully." = "All data has been restored successfully.";
+"Cannot access file" = "Cannot access file";
+"Invalid backup file: %@" = "Invalid backup file: %@";
+"Auto-Backup" = "Auto-Backup";
+"Last Auto-Backup" = "Last Auto-Backup";
+"Off" = "Off";
+"Daily" = "Daily";
+"Weekly" = "Weekly";
+"Date Range" = "Date Range";
+"From" = "From";
+"To" = "To";
+"Format" = "Format";
+"Preview" = "Preview";
+"Expenses" = "Expenses";
+"Export" = "Export";
+"Transaction Report" = "Transaction Report";
+"Total transactions" = "Total transactions";
+
+/* Charts — period switcher & comparison */
+"Week" = "Week";
+"Year" = "Year";
+"Period Comparison" = "Period Comparison";
+"Current" = "Current";
+"Previous" = "Previous";
+"Last Year" = "Last Year";
+"vs Previous" = "vs Previous";
+"vs Last Year" = "vs Last Year";
+"Monthly Expenses" = "Monthly Expenses";
+
+/* Yearly Overview */
+"Yearly Overview" = "Yearly Overview";
+"Best Month" = "Best Month";
+"Worst Month" = "Worst Month";
+"Top Categories" = "Top Categories";
+"of expenses" = "of expenses";
+"No data for this year" = "No data for this year";
+
+/* Charts */
+"Daily Expenses" = "Daily Expenses";
+"No expenses this month" = "No expenses this month";
+"No transactions yet" = "No transactions yet";
+"Income vs Expenses" = "Income vs Expenses";
+"Top Spending" = "Top Spending";
+"Savings Rate" = "Savings Rate";
+"No income data yet" = "No income data yet";
+"Net Worth Trend" = "Net Worth Trend";
+"Net Worth History" = "Net Worth History";
+"Budget vs Actual" = "Budget vs Actual";
+"Budget" = "Budget";
+"Actual" = "Actual";
+"Analytics" = "Analytics";
+
+/* Settings extras */
+"Manage" = "Manage";
+"Data" = "Data";
+"Home Screen" = "Home Screen";
+"Quick Add on Home Screen" = "Quick Add on Home Screen";
+"Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen" = "Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen";
+"Edit Category" = "Edit Category";
+"Icon" = "Icon";
+
+/* Live Activity */
+"Live Activity" = "Live Activity";
+"Daily Budget in Dynamic Island" = "Daily Budget in Dynamic Island";
+"Shows today's spending progress in Dynamic Island and Lock Screen." = "Shows today's spending progress in Dynamic Island and Lock Screen.";
+"Daily Budget" = "Daily Budget";
+
+/* Notifications */
+"Notifications" = "Notifications";
+"Budget alerts" = "Budget alerts";
+"Subscription reminders" = "Subscription reminders";
+"Debt payment reminders" = "Debt payment reminders";
+"Enable in Settings" = "Enable in Settings";
+"Budget exceeded!" = "Budget exceeded!";
+"Budget warning: %d%%" = "Budget warning: %d%%";
+"Subscription reminder" = "Subscription reminder";
+"Tomorrow: %@ — %@" = "Tomorrow: %@ — %@";
+"Payment due in 3 days: %@" = "Payment due in 3 days: %@";
+
+/* Category suggestions */
+"Suggested:" = "Suggested:";
+
+/* What-If Scenarios */
+"What If..." = "What If...";
+"What-If Scenarios" = "What-If Scenarios";
+"Save More" = "Save More";
+"Spend Less" = "Spend Less";
+"Extra Payment" = "Extra Payment";
+"Monthly Savings" = "Monthly Savings";
+"Months to Goal" = "Months to Goal";
+"Annual Savings" = "Annual Savings";
+"Months Saved" = "Months Saved";
+"Interest Saved" = "Interest Saved";
+"Original Payoff" = "Original Payoff";
+"New Payoff" = "New Payoff";
+"Reduction" = "Reduction";
+"Enter amount" = "Enter amount";
+"Select a debt" = "Select a debt";
+"No debts added" = "No debts added";
+"Estimated Date" = "Estimated Date";
+"Total Saved" = "Total Saved";
+"Goal Amount (optional)" = "Goal Amount (optional)";
+"Debt Details" = "Debt Details";
+"Remaining Balance" = "Remaining Balance";
+"Annual Interest Rate (%)" = "Annual Interest Rate (%)";
+"Minimum Payment" = "Minimum Payment";
+"Manual Entry" = "Manual Entry";
+"Min Payment" = "Min Payment";
+"Use actual" = "Use actual";
+"Enter a monthly savings amount" = "Enter a monthly savings amount";
+"Enter debt details above" = "Enter debt details above";
+"Scenario" = "Scenario";
+"Current Monthly Expense" = "Current Monthly Expense";
+"Results" = "Results";
+
+/* Capture / Apple Pay */
+"Apple Pay" = "Apple Pay";
+"Shortcut Capture" = "Shortcut Capture";
+"Deep Link Capture" = "Deep Link Capture";
+"Possible duplicate" = "Possible duplicate";
+"Save Anyway" = "Save Anyway";
+"Possible duplicate found" = "Possible duplicate found";
+"A similar transaction already exists." = "A similar transaction already exists.";
+"No note" = "No note";
+
+/* Auto-capture settings */
+"Auto-Capture Purchases" = "Auto-Capture Purchases";
+"Open Shortcuts" = "Open Shortcuts";
+"Run Capture Test" = "Run Capture Test";
+"1) In Shortcuts create Personal Automation with Transaction trigger." = "1) In Shortcuts create Personal Automation with Transaction trigger.";
+"2) Select cards and map Amount/Merchant/Date/Currency to URL query fields." = "2) Select cards and map Amount/Merchant/Date/Currency to URL query fields.";
+"3) Use URL financeapp://capture and run a test payment flow." = "3) Use URL financeapp://capture and run a test payment flow.";
+"Capture Diagnostics" = "Capture Diagnostics";
+"Last Received" = "Last Received";
+"Last Opened in Quick Add" = "Last Opened in Quick Add";
+"Source" = "Source";
+"Merchant" = "Merchant";
+"No merchant" = "No merchant";
+"Payment Date" = "Payment Date";
+"No captures yet" = "No captures yet";
+"Pending capture is waiting to be opened" = "Pending capture is waiting to be opened";
+"Refresh Diagnostics" = "Refresh Diagnostics";
+"Never" = "Never";
+
+/* Debt total payments */
+"Total Payments" = "Total Payments";
+"Auto" = "Auto";
+"Auto (%lld)" = "Auto (%lld)";
