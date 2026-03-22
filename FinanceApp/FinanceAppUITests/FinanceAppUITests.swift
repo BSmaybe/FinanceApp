@@ -21,28 +21,39 @@ final class FinanceAppUITests: XCTestCase {
         tab.tap()
     }
 
+    private func preferredElement(
+        primary: XCUIElement,
+        secondary: XCUIElement,
+        fallback: XCUIElement,
+        identifierTimeout: TimeInterval = 2
+    ) -> XCUIElement {
+        if primary.waitForExistence(timeout: identifierTimeout) { return primary }
+        if secondary.waitForExistence(timeout: 1) { return secondary }
+        return fallback
+    }
+
     private func quickAddFab(_ app: XCUIApplication) -> XCUIElement {
         let idButton = app.buttons["transactions.quickAddFab"]
-        if idButton.exists { return idButton }
-
         let idAny = app.descendants(matching: .any)
             .matching(identifier: "transactions.quickAddFab")
             .firstMatch
-        if idAny.exists { return idAny }
-
-        return app.buttons["Quick Add"]
+        return preferredElement(
+            primary: idButton,
+            secondary: idAny,
+            fallback: app.buttons["Quick Add"]
+        )
     }
 
     private func detailedButton(_ app: XCUIApplication) -> XCUIElement {
         let idButton = app.buttons["quickAdd.detailedButton"]
-        if idButton.exists { return idButton }
-
         let idAny = app.descendants(matching: .any)
             .matching(identifier: "quickAdd.detailedButton")
             .firstMatch
-        if idAny.exists { return idAny }
-
-        return app.buttons["Detailed"]
+        return preferredElement(
+            primary: idButton,
+            secondary: idAny,
+            fallback: app.buttons["Detailed"]
+        )
     }
 
     private func openQuickAdd(_ app: XCUIApplication) {

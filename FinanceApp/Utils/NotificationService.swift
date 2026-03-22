@@ -1,10 +1,14 @@
 import UserNotifications
 
 enum NotificationService {
+    private static var isUITestMode: Bool {
+        ProcessInfo.processInfo.arguments.contains("UITEST_RESET")
+    }
 
     // MARK: - Permission
 
     static func requestPermission() async -> Bool {
+        guard !isUITestMode else { return false }
         let center = UNUserNotificationCenter.current()
         let settings = await center.notificationSettings()
         if settings.authorizationStatus == .notDetermined {

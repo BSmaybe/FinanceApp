@@ -1,6 +1,16 @@
 import SwiftUI
 import SwiftData
 
+struct QuickAddDetailedDraft: Identifiable {
+    let id = UUID()
+    let type: TransactionType
+    let amount: Decimal?
+    let date: Date
+    let accountId: UUID?
+    let categoryId: UUID?
+    let note: String?
+}
+
 struct QuickAddView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -25,10 +35,10 @@ struct QuickAddView: View {
     @State private var showSavedCheck = false
     @State private var swipeOffset: CGFloat = 0
     @State private var swipeCompleted = false
-    @State private var showingDetailedForm = false
+    @State private var detailedDraft: QuickAddDetailedDraft?
 
     var capturePayload: PendingCapturePayload?
-    var onOpenDetailed: (() -> Void)?
+    var onOpenDetailed: ((QuickAddDetailedDraft) -> Void)?
     var prefillAmount: Decimal?
     var prefillNote: String?
     var prefillCategoryId: UUID?
@@ -86,6 +96,17 @@ struct QuickAddView: View {
 
     private let quickAmounts: [Int] = [500, 1000, 2000, 5000, 10000]
 
+    private var currentDetailedDraft: QuickAddDetailedDraft {
+        QuickAddDetailedDraft(
+            type: type,
+            amount: parsedAmount > 0 ? parsedAmount : nil,
+            date: transactionDateForSave,
+            accountId: selectedAccountId,
+            categoryId: selectedCategoryId,
+            note: note.isEmpty ? nil : note
+        )
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -113,7 +134,6 @@ struct QuickAddView: View {
                         .padding(.bottom, 8)
                 }
             }
-            .accessibilityIdentifier("quickAdd.screen")
             .navigationTitle(String(localized: "Quick Add"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(.visible, for: .navigationBar)
@@ -125,11 +145,12 @@ struct QuickAddView: View {
                 }
                 ToolbarItemGroup(placement: .primaryAction) {
                     Button(String(localized: "Detailed")) {
+                        let draft = currentDetailedDraft
                         if let onOpenDetailed {
+                            onOpenDetailed(draft)
                             dismiss()
-                            onOpenDetailed()
                         } else {
-                            showingDetailedForm = true
+                            detailedDraft = draft
                         }
                     }
                     .font(.subheadline)
@@ -187,20 +208,19 @@ struct QuickAddView: View {
             } message: {
                 Text(duplicateAlertMessage)
             }
-            .sheet(isPresented: $showingDetailedForm) {
+            .sheet(item: $detailedDraft) { draft in
                 NavigationStack {
                     AddEditTransactionView(
-                        prefillType: type,
-                        prefillAmount: parsedAmount > 0 ? parsedAmount : nil,
-                        prefillDate: transactionDateForSave,
-                        prefillAccountId: selectedAccountId,
-                        prefillCategoryId: selectedCategoryId,
-                        prefillNote: note.isEmpty ? nil : note
+                        prefillType: draft.type,
+                        prefillAmount: draft.amount,
+                        prefillDate: draft.date,
+                        prefillAccountId: draft.accountId,
+                        prefillCategoryId: draft.categoryId,
+                        prefillNote: draft.note
                     )
                 }
             }
         }
-        .accessibilityIdentifier("quickAdd.screen")
     }
 
     private var typePickerSection: some View {

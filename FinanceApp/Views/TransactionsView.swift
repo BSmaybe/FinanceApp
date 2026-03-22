@@ -8,7 +8,8 @@ struct TransactionsView: View {
     @Query private var categories: [Category]
 
     @State private var showingQuickAdd = false
-    @State private var showingAdd = false
+    @State private var detailedDraft: QuickAddDetailedDraft?
+    @State private var pendingDetailedDraft: QuickAddDetailedDraft?
     @State private var editingTransaction: Transaction?
     @State private var repeatingTransaction: Transaction?
     @State private var showingRecurring = false
@@ -138,13 +139,12 @@ struct TransactionsView: View {
                         .clipShape(Circle())
                         .shadow(color: AppTheme.shadowStrong, radius: 18, x: 0, y: 10)
                 }
-                .accessibilityElement(children: .ignore)
+                .buttonStyle(.plain)
                 .accessibilityLabel(String(localized: "Quick Add"))
                 .accessibilityIdentifier("transactions.quickAddFab")
                 .padding(.trailing, 20)
                 .padding(.bottom, 12)
             }
-            .accessibilityIdentifier("transactions.screen")
             .navigationTitle(String(localized: "Transactions"))
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(AppTheme.surface, for: .navigationBar)
@@ -182,14 +182,21 @@ struct TransactionsView: View {
                     RecurringTransactionsView()
                 }
             }
-            .sheet(isPresented: $showingQuickAdd) {
-                QuickAddView {
-                    showingAdd = true
+            .sheet(isPresented: $showingQuickAdd, onDismiss: openPendingDetailedDraftIfNeeded) {
+                QuickAddView { draft in
+                    pendingDetailedDraft = draft
                 }
                 .presentationDetents([.large])
             }
-            .sheet(isPresented: $showingAdd) {
-                AddEditTransactionView()
+            .sheet(item: $detailedDraft) { draft in
+                AddEditTransactionView(
+                    prefillType: draft.type,
+                    prefillAmount: draft.amount,
+                    prefillDate: draft.date,
+                    prefillAccountId: draft.accountId,
+                    prefillCategoryId: draft.categoryId,
+                    prefillNote: draft.note
+                )
             }
             .sheet(item: $editingTransaction) { txn in
                 AddEditTransactionView(transaction: txn)
@@ -371,6 +378,12 @@ struct TransactionsView: View {
         filterAccountId = nil
         filterType = nil
         filterCategoryId = nil
+    }
+
+    private func openPendingDetailedDraftIfNeeded() {
+        guard let pendingDetailedDraft else { return }
+        self.pendingDetailedDraft = nil
+        detailedDraft = pendingDetailedDraft
     }
 
     private func deleteTxns(from txns: [Transaction], at offsets: IndexSet) {
