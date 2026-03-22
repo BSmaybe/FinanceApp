@@ -253,6 +253,56 @@ extension ThemePalette {
     ]
 
     static let allCases: [ThemePalette] = [.financeBlue, .midnightGreen, .sunset, .lavender, .midnight]
+
+    var surfaceMuted: Color {
+        switch id {
+        case "finance_blue": return Color(hex: "#F8FAFD")
+        case "midnight_green": return Color(hex: "#F6FCF8")
+        case "sunset": return Color(hex: "#FFF7EF")
+        case "lavender": return Color(hex: "#FCF8FF")
+        case "midnight": return Color(hex: "#162033")
+        default: return surface
+        }
+    }
+
+    var surfaceElevated: Color {
+        switch id {
+        case "finance_blue": return Color(hex: "#FFFFFF")
+        case "midnight_green": return Color(hex: "#FFFFFF")
+        case "sunset": return Color(hex: "#FFFFFF")
+        case "lavender": return Color(hex: "#FFFFFF")
+        case "midnight": return Color(hex: "#1B2840")
+        default: return surface
+        }
+    }
+
+    var glassOverlay: Color {
+        isDark ? Color.white.opacity(0.08) : Color.white.opacity(0.60)
+    }
+
+    var warning: Color {
+        isDark ? Color(hex: "#FBBF24") : Color(hex: "#D97706")
+    }
+
+    var info: Color {
+        isDark ? Color(hex: "#38BDF8") : Color(hex: "#0284C7")
+    }
+
+    var shadowSoft: Color {
+        isDark ? Color.black.opacity(0.22) : Color(hex: "#0F172A").opacity(0.08)
+    }
+
+    var shadowStrong: Color {
+        isDark ? Color.black.opacity(0.36) : Color(hex: "#0F172A").opacity(0.16)
+    }
+
+    var chartNeutral: Color {
+        isDark ? Color(hex: "#64748B") : Color(hex: "#94A3B8")
+    }
+
+    var sectionAccent: Color {
+        isDark ? secondaryAccent.opacity(0.9) : secondaryAccent.opacity(0.72)
+    }
 }
 
 // MARK: - ThemeStore

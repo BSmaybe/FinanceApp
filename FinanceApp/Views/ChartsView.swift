@@ -122,14 +122,13 @@ private func totals(for range: PeriodRange, in transactions: [Transaction]) -> P
 // MARK: - ChartsView
 
 struct ChartsView: View {
+    @Binding var selectedTab: AppRootTab
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query private var categories: [Category]
     @Query private var accounts: [Account]
     @Query private var budgets: [Budget]
 
     @State private var selectedPeriod: AnalyticsPeriod = .month
-    // Keep month navigation for budget chart (which is month-scoped)
-    @State private var selectedMonth: Date = Date()
 
     private var calendar: Calendar { Calendar.current }
 
@@ -308,23 +307,44 @@ struct ChartsView: View {
         let budgetActual   = budgetVsActualData(monthTransactions: periodTransactions)
 
         return NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    periodPicker
-                    periodComparisonCard
-                    categoryPieChart(expensesByCategory: catExpenses)
-                    topSpendingChart(expensesByCategory: catExpenses)
-                    dailyExpenseChart(hasExpenses: hasExpenses, barData: bars)
-                    savingsRateChart(savingsRateData: savingsRates)
-                    netWorthTrendChart(netWorthTrendData: trendData)
-                    monthlyBarChart(monthlyTotals: incExpData)
-                    budgetVsActualChart(data: budgetActual)
-                    whatIfLink
-                    yearlyOverviewLink
+            ZStack {
+                AppTheme.canvas
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: 18) {
+                        analyticsHeroCard
+                        groupHeader(
+                            title: String(localized: "Compare"),
+                            subtitle: compareSectionTakeaway
+                        )
+                        periodPicker
+                        periodComparisonCard
+                        budgetVsActualChart(data: budgetActual)
+
+                        groupHeader(
+                            title: String(localized: "Trends"),
+                            subtitle: trendsSectionTakeaway(expensesByCategory: catExpenses, netWorthTrendData: trendData)
+                        )
+                        categoryPieChart(expensesByCategory: catExpenses)
+                        topSpendingChart(expensesByCategory: catExpenses)
+                        dailyExpenseChart(hasExpenses: hasExpenses, barData: bars)
+                        monthlyBarChart(monthlyTotals: incExpData)
+                        savingsRateChart(savingsRateData: savingsRates)
+                        netWorthTrendChart(netWorthTrendData: trendData)
+
+                        groupHeader(
+                            title: String(localized: "Planning"),
+                            subtitle: String(localized: "Explore scenarios and review longer horizons")
+                        )
+                        planningCards
+                    }
+                    .padding(16)
                 }
-                .padding()
             }
             .navigationTitle(String(localized: "Analytics"))
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(AppTheme.surface, for: .navigationBar)
         }
     }
 
@@ -337,6 +357,113 @@ struct ChartsView: View {
             }
         }
         .pickerStyle(.segmented)
+        .padding(12)
+        .cockpitSurface(cornerRadius: 20, elevated: true, compact: true)
+    }
+
+    private var analyticsHeroCard: some View {
+        HeroMetricCard(
+            title: String(localized: "Analytics"),
+            value: currentRange.label,
+            supportingTitle: String(localized: "Net"),
+            supportingValue: CurrencyFormatter.string(from: currentTotals.net),
+            note: selectedPeriod.title,
+            badgeText: compareBadgeText
+        )
+    }
+
+    private func groupHeader(title: String, subtitle: String) -> some View {
+        HStack(alignment: .top) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.system(.title3, design: .rounded).weight(.semibold))
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 2)
+    }
+
+    private var compareBadgeText: String {
+        let delta = currentTotals.net - previousTotals.net
+        let prefix = delta >= 0 ? "+" : "-"
+        return "\(prefix)\(CurrencyFormatter.string(from: abs(delta)))"
+    }
+
+    private var compareSectionTakeaway: String {
+        if currentTotals.net == previousTotals.net {
+            return String(localized: "Current period is tracking in line with the previous period.")
+        }
+        let stronger = currentTotals.net > previousTotals.net
+        let diff = abs(currentTotals.net - previousTotals.net)
+        return stronger
+            ? String(format: String(localized: "Net is up by %@ versus the prior comparable period."), CurrencyFormatter.string(from: diff))
+            : String(format: String(localized: "Net is down by %@ versus the prior comparable period."), CurrencyFormatter.string(from: diff))
+    }
+
+    private func trendsSectionTakeaway(
+        expensesByCategory: [(name: String, amount: Double, color: Color, iconName: String)],
+        netWorthTrendData: [(month: String, date: Date, balance: Double)]
+    ) -> String {
+        let topCategory = expensesByCategory.first?.name ?? String(localized: "No category")
+        let delta = (netWorthTrendData.last?.balance ?? 0) - (netWorthTrendData.dropLast().last?.balance ?? 0)
+        let direction = delta >= 0 ? String(localized: "up") : String(localized: "down")
+        return String(format: String(localized: "Top spending is %@ and net worth is %@ month over month."), topCategory, direction)
+    }
+
+    private var planningCards: some View {
+        VStack(spacing: 12) {
+            NavigationLink(destination: WhatIfView()) {
+                InsightCard(
+                    title: String(localized: "What If"),
+                    value: String(localized: "Scenarios"),
+                    message: String(localized: "Test savings, spending, and debt payoff decisions before acting."),
+                    systemImage: "questionmark.circle.fill",
+                    tint: AppTheme.secondaryAccent
+                )
+            }
+            .buttonStyle(.plain)
+
+            NavigationLink(destination: YearlyOverviewView()) {
+                InsightCard(
+                    title: String(localized: "Yearly Overview"),
+                    value: String(localized: "12 Months"),
+                    message: String(localized: "Review full-year cash flow, savings rate, and category concentration."),
+                    systemImage: "calendar.badge.clock",
+                    tint: AppTheme.primaryAccent
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func analyticsCard<Content: View>(
+        title: String,
+        takeaway: String,
+        actionTitle: String,
+        action: @escaping () -> Void,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(title)
+                        .font(.headline)
+                    Text(takeaway)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(actionTitle, action: action)
+                    .font(.caption.weight(.semibold))
+                    .buttonStyle(.plain)
+                    .foregroundStyle(AppTheme.primaryAccent)
+            }
+            content()
+        }
+        .cockpitSurface(cornerRadius: 24, elevated: true)
     }
 
     // MARK: - Period Comparison Card
@@ -348,11 +475,12 @@ struct ChartsView: View {
         let prevT   = previousTotals
         let lyT     = lastYearTotals
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "Period Comparison"))
-                .font(.headline)
-
-            // Header row
+        return analyticsCard(
+            title: String(localized: "Period Comparison"),
+            takeaway: compareSectionTakeaway,
+            actionTitle: String(localized: "Open Dashboard"),
+            action: { selectedTab = .dashboard }
+        ) {
             HStack {
                 Text("").frame(maxWidth: .infinity, alignment: .leading)
                 Text(currentRange.label)
@@ -386,7 +514,6 @@ struct ChartsView: View {
 
             Divider()
 
-            // Net row
             HStack {
                 Text(String(localized: "Net"))
                     .font(.subheadline.bold())
@@ -396,9 +523,6 @@ struct ChartsView: View {
                 netValueText(lyT.net)
             }
         }
-        .padding()
-        .background(AppTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 
     @ViewBuilder
@@ -439,10 +563,12 @@ struct ChartsView: View {
     private func categoryPieChart(
         expensesByCategory: [(name: String, amount: Double, color: Color, iconName: String)]
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "Expenses by Category"))
-                .font(.headline)
-
+        analyticsCard(
+            title: String(localized: "Expenses by Category"),
+            takeaway: categoryTakeaway(expensesByCategory),
+            actionTitle: String(localized: "Open Transactions"),
+            action: { selectedTab = .transactions }
+        ) {
             if expensesByCategory.isEmpty {
                 Text(String(localized: "No expenses this month"))
                     .foregroundColor(.secondary)
@@ -480,9 +606,6 @@ struct ChartsView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Daily/Weekly/Monthly Expense Bar Chart
@@ -499,10 +622,12 @@ struct ChartsView: View {
             }
         }()
 
-        return VStack(alignment: .leading, spacing: 12) {
-            Text(chartTitle)
-                .font(.headline)
-
+        return analyticsCard(
+            title: chartTitle,
+            takeaway: expenseBarTakeaway(hasExpenses: hasExpenses, barData: barData),
+            actionTitle: String(localized: "Open Transactions"),
+            action: { selectedTab = .transactions }
+        ) {
             if !hasExpenses {
                 Text(String(localized: "No expenses this month"))
                     .foregroundColor(.secondary)
@@ -526,9 +651,6 @@ struct ChartsView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Income vs Expenses Bar Chart
@@ -536,10 +658,12 @@ struct ChartsView: View {
     private func monthlyBarChart(
         monthlyTotals: [(month: Date, income: Double, expense: Double)]
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "Income vs Expenses"))
-                .font(.headline)
-
+        analyticsCard(
+            title: String(localized: "Income vs Expenses"),
+            takeaway: incomeVsExpenseTakeaway(monthlyTotals),
+            actionTitle: String(localized: "Open Dashboard"),
+            action: { selectedTab = .dashboard }
+        ) {
             if monthlyTotals.allSatisfy({ $0.income == 0 && $0.expense == 0 }) {
                 Text(String(localized: "No transactions yet"))
                     .foregroundColor(.secondary)
@@ -569,9 +693,6 @@ struct ChartsView: View {
                 ])
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Savings Rate Chart (last 6 months — always)
@@ -590,10 +711,12 @@ struct ChartsView: View {
     private func savingsRateChart(
         savingsRateData: [(month: String, rate: Double)]
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "Savings Rate"))
-                .font(.headline)
-
+        analyticsCard(
+            title: String(localized: "Savings Rate"),
+            takeaway: savingsRateTakeaway(savingsRateData),
+            actionTitle: String(localized: "Review Year"),
+            action: { selectedPeriod = .year }
+        ) {
             if savingsRateData.allSatisfy({ $0.rate == 0 }) {
                 Text(String(localized: "No income data yet"))
                     .foregroundColor(.secondary)
@@ -619,9 +742,6 @@ struct ChartsView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Top Spending
@@ -630,10 +750,12 @@ struct ChartsView: View {
         expensesByCategory: [(name: String, amount: Double, color: Color, iconName: String)]
     ) -> some View {
         let top5 = Array(expensesByCategory.prefix(5))
-        return VStack(alignment: .leading, spacing: 12) {
-            Text(String(localized: "Top Spending"))
-                .font(.headline)
-
+        return analyticsCard(
+            title: String(localized: "Top Spending"),
+            takeaway: topSpendingTakeaway(top5),
+            actionTitle: String(localized: "Open Transactions"),
+            action: { selectedTab = .transactions }
+        ) {
             if top5.isEmpty {
                 Text(String(localized: "No expenses this month"))
                     .foregroundColor(.secondary)
@@ -658,9 +780,6 @@ struct ChartsView: View {
                 }
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
     }
 
     // MARK: - Net Worth Trend (always last 12 months)
@@ -695,21 +814,12 @@ struct ChartsView: View {
         let delta     = last - prev
         let isPositive = delta >= 0
 
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(String(localized: "Net Worth History"))
-                    .font(.headline)
-                Spacer()
-                if delta != 0 {
-                    HStack(spacing: 2) {
-                        Image(systemName: isPositive ? "arrow.up.right" : "arrow.down.right")
-                        Text(CurrencyFormatter.string(from: Decimal(abs(delta))))
-                    }
-                    .font(.caption.bold())
-                    .foregroundStyle(isPositive ? AppTheme.success : AppTheme.danger)
-                }
-            }
-
+        return analyticsCard(
+            title: String(localized: "Net Worth History"),
+            takeaway: netWorthTakeaway(delta: delta, isPositive: isPositive),
+            actionTitle: String(localized: "Open Dashboard"),
+            action: { selectedTab = .dashboard }
+        ) {
             if netWorthTrendData.allSatisfy({ $0.balance == 0 }) {
                 Text(String(localized: "No transactions yet"))
                     .foregroundColor(.secondary)
@@ -733,9 +843,72 @@ struct ChartsView: View {
                 .frame(height: 200)
             }
         }
-        .padding()
-        .background(Color(.secondarySystemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+    }
+
+    private func categoryTakeaway(
+        _ expensesByCategory: [(name: String, amount: Double, color: Color, iconName: String)]
+    ) -> String {
+        guard let first = expensesByCategory.first else {
+            return String(localized: "No category has meaningfully emerged in this period yet.")
+        }
+        return String(format: String(localized: "%@ is currently the largest expense bucket."), first.name)
+    }
+
+    private func expenseBarTakeaway(
+        hasExpenses: Bool,
+        barData: [(label: String, xIndex: Int, amount: Double)]
+    ) -> String {
+        guard hasExpenses, let peak = barData.max(by: { $0.amount < $1.amount }) else {
+            return String(localized: "No spend trend is available for the selected period.")
+        }
+        return String(format: String(localized: "The highest spend point lands on %@."), peak.label)
+    }
+
+    private func incomeVsExpenseTakeaway(
+        _ monthlyTotals: [(month: Date, income: Double, expense: Double)]
+    ) -> String {
+        guard let latest = monthlyTotals.last else {
+            return String(localized: "Income and expense history will appear here once transactions exist.")
+        }
+        let net = latest.income - latest.expense
+        let direction = net >= 0 ? String(localized: "ahead") : String(localized: "behind")
+        return String(format: String(localized: "The latest period closes %@ by %@."), direction, CurrencyFormatter.string(from: Decimal(abs(net))))
+    }
+
+    private func savingsRateTakeaway(
+        _ savingsRateData: [(month: String, rate: Double)]
+    ) -> String {
+        guard let latest = savingsRateData.last else {
+            return String(localized: "Savings trend will appear once income is recorded.")
+        }
+        return String(format: String(localized: "Latest savings rate is %.1f%%."), latest.rate)
+    }
+
+    private func topSpendingTakeaway(
+        _ top5: [(name: String, amount: Double, color: Color, iconName: String)]
+    ) -> String {
+        guard let first = top5.first else {
+            return String(localized: "Top spending categories will appear once expenses are logged.")
+        }
+        return String(format: String(localized: "%@ leads current spend ranking."), first.name)
+    }
+
+    private func netWorthTakeaway(delta: Double, isPositive: Bool) -> String {
+        guard delta != 0 else {
+            return String(localized: "Net worth is flat versus the previous month.")
+        }
+        let direction = isPositive ? String(localized: "up") : String(localized: "down")
+        return String(format: String(localized: "Net worth is %@ by %@ month over month."), direction, CurrencyFormatter.string(from: Decimal(abs(delta))))
+    }
+
+    private func budgetTakeaway(
+        _ data: [(category: String, budget: Double, actual: Double, color: Color)]
+    ) -> String {
+        let overspent = data.filter { $0.actual > $0.budget }.count
+        if overspent == 0 {
+            return String(localized: "Every tracked budget category remains within plan.")
+        }
+        return String(format: String(localized: "%lld categories are currently over budget."), overspent)
     }
 
     // MARK: - Budget vs Actual (always uses current calendar month)
@@ -767,37 +940,17 @@ struct ChartsView: View {
         }
     }
 
-    // MARK: - What-If Link
-
-    private var whatIfLink: some View {
-        NavigationLink(destination: WhatIfView()) {
-            Label(String(localized: "What If..."), systemImage: "questionmark.circle")
-                .foregroundStyle(AppTheme.secondaryAccent)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 4)
-    }
-
-    // MARK: - Yearly Overview Link
-
-    private var yearlyOverviewLink: some View {
-        NavigationLink(destination: YearlyOverviewView()) {
-            Label(String(localized: "Yearly Overview"), systemImage: "calendar.badge.clock")
-                .foregroundStyle(AppTheme.primaryAccent)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-    }
-
     @ViewBuilder
     private func budgetVsActualChart(
         data: [(category: String, budget: Double, actual: Double, color: Color)]
     ) -> some View {
         if !data.isEmpty {
-            VStack(alignment: .leading, spacing: 12) {
-                Text(String(localized: "Budget vs Actual"))
-                    .font(.headline)
-
+            analyticsCard(
+                title: String(localized: "Budget vs Actual"),
+                takeaway: budgetTakeaway(data),
+                actionTitle: String(localized: "Open Dashboard"),
+                action: { selectedTab = .dashboard }
+            ) {
                 Chart {
                     ForEach(data, id: \.category) { item in
                         BarMark(
@@ -821,9 +974,6 @@ struct ChartsView: View {
                     String(localized: "Actual"): Color.orange
                 ])
             }
-            .padding()
-            .background(Color(.secondarySystemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
         }
     }
 }
