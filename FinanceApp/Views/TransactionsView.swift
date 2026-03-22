@@ -185,6 +185,7 @@ struct TransactionsView: View {
             .sheet(isPresented: $showingQuickAdd, onDismiss: openPendingDetailedDraftIfNeeded) {
                 QuickAddView { draft in
                     pendingDetailedDraft = draft
+                    showingQuickAdd = false
                 }
                 .presentationDetents([.large])
             }

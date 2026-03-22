@@ -148,7 +148,6 @@ struct QuickAddView: View {
                         let draft = currentDetailedDraft
                         if let onOpenDetailed {
                             onOpenDetailed(draft)
-                            dismiss()
                         } else {
                             detailedDraft = draft
                         }
