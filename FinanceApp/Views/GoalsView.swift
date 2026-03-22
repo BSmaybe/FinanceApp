@@ -6,16 +6,21 @@ struct GoalsView: View {
     @Query(sort: \Goal.createdDate) private var goals: [Goal]
     @State private var showAdd = false
     @State private var editingGoal: Goal?
+    @State private var showSuccess = false
+    @State private var successGoalName = ""
+    private var completedCount: Int { goals.filter { $0.progress >= 1.0 }.count }
 
     var body: some View {
         NavigationStack {
             List {
                 if goals.isEmpty {
-                    ContentUnavailableView(
-                        String(localized: "No Goals"),
-                        systemImage: "flag",
-                        description: Text(String(localized: "Tap + to add a financial goal."))
+                    EmptyStateView(
+                        icon: "flag.fill",
+                        title: String(localized: "No Goals"),
+                        subtitle: String(localized: "Set a financial goal to start saving")
                     )
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
                 } else {
                     ForEach(goals) { goal in
                         Button {
@@ -26,6 +31,7 @@ struct GoalsView: View {
                         .buttonStyle(.plain)
                     }
                     .onDelete { indexSet in
+                        HapticManager.impact(.medium)
                         for i in indexSet { context.delete(goals[i]) }
                     }
                 }
@@ -42,6 +48,22 @@ struct GoalsView: View {
             }
             .sheet(item: $editingGoal) { goal in
                 GoalFormView(goal: goal)
+            }
+            .onChange(of: completedCount) { old, new in
+                guard new > old else { return }
+                if let justCompleted = goals.first(where: { $0.progress >= 1.0 }) {
+                    successGoalName = justCompleted.name
+                }
+                HapticManager.success()
+                showSuccess = true
+            }
+            .overlay {
+                if showSuccess {
+                    SuccessOverlayView(
+                        message: String(localized: "Goal Reached! 🎉"),
+                        subtitle: successGoalName
+                    ) { showSuccess = false }
+                }
             }
         }
     }
@@ -99,14 +121,15 @@ private struct GoalFormView: View {
                 Section(String(localized: "Goal")) {
                     TextField(String(localized: "Name"), text: $name)
                     TextField(String(localized: "Target Amount"), text: $targetText)
-                        .keyboardType(.decimalPad)
+                        .financeNumericKeyboard()
                     TextField(String(localized: "Current Amount"), text: $currentText)
-                        .keyboardType(.decimalPad)
+                        .financeNumericKeyboard()
                 }
                 Section(String(localized: "Note")) {
                     TextField(String(localized: "Optional note"), text: $note)
                 }
             }
+            .keyboardDismissable()
             .navigationTitle(goal == nil ? String(localized: "New Goal") : String(localized: "Edit Goal"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -143,6 +166,7 @@ private struct GoalFormView: View {
             let g = Goal(name: trimmedName, targetAmount: targetDecimal, currentAmount: currentDecimal, note: note)
             context.insert(g)
         }
+        HapticManager.success()
         dismiss()
     }
 }

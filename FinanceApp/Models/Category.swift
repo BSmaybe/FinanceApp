@@ -17,13 +17,15 @@ final class Category {
     var type: CategoryType
     var colorHex: String
     var iconName: String
+    var sortOrder: Int = 0
 
-    init(id: UUID = UUID(), name: String, type: CategoryType, colorHex: String = "#888888", iconName: String = "folder") {
+    init(id: UUID = UUID(), name: String, type: CategoryType, colorHex: String = "#888888", iconName: String = "folder", sortOrder: Int = 0) {
         self.id = id
         self.name = name
         self.type = type
         self.colorHex = colorHex
         self.iconName = iconName
+        self.sortOrder = sortOrder
     }
 
     static let availableIcons: [String] = [

@@ -297,16 +297,7 @@ struct ChartsView: View {
     // MARK: - body
 
     var body: some View {
-        let txns           = periodTransactions
-        let catExpenses    = expensesByCategory(from: txns)
-        let bars           = barData(from: txns)
-        let hasExpenses    = txns.contains { $0.type == .expense }
-        let incExpData     = incomeExpenseBarData
-        let savingsRates   = savingsRateData(from: monthlyTotals)
-        let trendData      = netWorthTrendData
-        let budgetActual   = budgetVsActualData(monthTransactions: periodTransactions)
-
-        return NavigationStack {
+        NavigationStack {
             ZStack {
                 AppTheme.canvas
                     .ignoresSafeArea()
@@ -314,30 +305,8 @@ struct ChartsView: View {
                 ScrollView {
                     VStack(spacing: 18) {
                         analyticsHeroCard
-                        groupHeader(
-                            title: String(localized: "Compare"),
-                            subtitle: compareSectionTakeaway
-                        )
                         periodPicker
-                        periodComparisonCard
-                        budgetVsActualChart(data: budgetActual)
-
-                        groupHeader(
-                            title: String(localized: "Trends"),
-                            subtitle: trendsSectionTakeaway(expensesByCategory: catExpenses, netWorthTrendData: trendData)
-                        )
-                        categoryPieChart(expensesByCategory: catExpenses)
-                        topSpendingChart(expensesByCategory: catExpenses)
-                        dailyExpenseChart(hasExpenses: hasExpenses, barData: bars)
-                        monthlyBarChart(monthlyTotals: incExpData)
-                        savingsRateChart(savingsRateData: savingsRates)
-                        netWorthTrendChart(netWorthTrendData: trendData)
-
-                        groupHeader(
-                            title: String(localized: "Planning"),
-                            subtitle: String(localized: "Explore scenarios and review longer horizons")
-                        )
-                        planningCards
+                        periodContentView
                     }
                     .padding(16)
                 }
@@ -348,10 +317,176 @@ struct ChartsView: View {
         }
     }
 
+    // MARK: - Period Content
+
+    @ViewBuilder
+    private var periodContentView: some View {
+        switch selectedPeriod {
+        case .week:
+            weekContentView
+        case .month:
+            monthContentView
+        case .year:
+            yearContentView
+        }
+    }
+
+    private var weekContentView: some View {
+        let txns        = periodTransactions
+        let bars        = barData(from: txns)
+        let hasExpenses = txns.contains { $0.type == .expense }
+        let budgetActual = budgetVsActualData(monthTransactions: txns)
+        return VStack(spacing: 18) {
+            groupHeader(
+                title: String(localized: "Compare"),
+                subtitle: compareSectionTakeaway
+            )
+            periodComparisonCard
+            budgetVsActualChart(data: budgetActual)
+            groupHeader(
+                title: String(localized: "Trends"),
+                subtitle: expenseBarTakeaway(hasExpenses: hasExpenses, barData: bars)
+            )
+            dailyExpenseChart(hasExpenses: hasExpenses, barData: bars)
+            groupHeader(
+                title: String(localized: "Planning"),
+                subtitle: String(localized: "Explore scenarios and review longer horizons")
+            )
+            planningCards
+        }
+    }
+
+    private var monthContentView: some View {
+        let txns        = periodTransactions
+        let catExpenses = expensesByCategory(from: txns)
+        let trendData   = netWorthTrendData
+        let budgetActual = budgetVsActualData(monthTransactions: txns)
+        return VStack(spacing: 18) {
+            groupHeader(
+                title: String(localized: "Compare"),
+                subtitle: compareSectionTakeaway
+            )
+            periodComparisonCard
+            budgetVsActualChart(data: budgetActual)
+            groupHeader(
+                title: String(localized: "Trends"),
+                subtitle: trendsSectionTakeaway(expensesByCategory: catExpenses, netWorthTrendData: trendData)
+            )
+            categoryPieChart(expensesByCategory: catExpenses)
+            netWorthTrendChart(netWorthTrendData: trendData)
+            groupHeader(
+                title: String(localized: "Planning"),
+                subtitle: String(localized: "Explore scenarios and review longer horizons")
+            )
+            planningCards
+        }
+    }
+
+    private var yearContentView: some View {
+        let catExpenses = expensesByCategory(from: periodTransactions)
+        let incExpData  = yearlyMonthTotals
+        let trendData   = netWorthTrendData
+        return VStack(spacing: 18) {
+            groupHeader(
+                title: String(localized: "Compare"),
+                subtitle: compareSectionTakeaway
+            )
+            yearSummaryCard
+            periodComparisonCard
+            groupHeader(
+                title: String(localized: "Trends"),
+                subtitle: trendsSectionTakeaway(expensesByCategory: catExpenses, netWorthTrendData: trendData)
+            )
+            monthlyBarChart(monthlyTotals: incExpData)
+            netWorthTrendChart(netWorthTrendData: trendData)
+            groupHeader(
+                title: String(localized: "Planning"),
+                subtitle: String(localized: "Explore scenarios and review longer horizons")
+            )
+            planningCards
+        }
+    }
+
+    // MARK: - Comparison rows by period
+
+    private var weekComparisonRows: some View {
+        analyticsCard(
+            title: String(localized: "Period Comparison"),
+            takeaway: "",
+            actionTitle: String(localized: "Open Dashboard"),
+            action: { selectedTab = .dashboard }
+        ) {
+            PeriodComparisonRow(
+                label: String(localized: "vs last week"),
+                currentAmount: currentTotals.expense,
+                previousAmount: previousTotals.expense
+            )
+            PeriodComparisonRow(
+                label: String(localized: "vs same week last year"),
+                currentAmount: currentTotals.expense,
+                previousAmount: lastYearTotals.expense
+            )
+        }
+    }
+
+    private var monthComparisonRows: some View {
+        analyticsCard(
+            title: String(localized: "Period Comparison"),
+            takeaway: "",
+            actionTitle: String(localized: "Open Dashboard"),
+            action: { selectedTab = .dashboard }
+        ) {
+            PeriodComparisonRow(
+                label: String(localized: "vs last month"),
+                currentAmount: currentTotals.expense,
+                previousAmount: previousTotals.expense
+            )
+            PeriodComparisonRow(
+                label: String(localized: "vs same month last year"),
+                currentAmount: currentTotals.expense,
+                previousAmount: lastYearTotals.expense
+            )
+        }
+    }
+
+    private var yearComparisonRows: some View {
+        analyticsCard(
+            title: String(localized: "Period Comparison"),
+            takeaway: "",
+            actionTitle: String(localized: "Open Dashboard"),
+            action: { selectedTab = .dashboard }
+        ) {
+            PeriodComparisonRow(
+                label: String(localized: "vs last year"),
+                currentAmount: currentTotals.expense,
+                previousAmount: previousTotals.expense
+            )
+        }
+    }
+
+    // MARK: - Year summary card
+
+    private var yearSummaryCard: some View {
+        let savings = currentTotals.income - currentTotals.expense
+        return HeroMetricCard(
+            title: String(localized: "This Year"),
+            value: CurrencyFormatter.string(from: currentTotals.income),
+            supportingTitle: String(localized: "Savings"),
+            supportingValue: CurrencyFormatter.string(from: savings),
+            note: currentRange.label,
+            badgeText: compareBadgeText
+        )
+    }
+
     // MARK: - Period Picker
 
     private var periodPicker: some View {
-        Picker(String(localized: "Period"), selection: $selectedPeriod) {
+        Picker(String(localized: "Period"), selection: Binding(
+            get: { selectedPeriod },
+            set: { newValue in
+                withAnimation(.easeInOut) { selectedPeriod = newValue }
+            }
+        )) {
             ForEach(AnalyticsPeriod.allCases, id: \.self) { p in
                 Text(p.title).tag(p)
             }
@@ -438,6 +573,18 @@ struct ChartsView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("analytics.planning.yearlyOverview")
+
+            NavigationLink(destination: AnnualOverviewView()) {
+                InsightCard(
+                    title: String(localized: "Annual Overview"),
+                    value: String(localized: "Year Overview"),
+                    message: String(localized: "Full-year income, expenses, savings rate, top categories, and year-over-year comparison."),
+                    systemImage: "chart.bar.xaxis.ascending",
+                    tint: AppTheme.secondaryAccent
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("analytics.planning.annualOverview")
         }
     }
 
@@ -606,6 +753,24 @@ struct ChartsView: View {
                         }
                     }
                 }
+
+                Divider()
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Text(String(localized: "Top Categories"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    ForEach(Array(expensesByCategory.prefix(3).enumerated()), id: \.offset) { index, item in
+                        HStack {
+                            Text("\(index + 1). \(item.name)")
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text(CurrencyFormatter.string(from: Decimal(item.amount)))
+                                .font(.caption.monospacedDigit().weight(.semibold))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                }
             }
         }
     }
@@ -663,8 +828,8 @@ struct ChartsView: View {
         analyticsCard(
             title: String(localized: "Income vs Expenses"),
             takeaway: incomeVsExpenseTakeaway(monthlyTotals),
-            actionTitle: String(localized: "Open Dashboard"),
-            action: { selectedTab = .dashboard }
+            actionTitle: String(localized: "Open Transactions"),
+            action: { selectedTab = .transactions }
         ) {
             if monthlyTotals.allSatisfy({ $0.income == 0 && $0.expense == 0 }) {
                 Text(String(localized: "No transactions yet"))
@@ -819,8 +984,8 @@ struct ChartsView: View {
         return analyticsCard(
             title: String(localized: "Net Worth History"),
             takeaway: netWorthTakeaway(delta: delta, isPositive: isPositive),
-            actionTitle: String(localized: "Open Dashboard"),
-            action: { selectedTab = .dashboard }
+            actionTitle: String(localized: "Open Accounts"),
+            action: { selectedTab = .accounts }
         ) {
             if netWorthTrendData.allSatisfy({ $0.balance == 0 }) {
                 Text(String(localized: "No transactions yet"))
@@ -950,7 +1115,7 @@ struct ChartsView: View {
             analyticsCard(
                 title: String(localized: "Budget vs Actual"),
                 takeaway: budgetTakeaway(data),
-                actionTitle: String(localized: "Open Dashboard"),
+                actionTitle: String(localized: "Manage Budgets"),
                 action: { selectedTab = .dashboard }
             ) {
                 Chart {

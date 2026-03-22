@@ -17,8 +17,49 @@ struct AddEditDebtView: View {
     @State private var note = ""
     @State private var totalInstallments = 12
     @State private var totalPaymentsText = ""  // empty = auto-calculate
+    @State private var showValidation = false
 
     private var isEditing: Bool { debt != nil }
+
+    // MARK: - Validation
+
+    private var parsedTotal: Decimal {
+        Decimal(string: totalAmountText.replacingOccurrences(of: localDecimalSeparator, with: ".")) ?? .zero
+    }
+    private var parsedRemaining: Decimal {
+        Decimal(string: remainingAmountText.replacingOccurrences(of: localDecimalSeparator, with: ".")) ?? .zero
+    }
+    private var parsedMinPayment: Decimal {
+        Decimal(string: minimumPaymentText.replacingOccurrences(of: localDecimalSeparator, with: ".")) ?? .zero
+    }
+
+    private var nameError: String? {
+        name.trimmingCharacters(in: .whitespaces).isEmpty ? String(localized: "Name is required") : nil
+    }
+    private var totalError: String? {
+        parsedTotal <= 0 ? String(localized: "Enter the total debt amount") : nil
+    }
+    private var remainingError: String? {
+        if parsedRemaining <= 0 { return String(localized: "Enter the remaining balance") }
+        if parsedRemaining > parsedTotal && parsedTotal > 0 { return String(localized: "Remaining cannot exceed total") }
+        return nil
+    }
+    private var minPaymentError: String? {
+        parsedMinPayment <= 0 ? String(localized: "Enter the monthly payment amount") : nil
+    }
+
+    private var isValid: Bool {
+        nameError == nil && totalError == nil && remainingError == nil && minPaymentError == nil
+    }
+
+    @ViewBuilder
+    private func validationHint(_ message: String?) -> some View {
+        if showValidation, let message {
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(AppTheme.danger)
+        }
+    }
 
     /// Auto-calculated total payments count shown as placeholder when field is empty.
     private var autoPaymentsPlaceholder: String {
@@ -57,7 +98,10 @@ struct AddEditDebtView: View {
         NavigationStack {
             Form {
                 Section(String(localized: "Details")) {
-                    TextField(String(localized: "Name"), text: $name)
+                    VStack(alignment: .leading, spacing: 4) {
+                        TextField(String(localized: "Name"), text: $name)
+                        validationHint(nameError)
+                    }
                     Picker(String(localized: "Type"), selection: $type) {
                         ForEach(DebtType.allCases, id: \.self) { t in
                             Text(t.localizedName).tag(t)
@@ -71,19 +115,25 @@ struct AddEditDebtView: View {
                 }
 
                 Section(String(localized: "Amounts")) {
-                    HStack {
-                        Text(String(localized: "Total"))
-                        Spacer()
-                        TextField("0", text: $totalAmountText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(String(localized: "Total"))
+                            Spacer()
+                            TextField("0", text: $totalAmountText)
+                                .financeNumericKeyboard()
+                                .multilineTextAlignment(.trailing)
+                        }
+                        validationHint(totalError)
                     }
-                    HStack {
-                        Text(String(localized: "Remaining"))
-                        Spacer()
-                        TextField("0", text: $remainingAmountText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(String(localized: "Remaining"))
+                            Spacer()
+                            TextField("0", text: $remainingAmountText)
+                                .financeNumericKeyboard()
+                                .multilineTextAlignment(.trailing)
+                        }
+                        validationHint(remainingError)
                     }
                 }
 
@@ -92,21 +142,24 @@ struct AddEditDebtView: View {
                         Text(String(localized: "Interest Rate (%)"))
                         Spacer()
                         TextField("0", text: $interestRateText)
-                            .keyboardType(.decimalPad)
+                            .financeNumericKeyboard()
                             .multilineTextAlignment(.trailing)
                     }
-                    HStack {
-                        Text(String(localized: "Minimum Payment"))
-                        Spacer()
-                        TextField("0", text: $minimumPaymentText)
-                            .keyboardType(.decimalPad)
-                            .multilineTextAlignment(.trailing)
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack {
+                            Text(String(localized: "Minimum Payment"))
+                            Spacer()
+                            TextField("0", text: $minimumPaymentText)
+                                .financeNumericKeyboard()
+                                .multilineTextAlignment(.trailing)
+                        }
+                        validationHint(minPaymentError)
                     }
                     HStack {
                         Text(String(localized: "Total Payments"))
                         Spacer()
                         TextField(autoPaymentsPlaceholder, text: $totalPaymentsText)
-                            .keyboardType(.numberPad)
+                            .financeNumericKeyboard()
                             .multilineTextAlignment(.trailing)
                             .foregroundStyle(totalPaymentsText.isEmpty ? .secondary : .primary)
                     }
@@ -121,6 +174,7 @@ struct AddEditDebtView: View {
                     TextField(String(localized: "Optional note"), text: $note)
                 }
             }
+            .keyboardDismissable()
             .navigationTitle(isEditing ? String(localized: "Edit Debt") : String(localized: "New Debt"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -129,7 +183,7 @@ struct AddEditDebtView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Save")) { save() }
-                        .disabled(name.isEmpty || totalAmountText.isEmpty)
+                        .fontWeight(.semibold)
                 }
             }
             .onAppear { prefill() }
@@ -151,6 +205,12 @@ struct AddEditDebtView: View {
     }
 
     private func save() {
+        guard isValid else {
+            HapticManager.error()
+            showValidation = true
+            return
+        }
+        HapticManager.success()
         let sep = localDecimalSeparator
         let total = Decimal(string: totalAmountText.replacingOccurrences(of: sep, with: ".")) ?? .zero
         let remaining = Decimal(string: remainingAmountText.replacingOccurrences(of: sep, with: ".")) ?? total

@@ -40,9 +40,11 @@ struct SetBudgetView: View {
 
                 Section(String(localized: "Budget Limit")) {
                     TextField(String(localized: "Amount"), text: $amountText)
-                        .keyboardType(.decimalPad)
+                        .financeNumericKeyboard()
                 }
             }
+            .keyboardDismissable()
+            .accessibilityIdentifier("setBudget.screen")
             .navigationTitle(String(localized: "Set Budget"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -73,6 +75,7 @@ struct SetBudgetView: View {
             modelContext.insert(budget)
         }
         do { try modelContext.save() } catch { print("Budget save error: \(error)") }
+        HapticManager.success()
         dismiss()
     }
 }

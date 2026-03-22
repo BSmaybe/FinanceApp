@@ -107,8 +107,9 @@ struct AddEditTransactionView: View {
     @Query private var allTransactions: [Transaction]
 
     @State private var vm: AddEditTransactionViewModel
-    @State private var suggestedCategoryIds: [UUID] = []
-    @State private var suggestionDebounceTask: Task<Void, Never>?
+    @State private var categorySuggestion: Category? = nil
+    @State private var suggestionDismissed = false
+    @State private var showSuccessBurst = false
 
     let existingTransaction: Transaction?
 
@@ -149,12 +150,9 @@ struct AddEditTransactionView: View {
         categories.filter { $0.type == (vm.type == .income ? .income : .expense) }
     }
 
-    private var categoryById: [UUID: Category] {
-        Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
-    }
-
     var body: some View {
         NavigationStack {
+            VStack(spacing: 0) {
             Form {
                 Section(String(localized: "Type")) {
                     Picker(String(localized: "Type"), selection: $vm.type) {
@@ -166,8 +164,10 @@ struct AddEditTransactionView: View {
                 }
 
                 Section(String(localized: "Amount")) {
-                    TextField("0.00", text: $vm.amountText)
-                        .keyboardType(.decimalPad)
+                    Text(vm.amountText.isEmpty ? "0" : vm.amountText)
+                        .font(.title2.monospacedDigit().weight(.semibold))
+                        .foregroundStyle(vm.amountText.isEmpty ? .secondary : .primary)
+                        .frame(maxWidth: .infinity, alignment: .trailing)
                         .accessibilityIdentifier("addEditTransaction.amountField")
                 }
 
@@ -201,23 +201,26 @@ struct AddEditTransactionView: View {
                 }
 
                 if vm.type != .transfer {
-                    if !suggestedCategoryIds.isEmpty && vm.selectedCategoryId == nil {
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: 8) {
-                                Text(String(localized: "Suggested:"))
+                    if let suggestion = categorySuggestion, !suggestionDismissed, vm.selectedCategoryId == nil {
+                        Button {
+                            vm.selectedCategoryId = suggestion.id
+                            suggestionDismissed = true
+                        } label: {
+                            HStack(spacing: 6) {
+                                Text(String(format: String(localized: "Suggested: %@"), suggestion.name))
                                     .font(.caption)
+                                Spacer()
+                                Text(String(localized: "Tap to apply"))
+                                    .font(.caption2)
                                     .foregroundStyle(.secondary)
-                                ForEach(suggestedCategoryIds, id: \.self) { id in
-                                    if let cat = categoryById[id] {
-                                        SuggestionChip(category: cat) {
-                                            vm.selectedCategoryId = id
-                                        }
-                                    }
-                                }
                             }
-                            .padding(.horizontal, 16)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 8)
+                            .background(AppTheme.primaryAccent.opacity(0.12))
+                            .foregroundStyle(AppTheme.primaryAccent)
+                            .clipShape(RoundedRectangle(cornerRadius: 8))
                         }
-                        .listRowInsets(EdgeInsets())
+                        .buttonStyle(.plain)
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                     }
@@ -252,7 +255,17 @@ struct AddEditTransactionView: View {
                         .autocorrectionDisabled()
                 }
             }
+            .keyboardDismissable()
             .accessibilityIdentifier("addEditTransaction.screen")
+
+            VStack(spacing: 0) {
+                Divider()
+                AmountNumpad(text: $vm.amountText)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(AppTheme.canvas)
+            }
+            } // end outer VStack
             .navigationTitle(existingTransaction == nil ? String(localized: "Add Transaction") : String(localized: "Edit Transaction"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -262,6 +275,8 @@ struct AddEditTransactionView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Save")) {
+                        HapticManager.success()
+                        showSuccessBurst = true
                         vm.save(context: modelContext, existing: existingTransaction)
                         dismiss()
                     }
@@ -274,64 +289,23 @@ struct AddEditTransactionView: View {
                 if vm.selectedAccountId == nil {
                     vm.selectedAccountId = accounts.first?.id
                 }
-                recomputeSuggestions()
             }
-            .onChange(of: vm.note) {
-                scheduleSuggestionUpdate(noteChanged: true)
+            .onChange(of: vm.note) { _, newValue in
+                suggestionDismissed = false
+                categorySuggestion = CategorySuggester.suggest(
+                    for: newValue,
+                    transactions: allTransactions,
+                    categories: categories
+                )
             }
-            .onChange(of: vm.amountText) {
-                if vm.note.count < 2 {
-                    scheduleSuggestionUpdate(noteChanged: false)
+            .onChange(of: vm.selectedCategoryId) {
+                if vm.selectedCategoryId != nil {
+                    suggestionDismissed = true
                 }
-            }
-            .onChange(of: vm.type) {
-                suggestedCategoryIds = []
-                recomputeSuggestions()
             }
         }
         .accessibilityIdentifier("addEditTransaction.screen")
+        .overlay(alignment: .center) { SuccessBurst(isShowing: $showSuccessBurst) }
     }
 
-    private func scheduleSuggestionUpdate(noteChanged: Bool) {
-        suggestionDebounceTask?.cancel()
-        suggestionDebounceTask = Task {
-            try? await Task.sleep(nanoseconds: 300_000_000)
-            guard !Task.isCancelled else { return }
-            recomputeSuggestions()
-        }
-    }
-
-    private func recomputeSuggestions() {
-        guard existingTransaction == nil || vm.selectedCategoryId == nil else { return }
-        suggestedCategoryIds = CategorySuggester.suggest(
-            note: vm.note,
-            amount: vm.amount,
-            type: vm.type,
-            from: allTransactions
-        )
-    }
-}
-
-private struct SuggestionChip: View {
-    let category: Category
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 4) {
-                Image(systemName: category.iconName)
-                    .font(.caption2)
-                Text(category.name)
-                    .font(.caption)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 5)
-            .background(Color(hex: category.colorHex).opacity(0.15))
-            .foregroundStyle(Color(hex: category.colorHex))
-            .clipShape(Capsule())
-            .overlay(Capsule().stroke(Color(hex: category.colorHex).opacity(0.3), lineWidth: 1))
-        }
-        .buttonStyle(.plain)
-    }
 }

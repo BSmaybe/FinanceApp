@@ -7,9 +7,12 @@ struct DebtsView: View {
     @State private var showingAdd = false
     @State private var showingPayoff = false
     @State private var editingDebt: Debt?
+    @State private var showSuccess = false
+    @State private var successDebtName = ""
 
     private var activeDebts: [Debt] { debts.filter { $0.remainingAmount > 0 } }
     private var paidDebts: [Debt] { debts.filter { $0.remainingAmount <= 0 } }
+    private var paidDebtsCount: Int { paidDebts.count }
     private var totalRemaining: Decimal { activeDebts.reduce(.zero) { $0 + $1.remainingAmount } }
     private var totalMinPayment: Decimal { activeDebts.reduce(.zero) { $0 + $1.minimumPayment } }
 
@@ -50,6 +53,20 @@ struct DebtsView: View {
             .sheet(isPresented: $showingPayoff) {
                 DebtPayoffView()
             }
+            .onChange(of: paidDebtsCount) { old, new in
+                guard new > old else { return }
+                successDebtName = paidDebts.last?.name ?? ""
+                HapticManager.success()
+                showSuccess = true
+            }
+            .overlay {
+                if showSuccess {
+                    SuccessOverlayView(
+                        message: String(localized: "Debt Paid Off! 🎉"),
+                        subtitle: successDebtName
+                    ) { showSuccess = false }
+                }
+            }
         }
     }
 
@@ -87,7 +104,15 @@ struct DebtsView: View {
 
     private var activeSection: some View {
         Section(String(localized: "Active")) {
-            if activeDebts.isEmpty {
+            if activeDebts.isEmpty && debts.isEmpty {
+                EmptyStateView(
+                    icon: "creditcard.circle.fill",
+                    title: String(localized: "No Debts"),
+                    subtitle: String(localized: "Add a loan or installment to track payments")
+                )
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            } else if activeDebts.isEmpty {
                 Text(String(localized: "No debts — tap + to add"))
                     .foregroundStyle(.secondary)
             } else {
@@ -97,6 +122,7 @@ struct DebtsView: View {
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
+                            HapticManager.impact(.medium)
                             modelContext.delete(debt)
                         } label: {
                             Label(String(localized: "Delete"), systemImage: "trash")
@@ -125,6 +151,7 @@ struct DebtsView: View {
                 }
             }
             .onDelete { offsets in
+                HapticManager.impact(.medium)
                 for i in offsets { modelContext.delete(paidDebts[i]) }
             }
         }
@@ -160,8 +187,7 @@ struct DebtsView: View {
                 ProgressView(value: debt.progress)
                     .tint(debt.progress >= 1.0 ? .green : AppTheme.primaryAccent)
                 if let paid = debt.paidPaymentsCount, let total = debt.totalPaymentsCount, total > 0 {
-                    let remaining = total - paid
-                    Text("\(remaining)/\(total)")
+                    Text("\(paid)/\(total)")
                         .font(.caption2)
                         .foregroundStyle(.secondary)
                         .monospacedDigit()

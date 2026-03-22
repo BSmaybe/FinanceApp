@@ -21,6 +21,9 @@ struct TransactionsView: View {
     @State private var filterType: TransactionType? = nil
     @State private var filterCategoryId: UUID? = nil
 
+    @State private var transactionToDelete: Transaction?
+    @State private var showingDeleteConfirmation = false
+
     private var accountById: [UUID: Account] {
         Dictionary(uniqueKeysWithValues: accounts.map { ($0.id, $0) })
     }
@@ -75,16 +78,9 @@ struct TransactionsView: View {
                         .padding(.top, 12)
 
                     if filteredTransactions.isEmpty {
-                        ContentUnavailableView(
-                            transactions.isEmpty ? String(localized: "No Transactions") : String(localized: "No results"),
-                            systemImage: "tray",
-                            description: Text(transactions.isEmpty
-                                ? String(localized: "Tap + to add your first transaction.")
-                                : String(localized: "Try changing your search or filters."))
-                        )
-                        .foregroundStyle(.secondary)
-                        .accessibilityIdentifier("transactions.emptyState")
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        emptyStateView
+                            .accessibilityIdentifier("transactions.emptyState")
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         List {
                             ForEach(groupedTransactions, id: \.0) { date, txns in
@@ -105,17 +101,22 @@ struct TransactionsView: View {
                                         .listRowBackground(Color.clear)
                                         .listRowSeparator(.hidden)
                                         .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
-                                        .swipeActions(edge: .leading) {
+                                        .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                             Button {
-                                                repeatingTransaction = txn
+                                                duplicateTransaction(txn)
                                             } label: {
-                                                Label(String(localized: "Repeat"), systemImage: "doc.on.doc")
+                                                Label(String(localized: "Duplicate"), systemImage: "doc.on.doc")
                                             }
-                                            .tint(AppTheme.primaryAccent)
+                                            .tint(AppTheme.info)
                                         }
-                                    }
-                                    .onDelete { offsets in
-                                        deleteTxns(from: txns, at: offsets)
+                                        .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                                            Button(role: .destructive) {
+                                                transactionToDelete = txn
+                                                showingDeleteConfirmation = true
+                                            } label: {
+                                                Label(String(localized: "Delete"), systemImage: "trash")
+                                            }
+                                        }
                                     }
                                 } header: {
                                     journalDayHeader(date: date, transactions: txns)
@@ -149,20 +150,23 @@ struct TransactionsView: View {
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(AppTheme.surface, for: .navigationBar)
             .toolbar {
-                ToolbarItemGroup(placement: .primaryAction) {
-                    Button {
-                        showingRecurring = true
-                    } label: {
-                        Image(systemName: "arrow.clockwise")
-                    }
-                    .foregroundStyle(AppTheme.primaryAccent)
+                ToolbarItem(placement: .primaryAction) {
+                    Menu {
+                        Button {
+                            showingRecurring = true
+                        } label: {
+                            Label(String(localized: "Recurring"), systemImage: "arrow.clockwise")
+                        }
 
-                    Button {
-                        showingExport = true
+                        Button {
+                            showingExport = true
+                        } label: {
+                            Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
+                        }
                     } label: {
-                        Image(systemName: "square.and.arrow.up")
+                        Image(systemName: "ellipsis.circle")
+                            .foregroundStyle(AppTheme.primaryAccent)
                     }
-                    .foregroundStyle(AppTheme.primaryAccent)
                 }
             }
             .sheet(isPresented: $showingFilter) {
@@ -205,14 +209,51 @@ struct TransactionsView: View {
             .sheet(item: $repeatingTransaction) { txn in
                 AddEditTransactionView(template: txn)
             }
+            .alert(
+                String(localized: "Delete Transaction?"),
+                isPresented: $showingDeleteConfirmation,
+                presenting: transactionToDelete
+            ) { txn in
+                Button(String(localized: "Delete"), role: .destructive) {
+                    modelContext.delete(txn)
+                    transactionToDelete = nil
+                }
+                Button(String(localized: "Cancel"), role: .cancel) {
+                    transactionToDelete = nil
+                }
+            } message: { _ in
+                Text(String(localized: "This cannot be undone."))
+            }
         }
     }
 
     private var controlsHeader: some View {
         VStack(spacing: 12) {
             searchBar
-            summaryStrip
             filterStrip
+            summaryStrip
+        }
+    }
+
+    private var emptyStateView: some View {
+        Group {
+            if transactions.isEmpty {
+                EmptyStateView(
+                    icon: "arrow.left.arrow.right.circle.fill",
+                    title: String(localized: "No Transactions"),
+                    subtitle: String(localized: "Add your first income or expense to get started"),
+                    actionTitle: String(localized: "Add Transaction"),
+                    action: { showingQuickAdd = true }
+                )
+            } else {
+                EmptyStateView(
+                    icon: "line.3.horizontal.decrease.circle",
+                    title: String(localized: "No results"),
+                    subtitle: String(localized: "Adjust search or clear active filters to widen the journal."),
+                    actionTitle: String(localized: "Clear Filters"),
+                    action: { clearAllFilters() }
+                )
+            }
         }
     }
 
@@ -387,10 +428,19 @@ struct TransactionsView: View {
         detailedDraft = pendingDetailedDraft
     }
 
-    private func deleteTxns(from txns: [Transaction], at offsets: IndexSet) {
-        for index in offsets {
-            modelContext.delete(txns[index])
-        }
+    private func duplicateTransaction(_ txn: Transaction) {
+        HapticManager.impact(.medium)
+        let copy = Transaction(
+            date: Date(),
+            amount: txn.amount,
+            type: txn.type,
+            accountId: txn.accountId,
+            toAccountId: txn.toAccountId,
+            categoryId: txn.categoryId,
+            note: txn.note,
+            tags: txn.tags
+        )
+        modelContext.insert(copy)
     }
 }
 
@@ -561,9 +611,6 @@ private struct TransactionJournalRow: View {
                 Text(transaction.date.formatted(date: .omitted, time: .shortened))
                     .font(.caption2)
                     .foregroundStyle(.secondary)
-                if !transaction.tags.isEmpty {
-                    TagChipsView(tags: transaction.tags)
-                }
             }
         }
         .cockpitSurface(cornerRadius: 20, elevated: true, compact: true)

@@ -4,7 +4,7 @@ import SwiftData
 struct CategoriesView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    @Query(sort: \Category.name) private var categories: [Category]
+    @Query(sort: [SortDescriptor(\Category.sortOrder), SortDescriptor(\Category.name)]) private var categories: [Category]
     @Query private var budgets: [Budget]
 
     @State private var showingAdd = false
@@ -25,11 +25,14 @@ struct CategoriesView: View {
                         ForEach(incomeCategories) { cat in
                             CategoryRow(category: cat)
                                 .contextMenu {
-                                    Button("Edit") { editingCategory = cat }
+                                    Button(String(localized: "Edit")) { editingCategory = cat }
                                 }
                         }
                         .onDelete { offsets in
                             requestDeleteCategory(from: incomeCategories, at: offsets)
+                        }
+                        .onMove { from, to in
+                            moveCategories(incomeCategories, from: from, to: to)
                         }
                     }
                 }
@@ -41,24 +44,40 @@ struct CategoriesView: View {
                         ForEach(expenseCategories) { cat in
                             CategoryRow(category: cat)
                                 .contextMenu {
-                                    Button("Edit") { editingCategory = cat }
+                                    Button(String(localized: "Edit")) { editingCategory = cat }
                                 }
                         }
                         .onDelete { offsets in
                             requestDeleteCategory(from: expenseCategories, at: offsets)
                         }
+                        .onMove { from, to in
+                            moveCategories(expenseCategories, from: from, to: to)
+                        }
                     }
+                }
+            }
+            .overlay {
+                if categories.isEmpty {
+                    EmptyStateView(
+                        icon: "tag.fill",
+                        title: String(localized: "No Categories"),
+                        subtitle: String(localized: "Create categories to organise your spending")
+                    )
                 }
             }
             .navigationTitle(String(localized: "Categories"))
             .navigationBarTitleDisplayMode(.inline)
+            .accessibilityIdentifier("categories.screen")
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") { dismiss() }
+                    Button(String(localized: "Done")) { dismiss() }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button { showingAdd = true } label: {
-                        Image(systemName: "plus")
+                    HStack {
+                        EditButton()
+                        Button { showingAdd = true } label: {
+                            Image(systemName: "plus")
+                        }
                     }
                 }
             }
@@ -88,6 +107,14 @@ struct CategoriesView: View {
             } message: { _ in
                 Text("Transactions in this category will become uncategorized.")
             }
+        }
+    }
+
+    private func moveCategories(_ list: [Category], from source: IndexSet, to destination: Int) {
+        var reordered = list
+        reordered.move(fromOffsets: source, toOffset: destination)
+        for (index, cat) in reordered.enumerated() {
+            cat.sortOrder = index
         }
     }
 

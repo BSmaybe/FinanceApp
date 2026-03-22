@@ -320,6 +320,15 @@
 "of expenses" = "of expenses";
 "No data for this year" = "No data for this year";
 
+/* Annual Overview */
+"Annual Overview" = "Annual Overview";
+"Total Expenses" = "Total Expenses";
+"Net Savings" = "Net Savings";
+"Monthly Breakdown" = "Monthly Breakdown";
+"Year Overview" = "Year Overview";
+"No transactions this year" = "No transactions this year";
+"Full-year income, expenses, savings rate, top categories, and year-over-year comparison." = "Full-year income, expenses, savings rate, top categories, and year-over-year comparison.";
+
 /* Charts */
 "Daily Expenses" = "Daily Expenses";
 "No expenses this month" = "No expenses this month";
@@ -355,17 +364,47 @@
 "Budget alerts" = "Budget alerts";
 "Subscription reminders" = "Subscription reminders";
 "Debt payment reminders" = "Debt payment reminders";
+"Debt reminders" = "Debt reminders";
+"%lld days before" = "%lld days before";
 "Enable in Settings" = "Enable in Settings";
 "Budget exceeded!" = "Budget exceeded!";
 "Budget warning: %d%%" = "Budget warning: %d%%";
+"Budget Warning" = "Budget Warning";
+"Budget Exceeded" = "Budget Exceeded";
+"Category %@: 80%% of limit spent" = "Category %@: 80%% of limit spent";
+"Category %@: limit reached" = "Category %@: limit reached";
 "Subscription reminder" = "Subscription reminder";
+"Subscription Renewal Tomorrow" = "Subscription Renewal Tomorrow";
 "Tomorrow: %@ — %@" = "Tomorrow: %@ — %@";
+"%@ — %@" = "%@ — %@";
 "Payment due in 3 days: %@" = "Payment due in 3 days: %@";
+"Payment Due Soon" = "Payment Due Soon";
+"%@ — due in %lld days" = "%@ — due in %lld days";
 
 /* Category suggestions */
-"Suggested:" = "Suggested:";
+"Suggested: %@" = "Suggested: %@";
+"Tap to apply" = "Tap to apply";
 
 /* What-If Scenarios */
+"What If" = "What If";
+"Reduce Spending" = "Reduce Spending";
+"Reduce expenses by %lld%% and see the impact" = "Reduce expenses by %lld%% and see the impact";
+"Monthly savings gained" = "Monthly savings gained";
+"Projected annual savings" = "Projected annual savings";
+"Save Monthly" = "Save Monthly";
+"Monthly savings target" = "Monthly savings target";
+"Savings goal" = "Savings goal";
+"Months to goal" = "Months to goal";
+"Goal date" = "Goal date";
+"Pay Off Debt Faster" = "Pay Off Debt Faster";
+"Extra monthly payment" = "Extra monthly payment";
+"Months saved" = "Months saved";
+"Interest saved" = "Interest saved";
+"New payoff date" = "New payoff date";
+"No debt data" = "No debt data";
+"reduction" = "reduction";
+"%lld months" = "%lld months";
+"%lld yr %lld mo" = "%lld yr %lld mo";
 "What If..." = "What If...";
 "What-If Scenarios" = "What-If Scenarios";
 "Save More" = "Save More";
@@ -431,3 +470,133 @@
 "Total Payments" = "Total Payments";
 "Auto" = "Auto";
 "Auto (%lld)" = "Auto (%lld)";
+
+/* Analytics period switcher */
+"Month" = "Month";
+"This Week" = "This Week";
+"This Year" = "This Year";
+"vs last week" = "vs last week";
+"vs last year" = "vs last year";
+"vs same week last year" = "vs same week last year";
+"vs same month last year" = "vs same month last year";
+"Daily Spending" = "Daily Spending";
+"No data for this period" = "No data for this period";
+"Over by %@" = "Over by %@";
+"%@ left · %lld days" = "%@ left · %lld days";
+"of %@" = "of %@";
+"Dashboard" = "Dashboard";
+"Dashboard Settings" = "Dashboard Settings";
+"Dashboard Sections" = "Dashboard Sections";
+"Quick Actions" = "Quick Actions";
+"Weekly Budget" = "Weekly Budget";
+"Monthly Health" = "Monthly Health";
+"Commitments" = "Commitments";
+"Recent Activity" = "Recent Activity";
+"Name is required" = "Name is required";
+"Enter the total debt amount" = "Enter the total debt amount";
+"Enter the remaining balance" = "Enter the remaining balance";
+"Remaining cannot exceed total" = "Remaining cannot exceed total";
+"Enter the monthly payment amount" = "Enter the monthly payment amount";
+"%lld payments due in %lld days" = "%lld payments due in %lld days";
+" +%lld more" = " +%lld more";
+"Onboarding.Welcome.Title" = "Finance under control";
+"Onboarding.Welcome.Subtitle" = "All your accounts, expenses and income in one place";
+"Onboarding.Accounts.Title" = "Accounts & Transactions";
+"Onboarding.Accounts.Subtitle" = "Track balances across all your cards, cash and deposits";
+"Onboarding.Budget.Title" = "Budget & Analytics";
+"Onboarding.Budget.Subtitle" = "Set spending limits by category and see where your money goes";
+"Onboarding.Goals.Title" = "Debts & Goals";
+"Onboarding.Goals.Subtitle" = "Stay on top of loans, installments and savings targets";
+"Get Started" = "Get Started";
+"Next" = "Next";
+
+/* Success burst */
+"Saved!" = "Saved!";
+
+/* Dashboard redesign */
+"Budget Rings" = "Budget Rings";
+"All Budgets" = "All Budgets";
+"Language" = "Language";
+"System" = "System";
+"Restart Required" = "Restart Required";
+"Restart Now" = "Restart Now";
+"The app will restart to apply the new language." = "The app will restart to apply the new language.";
+"Monthly health and top overspend pressure" = "Monthly health and top overspend pressure";
+"Posted in this month" = "Posted in this month";
+"Positive balance" = "Positive balance";
+"Negative balance" = "Negative balance";
+"Based on free-to-spend and days left" = "Based on free-to-spend and days left";
+"No active budgets" = "No active budgets";
+"Set limits" = "Set limits";
+"Create monthly category limits to track overspend pressure." = "Create monthly category limits to track overspend pressure.";
+"Goal Reached! 🎉" = "Goal Reached! 🎉";
+"Debt Paid Off! 🎉" = "Debt Paid Off! 🎉";
+"Upcoming Payments" = "Upcoming Payments";
+"No upcoming payments" = "No upcoming payments";
+"View All" = "View All";
+"No recent activity" = "No recent activity";
+"Good morning 👋" = "Good morning 👋";
+"Good afternoon 👋" = "Good afternoon 👋";
+"Good evening 👋" = "Good evening 👋";
+"Good night 🌙" = "Good night 🌙";
+"Accounts" = "Accounts";
+
+/* Daily Quote Card */
+"Anime" = "Anime";
+"Game" = "Game";
+"Movie" = "Movie";
+
+/* Hero Profile / Gamification */
+"Beginner Saver" = "Beginner Saver";
+"Budget Apprentice" = "Budget Apprentice";
+"Money Mage" = "Money Mage";
+"Finance Warrior" = "Finance Warrior";
+"Wealth Master" = "Wealth Master";
+"Hero Profile" = "Hero Profile";
+"Your name" = "Your name";
+"Level Progress" = "Level Progress";
+"Level %d" = "Level %d";
+"%d / %d XP" = "%d / %d XP";
+"%d Day Streak 🔥" = "%d Day Streak 🔥";
+"Achievements" = "Achievements";
+"Lv.%d" = "Lv.%d";
+
+/* Achievement titles & descriptions */
+"First Step" = "First Step";
+"Add your first transaction" = "Add your first transaction";
+"Budget Keeper" = "Budget Keeper";
+"Stay under budget for a full month" = "Stay under budget for a full month";
+"Debt Slayer" = "Debt Slayer";
+"Pay off your first debt" = "Pay off your first debt";
+"Goal Getter" = "Goal Getter";
+"Complete your first financial goal" = "Complete your first financial goal";
+"7-Day Streak" = "7-Day Streak";
+"7 consecutive days with transactions" = "7 consecutive days with transactions";
+"30-Day Streak" = "30-Day Streak";
+"30 consecutive days with transactions" = "30 consecutive days with transactions";
+"Saver" = "Saver";
+"Save rate ≥ 20% for a month" = "Save rate ≥ 20% for a month";
+"Big Spender" = "Big Spender";
+"Single transaction over 10,000" = "Single transaction over 10,000";
+"Debt Free" = "Debt Free";
+"All debts paid off" = "All debts paid off";
+"Portfolio" = "Portfolio";
+"Have 3 or more accounts" = "Have 3 or more accounts";
+"Planner" = "Planner";
+"Set budgets for 5 or more categories" = "Set budgets for 5 or more categories";
+"Legend" = "Legend";
+"Reach Level 20" = "Reach Level 20";
+
+/* UX Polish */
+"Duplicate" = "Duplicate";
+"Delete Transaction?" = "Delete Transaction?";
+"This cannot be undone." = "This cannot be undone.";
+"No Categories" = "No Categories";
+"No Accounts" = "No Accounts";
+"No Debts" = "No Debts";
+"Add your first income or expense to get started" = "Add your first income or expense to get started";
+"Create categories to organise your spending" = "Create categories to organise your spending";
+"Add your first account to track balances" = "Add your first account to track balances";
+"Set a financial goal to start saving" = "Set a financial goal to start saving";
+"Add a loan or installment to track payments" = "Add a loan or installment to track payments";
+"Drag to reorder" = "Drag to reorder";

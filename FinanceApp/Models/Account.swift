@@ -21,13 +21,15 @@ final class Account {
     var type: AccountType
     var note: String
     var currencyCode: String
+    var sortOrder: Int = 0
 
-    init(id: UUID = UUID(), name: String, type: AccountType, note: String = "", currencyCode: String = "KZT") {
+    init(id: UUID = UUID(), name: String, type: AccountType, note: String = "", currencyCode: String = "KZT", sortOrder: Int = 0) {
         self.id = id
         self.name = name
         self.type = type
         self.note = note
         self.currencyCode = currencyCode
+        self.sortOrder = sortOrder
     }
 }
 

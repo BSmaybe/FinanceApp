@@ -53,6 +53,7 @@ struct RecurringTransactionsView: View {
     }
 
     private func delete(at offsets: IndexSet) {
+        HapticManager.impact(.medium)
         for index in offsets {
             modelContext.delete(recurrings[index])
         }
@@ -202,7 +203,7 @@ struct AddEditRecurringTransactionView: View {
 
                 Section(String(localized: "Amount")) {
                     TextField("0.00", text: $amountText)
-                        .keyboardType(.decimalPad)
+                        .financeNumericKeyboard()
                 }
 
                 Section(String(localized: "Account")) {
@@ -264,6 +265,7 @@ struct AddEditRecurringTransactionView: View {
                     DatePicker(String(localized: "Start Date"), selection: $startDate, displayedComponents: .date)
                 }
             }
+            .keyboardDismissable()
             .navigationTitle(existingRecurring == nil ? String(localized: "Add Recurring") : String(localized: "Edit Recurring"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -310,6 +312,7 @@ struct AddEditRecurringTransactionView: View {
             modelContext.insert(recurring)
         }
         do { try modelContext.save() } catch { print("Save error: \(error)") }
+        HapticManager.success()
         RecurringTransactionProcessor.process(context: modelContext)
         dismiss()
     }

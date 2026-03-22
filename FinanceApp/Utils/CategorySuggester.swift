@@ -1,69 +1,29 @@
 import Foundation
 
 enum CategorySuggester {
-    /// Returns up to 3 suggested category IDs, ranked by confidence.
-    /// - Parameters:
-    ///   - note: current note/merchant text being typed
-    ///   - amount: current amount
-    ///   - type: transaction type (only match same type)
-    ///   - transactions: all historical transactions
-    static func suggest(
-        note: String,
-        amount: Decimal,
-        type: TransactionType,
-        from transactions: [Transaction]
-    ) -> [UUID] {
-        let now = Date()
-        let thirtyDaysAgo = Calendar.current.date(byAdding: .day, value: -30, to: now) ?? now
+    /// Returns suggested category for a given note text, based on transaction history.
+    /// Matches by finding transactions whose note contains any word from the query (case-insensitive, 3+ chars).
+    /// Returns the most frequently used category for matching transactions.
+    /// Returns nil if no match or fewer than 2 matches found.
+    static func suggest(for note: String, transactions: [Transaction], categories: [Category]) -> Category? {
+        let queryWords = tokenize(note)
+        guard !queryWords.isEmpty else { return nil }
 
-        let candidates = transactions.filter { $0.type == type && $0.categoryId != nil }
+        let categoryMap = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
+        var categoryCount: [UUID: Int] = [:]
 
-        var scores: [UUID: Double] = [:]
-
-        let noteTokens = tokenize(note)
-
-        if noteTokens.count > 0 {
-            for txn in candidates {
-                guard let catId = txn.categoryId else { continue }
-                let txnTokens = tokenize(txn.note)
-                let overlap = noteTokens.filter { txnTokens.contains($0) }.count
-                guard overlap > 0 else { continue }
-                let recency = txn.date >= thirtyDaysAgo ? 2.0 : 1.0
-                scores[catId, default: 0] += Double(overlap) * recency
-            }
+        for txn in transactions {
+            guard !txn.note.isEmpty, let catId = txn.categoryId else { continue }
+            let txnWords = tokenize(txn.note)
+            let hasMatch = queryWords.contains { txnWords.contains($0) }
+            guard hasMatch else { continue }
+            categoryCount[catId, default: 0] += 1
         }
 
-        // Fall back to most-used category if note is empty or no scores found
-        if note.count < 2 || scores.values.max() == nil || scores.values.max() == 0 {
-            scores = [:]
-            if amount > 0 {
-                let lower = amount * Decimal(0.8)
-                let upper = amount * Decimal(1.2)
-                for txn in candidates {
-                    guard let catId = txn.categoryId else { continue }
-                    if txn.amount >= lower && txn.amount <= upper {
-                        let recency = txn.date >= thirtyDaysAgo ? 2.0 : 1.0
-                        scores[catId, default: 0] += recency
-                    }
-                }
-            }
+        guard let best = categoryCount.max(by: { $0.value < $1.value }),
+              best.value >= 2 else { return nil }
 
-            // If still empty, use overall most-used
-            if scores.isEmpty {
-                for txn in candidates {
-                    guard let catId = txn.categoryId else { continue }
-                    let recency = txn.date >= thirtyDaysAgo ? 2.0 : 1.0
-                    scores[catId, default: 0] += recency
-                }
-            }
-        }
-
-        let sorted = scores
-            .sorted { $0.value > $1.value }
-            .prefix(3)
-            .map { $0.key }
-
-        return Array(sorted)
+        return categoryMap[best.key]
     }
 
     private static func tokenize(_ text: String) -> Set<String> {

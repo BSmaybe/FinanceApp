@@ -66,6 +66,19 @@
 		F1I002000000000000000002 /* DailyBudgetActivity.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1I001000000000000000001 /* DailyBudgetActivity.swift */; };
 		F1I004000000000000000004 /* LiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1I003000000000000000003 /* LiveActivityManager.swift */; };
 		F1J002000000000000000002 /* BudgetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1J001000000000000000001 /* BudgetManagerView.swift */; };
+		F1K002000000000000000002 /* PeriodComparisonRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1K001000000000000000001 /* PeriodComparisonRow.swift */; };
+		F1L002000000000000000002 /* AnnualOverviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1L001000000000000000001 /* AnnualOverviewView.swift */; };
+		F1M002000000000000000002 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1M001000000000000000001 /* OnboardingView.swift */; };
+		F1N002000000000000000002 /* DashboardSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1N001000000000000000001 /* DashboardSettingsView.swift */; };
+		F1O002000000000000000002 /* SuccessOverlayView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1O001000000000000000001 /* SuccessOverlayView.swift */; };
+		F1P002000000000000000002 /* DailyQuoteStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1P001000000000000000001 /* DailyQuoteStore.swift */; };
+		F1Q002000000000000000002 /* DailyQuoteCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1Q001000000000000000001 /* DailyQuoteCardView.swift */; };
+		F1R002000000000000000002 /* GamificationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1R001000000000000000001 /* GamificationEngine.swift */; };
+		F1S002000000000000000002 /* HeroProfileCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1S001000000000000000001 /* HeroProfileCardView.swift */; };
+		F1T002000000000000000002 /* HeroProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1T001000000000000000001 /* HeroProfileView.swift */; };
+		F1U002000000000000000002 /* AchievementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1U001000000000000000001 /* AchievementStore.swift */; };
+		F1V002000000000000000002 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1V001000000000000000001 /* EmptyStateView.swift */; };
+		F1W002000000000000000002 /* SkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1W001000000000000000001 /* SkeletonView.swift */; };
 		F2B100000000000000000001 /* FinanceAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000001 /* FinanceAppUITests.swift */; };
 		F2B100000000000000000002 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000003 /* XCTest.framework */; };
 /* End PBXBuildFile section */
@@ -165,6 +178,19 @@
 		F1I001000000000000000001 /* DailyBudgetActivity.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyBudgetActivity.swift; sourceTree = "<group>"; };
 		F1I003000000000000000003 /* LiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveActivityManager.swift; sourceTree = "<group>"; };
 		F1J001000000000000000001 /* BudgetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BudgetManagerView.swift; sourceTree = "<group>"; };
+		F1K001000000000000000001 /* PeriodComparisonRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PeriodComparisonRow.swift; sourceTree = "<group>"; };
+		F1L001000000000000000001 /* AnnualOverviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnnualOverviewView.swift; sourceTree = "<group>"; };
+		F1M001000000000000000001 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		F1N001000000000000000001 /* DashboardSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardSettingsView.swift; sourceTree = "<group>"; };
+		F1O001000000000000000001 /* SuccessOverlayView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuccessOverlayView.swift; sourceTree = "<group>"; };
+		F1P001000000000000000001 /* DailyQuoteStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteStore.swift; sourceTree = "<group>"; };
+		F1Q001000000000000000001 /* DailyQuoteCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyQuoteCardView.swift; sourceTree = "<group>"; };
+		F1R001000000000000000001 /* GamificationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GamificationEngine.swift; sourceTree = "<group>"; };
+		F1S001000000000000000001 /* HeroProfileCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroProfileCardView.swift; sourceTree = "<group>"; };
+		F1T001000000000000000001 /* HeroProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeroProfileView.swift; sourceTree = "<group>"; };
+		F1U001000000000000000001 /* AchievementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AchievementStore.swift; sourceTree = "<group>"; };
+		F1V001000000000000000001 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
+		F1W001000000000000000001 /* SkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
 		F2A100000000000000000001 /* FinanceAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceAppUITests.swift; sourceTree = "<group>"; };
 		F2A100000000000000000002 /* FinanceAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FinanceAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2A100000000000000000003 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
@@ -271,6 +297,9 @@
 				F1G001000000000000000001 /* CategorySuggester.swift */,
 				F1I001000000000000000001 /* DailyBudgetActivity.swift */,
 				F1I003000000000000000003 /* LiveActivityManager.swift */,
+				F1P001000000000000000001 /* DailyQuoteStore.swift */,
+				F1R001000000000000000001 /* GamificationEngine.swift */,
+				F1U001000000000000000001 /* AchievementStore.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -302,6 +331,16 @@
 				F1A002000000000000000002 /* SetBudgetView.swift */,
 				F1J001000000000000000001 /* BudgetManagerView.swift */,
 				F1H001000000000000000001 /* WhatIfView.swift */,
+				F1K001000000000000000001 /* PeriodComparisonRow.swift */,
+				F1L001000000000000000001 /* AnnualOverviewView.swift */,
+				F1M001000000000000000001 /* OnboardingView.swift */,
+				F1N001000000000000000001 /* DashboardSettingsView.swift */,
+				F1O001000000000000000001 /* SuccessOverlayView.swift */,
+				F1Q001000000000000000001 /* DailyQuoteCardView.swift */,
+				F1S001000000000000000001 /* HeroProfileCardView.swift */,
+				F1T001000000000000000001 /* HeroProfileView.swift */,
+				F1V001000000000000000001 /* EmptyStateView.swift */,
+				F1W001000000000000000001 /* SkeletonView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -552,8 +591,21 @@
 				F1D002000000000000000002 /* NotificationService.swift in Sources */,
 				F1G002000000000000000002 /* CategorySuggester.swift in Sources */,
 				F1H002000000000000000002 /* WhatIfView.swift in Sources */,
+				F1K002000000000000000002 /* PeriodComparisonRow.swift in Sources */,
+				F1L002000000000000000002 /* AnnualOverviewView.swift in Sources */,
+				F1M002000000000000000002 /* OnboardingView.swift in Sources */,
+				F1N002000000000000000002 /* DashboardSettingsView.swift in Sources */,
+				F1O002000000000000000002 /* SuccessOverlayView.swift in Sources */,
 				F1I002000000000000000002 /* DailyBudgetActivity.swift in Sources */,
 				F1I004000000000000000004 /* LiveActivityManager.swift in Sources */,
+				F1P002000000000000000002 /* DailyQuoteStore.swift in Sources */,
+				F1Q002000000000000000002 /* DailyQuoteCardView.swift in Sources */,
+				F1R002000000000000000002 /* GamificationEngine.swift in Sources */,
+				F1S002000000000000000002 /* HeroProfileCardView.swift in Sources */,
+				F1T002000000000000000002 /* HeroProfileView.swift in Sources */,
+				F1U002000000000000000002 /* AchievementStore.swift in Sources */,
+				F1V002000000000000000002 /* EmptyStateView.swift in Sources */,
+				F1W002000000000000000002 /* SkeletonView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

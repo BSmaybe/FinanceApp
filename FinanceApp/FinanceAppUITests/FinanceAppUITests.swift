@@ -27,6 +27,18 @@ final class FinanceAppUITests: XCTestCase {
         tab.tap()
     }
 
+    private func openAccountsTab(_ app: XCUIApplication) {
+        let tab = app.tabBars.buttons.element(boundBy: 3)
+        XCTAssertTrue(tab.waitForExistence(timeout: 8))
+        tab.tap()
+    }
+
+    private func openSettingsTab(_ app: XCUIApplication) {
+        let tab = app.tabBars.buttons.element(boundBy: 4)
+        XCTAssertTrue(tab.waitForExistence(timeout: 8))
+        tab.tap()
+    }
+
     private func preferredElement(
         primary: XCUIElement,
         secondary: XCUIElement,
@@ -149,6 +161,26 @@ final class FinanceAppUITests: XCTestCase {
         XCTAssertTrue(budgetManager.waitForExistence(timeout: 8))
     }
 
+    func testDashboardBudgetManageButtonOpensSetBudget() {
+        let app = makeApp()
+        app.launch()
+
+        let dashboardTab = app.tabBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(dashboardTab.waitForExistence(timeout: 8))
+        dashboardTab.tap()
+
+        let manageBudgetButton = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "dashboard.budgetRow.manageBudget."))
+            .firstMatch
+        XCTAssertTrue(manageBudgetButton.waitForExistence(timeout: 8))
+        manageBudgetButton.tap()
+
+        let setBudgetScreen = app.descendants(matching: .any)
+            .matching(identifier: "setBudget.screen")
+            .firstMatch
+        XCTAssertTrue(setBudgetScreen.waitForExistence(timeout: 8))
+    }
+
     func testCanCreateTransactionFromDetailedForm() {
         let app = makeApp()
         app.launch()
@@ -216,5 +248,118 @@ final class FinanceAppUITests: XCTestCase {
             .matching(identifier: "yearlyOverview.screen")
             .firstMatch
         XCTAssertTrue(yearlyOverviewScreen.waitForExistence(timeout: 8))
+    }
+
+    func testAnalyticsPlanningOpensAnnualOverview() {
+        let app = makeApp()
+        app.launch()
+
+        openAnalyticsTab(app)
+
+        let annualOverviewCard = planningCard(
+            app,
+            identifier: "analytics.planning.annualOverview",
+            fallbackLabel: "Annual Overview"
+        )
+        XCTAssertTrue(annualOverviewCard.waitForExistence(timeout: 8))
+        reveal(annualOverviewCard, in: app)
+        annualOverviewCard.tap()
+
+        let annualOverviewScreen = app.descendants(matching: .any)
+            .matching(identifier: "annualOverview.screen")
+            .firstMatch
+        XCTAssertTrue(annualOverviewScreen.waitForExistence(timeout: 8))
+    }
+
+    func testAccountsManageCategoriesOpensCategories() {
+        let app = makeApp()
+        app.launch()
+
+        openAccountsTab(app)
+
+        let manageCategories = app.buttons["accounts.manageCategories"]
+        XCTAssertTrue(manageCategories.waitForExistence(timeout: 8))
+        manageCategories.tap()
+
+        let categoriesScreen = app.descendants(matching: .any)
+            .matching(identifier: "categories.screen")
+            .firstMatch
+        XCTAssertTrue(categoriesScreen.waitForExistence(timeout: 8))
+    }
+
+    func testDashboardRecentActivityCTAOpensTransactionsTab() {
+        let app = makeApp()
+        app.launch()
+
+        let dashboardTab = app.tabBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(dashboardTab.waitForExistence(timeout: 8))
+        dashboardTab.tap()
+
+        let openTransactions = app.buttons["dashboard.recentActivity.openTransactions"]
+        XCTAssertTrue(openTransactions.waitForExistence(timeout: 8))
+        reveal(openTransactions, in: app)
+        openTransactions.tap()
+
+        let transactionsList = app.descendants(matching: .any)
+            .matching(identifier: "transactions.list")
+            .firstMatch
+        let emptyState = app.descendants(matching: .any)
+            .matching(identifier: "transactions.emptyState")
+            .firstMatch
+        XCTAssertTrue(transactionsList.waitForExistence(timeout: 8) || emptyState.waitForExistence(timeout: 8))
+    }
+
+    func testSettingsShowsSystemSectionsOnly() {
+        let app = makeApp()
+        app.launch()
+
+        openSettingsTab(app)
+
+        let settingsScreen = app.descendants(matching: .any)
+            .matching(identifier: "settings.screen")
+            .firstMatch
+        XCTAssertTrue(settingsScreen.waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Personalization"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Planning Rules"].exists)
+        XCTAssertTrue(app.staticTexts["Notifications & Live Activity"].exists)
+
+        XCTAssertFalse(app.staticTexts["Categories"].exists)
+        XCTAssertFalse(app.staticTexts["Subscriptions"].exists)
+        XCTAssertFalse(app.staticTexts["Debts"].exists)
+    }
+
+    func testDashboardShowsCoreSections() {
+        let app = makeApp()
+        app.launch()
+
+        let dashboardTab = app.tabBars.buttons.element(boundBy: 0)
+        XCTAssertTrue(dashboardTab.waitForExistence(timeout: 8))
+        dashboardTab.tap()
+
+        let heroSection = app.descendants(matching: .any)
+            .matching(identifier: "dashboard.hero.section")
+            .firstMatch
+        XCTAssertTrue(heroSection.waitForExistence(timeout: 8))
+
+        let actionsSection = app.descendants(matching: .any)
+            .matching(identifier: "dashboard.primaryActions.section")
+            .firstMatch
+        XCTAssertTrue(actionsSection.waitForExistence(timeout: 8))
+
+        let monthSection = app.descendants(matching: .any)
+            .matching(identifier: "dashboard.thisMonth.section")
+            .firstMatch
+        XCTAssertTrue(monthSection.waitForExistence(timeout: 8))
+        reveal(monthSection, in: app)
+
+        let commitmentsSection = app.descendants(matching: .any)
+            .matching(identifier: "dashboard.commitments.section")
+            .firstMatch
+        XCTAssertTrue(commitmentsSection.waitForExistence(timeout: 8))
+
+        let recentSection = app.descendants(matching: .any)
+            .matching(identifier: "dashboard.recentActivity.section")
+            .firstMatch
+        XCTAssertTrue(recentSection.waitForExistence(timeout: 8))
     }
 }

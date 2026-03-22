@@ -166,7 +166,7 @@ struct DebtDetailView: View {
         return DebtAmortization.schedule(
             remaining: debt.remainingAmount,
             monthlyPayment: debt.minimumPayment,
-            annualRate: debt.interestRate * 100,
+            annualRate: debt.interestRate,   // stored as fraction (0.045 = 4.5%)
             dueDay: debt.dueDay,
             startDate: Date()
         )
@@ -182,32 +182,8 @@ struct DebtDetailView: View {
 
     private var remainingPaymentsCount: Int? {
         if isPaidOff || debt.minimumPayment == 0 { return nil }
-
-        if debt.type == .installment && debt.totalInstallments > 0 {
-            let left = debt.totalInstallments - debt.paidInstallments
-            return left > 0 ? left : nil
-        }
-
-        // Interest-bearing: use formula
-        let r = debt.interestRate / 12
-        guard r > 0, debt.minimumPayment > 0 else {
-            // Zero rate: simple division
-            if debt.minimumPayment > 0 && debt.remainingAmount > 0 {
-                let n = NSDecimalNumber(decimal: debt.remainingAmount / debt.minimumPayment).doubleValue
-                return Int(ceil(n))
-            }
-            return nil
-        }
-
-        let payment = NSDecimalNumber(decimal: debt.minimumPayment).doubleValue
-        let remaining = NSDecimalNumber(decimal: debt.remainingAmount).doubleValue
-        let rate = NSDecimalNumber(decimal: r).doubleValue
-
-        let denominator = payment - remaining * rate
-        guard denominator > 0 else { return 360 } // Can't pay off
-
-        let n = log(payment / denominator) / log(1 + rate)
-        return Int(ceil(n))
+        let count = amortizationRows.count
+        return count > 0 ? count : nil
     }
 
     private var totalInterestRemaining: Decimal {

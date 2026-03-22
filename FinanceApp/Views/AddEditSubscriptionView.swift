@@ -56,7 +56,7 @@ struct AddEditSubscriptionView: View {
 
                 Section(String(localized: "Amount")) {
                     TextField("0.00", text: $amountText)
-                        .keyboardType(.decimalPad)
+                        .financeNumericKeyboard()
                 }
 
                 Section(String(localized: "Frequency")) {
@@ -95,6 +95,7 @@ struct AddEditSubscriptionView: View {
                     TextField(String(localized: "Notes"), text: $note)
                 }
             }
+            .keyboardDismissable()
             .navigationTitle(existingSubscription == nil ? String(localized: "Add Subscription") : String(localized: "Edit Subscription"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -132,6 +133,7 @@ struct AddEditSubscriptionView: View {
             modelContext.insert(subscription)
         }
         do { try modelContext.save() } catch { print("Subscription save error: \(error)") }
+        HapticManager.success()
 
         // Re-schedule subscription reminders
         let activeDescriptor = FetchDescriptor<Subscription>()

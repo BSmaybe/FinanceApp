@@ -51,6 +51,10 @@ struct FinanceAppApp: App {
 
     @AppStorage("autoBackupInterval") private var autoBackupInterval = "off"
     @AppStorage("lastAutoBackupDate") private var lastAutoBackupTimestamp: Double = 0
+    @AppStorage("budgetNotificationsEnabled") private var budgetNotificationsEnabled = true
+    @AppStorage("subscriptionRemindersEnabled") private var subscriptionRemindersEnabled = true
+    @AppStorage("debtRemindersEnabled") private var debtRemindersEnabled = true
+    @AppStorage("debtReminderDays") private var debtReminderDays = 3
 
     @State private var captureQuickAddPayload: PendingCapturePayload?
 
@@ -61,7 +65,7 @@ struct FinanceAppApp: App {
                     SeedData.seedIfNeeded(context: container.mainContext)
                     RecurringTransactionProcessor.process(context: container.mainContext)
                     if !isUITestMode {
-                        BudgetNotificationHelper.requestPermissionIfNeeded()
+                        scheduleNotificationsIfNeeded()
                     }
                     consumePendingCaptureIfNeeded()
                     runAutoBackupIfNeeded()
@@ -69,6 +73,9 @@ struct FinanceAppApp: App {
                 .onChange(of: scenePhase) { _, newValue in
                     guard newValue == .active else { return }
                     RecurringTransactionProcessor.process(context: container.mainContext)
+                    if !isUITestMode {
+                        scheduleNotificationsIfNeeded()
+                    }
                     consumePendingCaptureIfNeeded()
                     runAutoBackupIfNeeded()
                 }
@@ -82,6 +89,46 @@ struct FinanceAppApp: App {
                 }
         }
         .modelContainer(container)
+    }
+
+    @MainActor
+    private func scheduleNotificationsIfNeeded() {
+        let ctx = container.mainContext
+        let subscriptions = (try? ctx.fetch(FetchDescriptor<Subscription>())) ?? []
+        let debts = (try? ctx.fetch(FetchDescriptor<Debt>())) ?? []
+        let budgets = (try? ctx.fetch(FetchDescriptor<Budget>())) ?? []
+        let categories = (try? ctx.fetch(FetchDescriptor<Category>())) ?? []
+        let transactions = (try? ctx.fetch(FetchDescriptor<Transaction>())) ?? []
+
+        let categoryById = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
+
+        let cal = Calendar.current
+        let now = Date()
+        let month = cal.component(.month, from: now)
+        let year = cal.component(.year, from: now)
+        guard let startOfMonth = cal.date(from: DateComponents(year: year, month: month, day: 1)) else { return }
+        let nextComps = DateComponents(year: year, month: month + 1, day: 1)
+        let startOfNextMonth = cal.date(from: nextComps) ?? now
+
+        let expenseTransactions = transactions.filter {
+            $0.type == .expense && $0.date >= startOfMonth && $0.date < startOfNextMonth
+        }
+        var spentByCategory: [UUID: Decimal] = [:]
+        for txn in expenseTransactions {
+            guard let catId = txn.categoryId else { continue }
+            spentByCategory[catId, default: .zero] += txn.amount
+        }
+
+        Task {
+            NotificationService.scheduleAll(
+                subscriptions: subscriptionRemindersEnabled ? subscriptions : [],
+                debts: debtRemindersEnabled ? debts : [],
+                budgets: budgetNotificationsEnabled ? budgets : [],
+                spentByCategory: spentByCategory,
+                categoryById: categoryById,
+                debtReminderDays: debtReminderDays
+            )
+        }
     }
 
     private func runAutoBackupIfNeeded() {

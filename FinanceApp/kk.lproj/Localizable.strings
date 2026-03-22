@@ -116,6 +116,15 @@
 "of expenses" = "шығыстардан";
 "No data for this year" = "Бұл жыл үшін деректер жоқ";
 
+/* Annual Overview */
+"Annual Overview" = "Жылдық шолу";
+"Total Expenses" = "Жалпы шығыс";
+"Net Savings" = "Таза жинақ";
+"Monthly Breakdown" = "Айлар бойынша";
+"Year Overview" = "Жыл шолуы";
+"No transactions this year" = "Бұл жылда транзакциялар жоқ";
+"Full-year income, expenses, savings rate, top categories, and year-over-year comparison." = "Жылдық кіріс, шығыс, жинақ нормасы, топ санаттар және өткен жылмен салыстыру.";
+
 /* Charts / Analytics */
 "Spending by Category" = "Санат бойынша шығыстар";
 "Monthly Overview" = "Ай бойынша шолу";
@@ -336,19 +345,30 @@
 "Daily Budget" = "Күнделікті бюджет";
 
 /* Notifications */
-"Notifications" = "Хабарландырулар";
-"Budget alerts" = "Бюджет ескертулері";
-"Subscription reminders" = "Жазылым еске салулары";
+"Notifications" = "Хабарламалар";
+"Budget alerts" = "Бюджет туралы хабарламалар";
+"Subscription reminders" = "Жазылымдар туралы еске салу";
 "Debt payment reminders" = "Қарыз төлемдері туралы еске салу";
+"Debt reminders" = "Қарыздар туралы еске салу";
+"%lld days before" = "%lld күн бұрын";
 "Enable in Settings" = "Параметрлерде қосу";
 "Budget exceeded!" = "Бюджет асып кетті!";
 "Budget warning: %d%%" = "Бюджет ескертуі: %d%%";
+"Budget Warning" = "Бюджет туралы ескерту";
+"Budget Exceeded" = "Бюджет асылды";
+"Category %@: 80%% of limit spent" = "%@ санаты: лимиттің 80%%  жұмсалды";
+"Category %@: limit reached" = "%@ санаты: лимитке жетті";
 "Subscription reminder" = "Жазылым еске салу";
+"Subscription Renewal Tomorrow" = "Ертең жазылымды жаңарту";
 "Tomorrow: %@ — %@" = "Ертең: %@ — %@";
+"%@ — %@" = "%@ — %@";
 "Payment due in 3 days: %@" = "3 күннен кейін төлем: %@";
+"Payment Due Soon" = "Төлем мерзімі жақындады";
+"%@ — due in %lld days" = "%@ — %lld күннен кейін";
 
 /* Category suggestions */
-"Suggested:" = "Ұсынылады:";
+"Suggested: %@" = "Ұсыным: %@";
+"Tap to apply" = "Қолдану үшін түртіңіз";
 
 /* Capture / Apple Pay */
 "Apple Pay" = "Apple Pay";
@@ -361,6 +381,25 @@
 "No note" = "Ескертпе жоқ";
 
 /* What-If Scenarios */
+"What If" = "Не болса";
+"Reduce Spending" = "Шығыстарды азайту";
+"Reduce expenses by %lld%% and see the impact" = "Шығыстарды %lld%% азайтып, нәтижені көру";
+"Monthly savings gained" = "Ай сайынғы қосымша жинақ";
+"Projected annual savings" = "Болжамды жылдық жинақ";
+"Save Monthly" = "Ай сайын жинақтау";
+"Monthly savings target" = "Ай сайынғы жинақ мақсаты";
+"Savings goal" = "Жинақ мақсаты";
+"Months to goal" = "Мақсатқа дейін ай";
+"Goal date" = "Мақсат күні";
+"Pay Off Debt Faster" = "Қарызды тезірек өтеу";
+"Extra monthly payment" = "Қосымша ай сайынғы төлем";
+"Months saved" = "Үнемделген айлар";
+"Interest saved" = "Пайыздан үнемдеу";
+"New payoff date" = "Жаңа өтеу күні";
+"No debt data" = "Қарыз деректері жоқ";
+"reduction" = "азайту";
+"%lld months" = "%lld ай";
+"%lld yr %lld mo" = "%lld жыл %lld ай";
 "What If..." = "Егер...";
 "What-If Scenarios" = "«Егер» сценарийлері";
 "Save More" = "Көбірек жинақтау";
@@ -416,3 +455,134 @@
 "Total Payments" = "Жалпы төлемдер";
 "Auto" = "Авто";
 "Auto (%lld)" = "Авто (%lld)";
+
+/* Analytics period switcher */
+"Month" = "Ай";
+"This Week" = "Осы апта";
+"This Year" = "Осы жыл";
+"vs last week" = "өткен аптамен";
+"vs last month" = "өткен аймен";
+"vs last year" = "өткен жылмен";
+"vs same week last year" = "өткен жылдың сол аптасымен";
+"vs same month last year" = "өткен жылдың сол айымен";
+"Daily Spending" = "Күндік шығыстар";
+"No data for this period" = "Кезең үшін деректер жоқ";
+"Over by %@" = "%@ асып кетті";
+"%@ left · %lld days" = "%@ қалды · %lld күн";
+"of %@" = "%@ ішінен";
+"Dashboard" = "Басқы бет";
+"Dashboard Settings" = "Бақылау тақтасы параметрлері";
+"Dashboard Sections" = "Бақылау тақтасы бөлімдері";
+"Quick Actions" = "Жылдам әрекеттер";
+"Weekly Budget" = "Апталық бюджет";
+"Monthly Health" = "Ай денсаулығы";
+"Commitments" = "Міндеттемелер";
+"Recent Activity" = "Соңғы операциялар";
+"Name is required" = "Атауды енгізіңіз";
+"Enter the total debt amount" = "Қарыздың жалпы сомасын енгізіңіз";
+"Enter the remaining balance" = "Қалдық сомасын енгізіңіз";
+"Remaining cannot exceed total" = "Қалдық жалпы сомадан аспауы керек";
+"Enter the monthly payment amount" = "Ай сайынғы төлем сомасын енгізіңіз";
+"%lld payments due in %lld days" = "%lld күнде %lld төлем";
+" +%lld more" = " және тағы %lld";
+"Onboarding.Welcome.Title" = "Қаржы бақылауда";
+"Onboarding.Welcome.Subtitle" = "Барлық шоттар, шығыстар және кірістер бір жерде";
+"Onboarding.Accounts.Title" = "Шоттар мен транзакциялар";
+"Onboarding.Accounts.Subtitle" = "Карталар, қолма-қол ақша және депозиттердің қалдықтарын бақылаңыз";
+"Onboarding.Budget.Title" = "Бюджет және аналитика";
+"Onboarding.Budget.Subtitle" = "Санаттар бойынша лимит қойып, шығыстарды қадағалаңыз";
+"Onboarding.Goals.Title" = "Қарыздар мен мақсаттар";
+"Onboarding.Goals.Subtitle" = "Несие, бөліп төлеу және жинақты бақылаңыз";
+"Get Started" = "Бастау";
+"Next" = "Келесі";
+
+/* Success burst */
+"Saved!" = "Сақталды!";
+
+/* Dashboard redesign */
+"Budget Rings" = "Бюджет сақиналары";
+"All Budgets" = "Барлық бюджеттер";
+"Language" = "Тіл";
+"System" = "Жүйелік";
+"Restart Required" = "Қайта іске қосу керек";
+"Restart Now" = "Қазір қайта іске қосу";
+"The app will restart to apply the new language." = "Жаңа тілді қолдану үшін қолданба қайта іске қосылады.";
+"Monthly health and top overspend pressure" = "Айлық жағдай және артық шығын қысымы";
+"Posted in this month" = "Осы айда тіркелді";
+"Positive balance" = "Оң баланс";
+"Negative balance" = "Теріс баланс";
+"Based on free-to-spend and days left" = "Еркін қалдық пен қалған күндерге негізделген";
+"No active budgets" = "Белсенді бюджеттер жоқ";
+"Set limits" = "Лимиттер орнату";
+"Create monthly category limits to track overspend pressure." = "Артық шығын қысымын бақылау үшін санаттар бойынша айлық лимиттер орнатыңыз.";
+"Goal Reached! 🎉" = "Мақсатқа жетілді! 🎉";
+"Debt Paid Off! 🎉" = "Қарыз өтелді! 🎉";
+"Upcoming Payments" = "Алдағы төлемдер";
+"No upcoming payments" = "Алдағы төлемдер жоқ";
+"View All" = "Барлығы";
+"No recent activity" = "Соңғы операциялар жоқ";
+"Good morning 👋" = "Қайырлы таң 👋";
+"Good afternoon 👋" = "Қайырлы күн 👋";
+"Good evening 👋" = "Қайырлы кеш 👋";
+"Good night 🌙" = "Тәтті ұйқы 🌙";
+"Accounts" = "Шоттар";
+
+/* Daily Quote Card */
+"Anime" = "Аниме";
+"Game" = "Ойын";
+"Movie" = "Кино";
+
+/* Hero Profile / Gamification */
+"Beginner Saver" = "Жаңадан Бастаушы";
+"Budget Apprentice" = "Бюджет Шәкірті";
+"Money Mage" = "Ақша Сиқыршысы";
+"Finance Warrior" = "Қаржы Жауынгері";
+"Wealth Master" = "Байлық Шебері";
+"Hero Profile" = "Батыр Профилі";
+"Your name" = "Есіміңіз";
+"Level Progress" = "Деңгей Үлгісі";
+"Level %d" = "%d Деңгей";
+"%d / %d XP" = "%d / %d ТТ";
+"%d Day Streak 🔥" = "%d Күн Серия 🔥";
+"Achievements" = "Жетістіктер";
+"Lv.%d" = "Дең.%d";
+
+/* Achievement titles & descriptions */
+"First Step" = "Бірінші Қадам";
+"Add your first transaction" = "Бірінші транзакция қосыңыз";
+"Budget Keeper" = "Бюджет Сақтаушы";
+"Stay under budget for a full month" = "Бір ай бойы бюджеттен аспаңыз";
+"Debt Slayer" = "Қарыз Жеңімпазы";
+"Pay off your first debt" = "Бірінші қарызды өтеңіз";
+"Goal Getter" = "Мақсат Жеткізуші";
+"Complete your first financial goal" = "Бірінші қаржылық мақсатты орындаңыз";
+"7-Day Streak" = "7 Күнлік Серия";
+"7 consecutive days with transactions" = "Транзакциямен 7 күн қатарынан";
+"30-Day Streak" = "30 Күнлік Серия";
+"30 consecutive days with transactions" = "Транзакциямен 30 күн қатарынан";
+"Saver" = "Үнемші";
+"Save rate ≥ 20% for a month" = "Айлық үнем мөлшері ≥ 20%";
+"Big Spender" = "Үлкен Шығын";
+"Single transaction over 10,000" = "10 000-нан асатын бір транзакция";
+"Debt Free" = "Қарыздан Бос";
+"All debts paid off" = "Барлық қарыздар өтелді";
+"Portfolio" = "Портфель";
+"Have 3 or more accounts" = "3 немесе одан да көп шот болу";
+"Planner" = "Жоспарлаушы";
+"Set budgets for 5 or more categories" = "5+ санат үшін бюджет белгілеу";
+"Legend" = "Аңыз";
+"Reach Level 20" = "20 деңгейге жету";
+
+/* UX Polish */
+"Duplicate" = "Көшіру";
+"Delete Transaction?" = "Транзакцияны жою?";
+"This cannot be undone." = "Бұл әрекетті кері қайтару мүмкін емес.";
+"No Categories" = "Санаттар жоқ";
+"No Accounts" = "Шоттар жоқ";
+"No Debts" = "Қарыздар жоқ";
+"Add your first income or expense to get started" = "Бастау үшін алғашқы кіріс немесе шығысты қосыңыз";
+"Create categories to organise your spending" = "Шығыстарды реттеу үшін санаттар жасаңыз";
+"Add your first account to track balances" = "Балансты бақылау үшін алғашқы шотты қосыңыз";
+"Set a financial goal to start saving" = "Жинақтауды бастау үшін қаржылық мақсат қойыңыз";
+"Add a loan or installment to track payments" = "Төлемдерді бақылау үшін несие немесе бөліп төлеу қосыңыз";
+"Drag to reorder" = "Ретін өзгерту үшін сүйреңіз";

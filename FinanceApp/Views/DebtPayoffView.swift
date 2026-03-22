@@ -41,7 +41,7 @@ struct DebtPayoffView: View {
                         Text(String(localized: "Extra Monthly"))
                         Spacer()
                         TextField("0", text: $extraPaymentText)
-                            .keyboardType(.decimalPad)
+                            .financeNumericKeyboard()
                             .multilineTextAlignment(.trailing)
                             .frame(width: 120)
                     }

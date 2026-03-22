@@ -126,6 +126,7 @@ struct QuickAddView: View {
                         .padding(.horizontal, 14)
                         .padding(.bottom, 12)
                     }
+                    .keyboardDismissable()
                     numpad
                         .padding(.horizontal, 14)
 

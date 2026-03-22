@@ -10,10 +10,9 @@ struct SettingsView: View {
     @AppStorage("budgetNotificationsEnabled") private var budgetNotificationsEnabled = true
     @AppStorage("subscriptionRemindersEnabled") private var subscriptionRemindersEnabled = true
     @AppStorage("debtRemindersEnabled") private var debtRemindersEnabled = true
+    @AppStorage("debtReminderDays") private var debtReminderDays = 3
     @State private var notificationsAuthorized = false
-    @State private var showingCategories = false
-    @State private var showingSubscriptions = false
-    @State private var showingDebts = false
+    @State private var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
     @State private var showingExport = false
     @State private var showingBackupExport = false
     @State private var showingBackupImport = false
@@ -30,74 +29,124 @@ struct SettingsView: View {
     @AppStorage("lastAutoBackupDate") private var lastAutoBackupTimestamp: Double = 0
     @AppStorage("liveActivityEnabled") private var liveActivityEnabled = false
     @State private var captureDiagnostics = PendingCaptureStore.diagnostics()
+    @AppStorage("selectedLanguage") private var selectedLanguage = "system"
+    @State private var showingLanguageRestart = false
+    @State private var pendingLanguage = ""
+
+    private static let languages: [(code: String, label: String, native: String)] = [
+        ("system", "System",   "Авто"),
+        ("en",     "English",  "English"),
+        ("ru",     "Russian",  "Русский"),
+        ("kk",     "Kazakh",   "Қазақша")
+    ]
 
     var body: some View {
         NavigationStack {
             Form {
-                Section(String(localized: "Appearance")) {
-                    ForEach(ThemePalette.allCases, id: \.id) { palette in
-                        Button {
-                            themeStore.selectedTheme = palette.id
-                        } label: {
-                            HStack(spacing: 12) {
-                                ZStack(alignment: .bottomTrailing) {
-                                    Circle()
-                                        .fill(palette.primaryAccent)
-                                        .frame(width: 28, height: 28)
-                                    Circle()
-                                        .fill(palette.secondaryAccent)
-                                        .frame(width: 13, height: 13)
-                                        .offset(x: 4, y: 4)
-                                }
-                                .frame(width: 32, height: 32)
-                                HStack(spacing: 4) {
-                                    Text(palette.name)
-                                        .foregroundStyle(.primary)
-                                    if palette.isDark {
-                                        Image(systemName: "moon.fill")
+                Section(String(localized: "Personalization")) {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 16) {
+                            ForEach(ThemePalette.allCases, id: \.id) { palette in
+                                Button {
+                                    themeStore.selectedTheme = palette.id
+                                } label: {
+                                    VStack(spacing: 6) {
+                                        ZStack {
+                                            Circle()
+                                                .fill(palette.primaryAccent)
+                                                .frame(width: 36, height: 36)
+                                            Circle()
+                                                .fill(palette.secondaryAccent)
+                                                .frame(width: 14, height: 14)
+                                                .offset(x: 10, y: 10)
+                                            if palette.isDark {
+                                                Image(systemName: "moon.fill")
+                                                    .font(.system(size: 10))
+                                                    .foregroundStyle(.white)
+                                                    .offset(x: -8, y: -8)
+                                            }
+                                            if themeStore.selectedTheme == palette.id {
+                                                Circle()
+                                                    .stroke(AppTheme.primaryAccent, lineWidth: 2.5)
+                                                    .frame(width: 44, height: 44)
+                                            }
+                                        }
+                                        .frame(width: 44, height: 44)
+                                        Text(palette.name)
                                             .font(.caption2)
-                                            .foregroundStyle(.secondary)
+                                            .foregroundStyle(themeStore.selectedTheme == palette.id ? AppTheme.primaryAccent : .secondary)
+                                            .lineLimit(1)
                                     }
                                 }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(.vertical, 6)
+                    }
+
+                    NavigationLink {
+                        DashboardSettingsView()
+                    } label: {
+                        Label(String(localized: "Dashboard Sections"), systemImage: "square.grid.3x1.below.line.grid.1x2")
+                    }
+                }
+
+                Section(String(localized: "Language")) {
+                    ForEach(Self.languages, id: \.code) { lang in
+                        Button {
+                            guard lang.code != selectedLanguage else { return }
+                            pendingLanguage = lang.code
+                            HapticManager.impact(.light)
+                            showingLanguageRestart = true
+                        } label: {
+                            HStack {
+                                Text(lang.native)
+                                    .foregroundStyle(.primary)
+                                if lang.code != "system" {
+                                    Text("· \(lang.label)")
+                                        .foregroundStyle(.secondary)
+                                        .font(.subheadline)
+                                }
                                 Spacer()
-                                if themeStore.selectedTheme == palette.id {
+                                if selectedLanguage == lang.code {
                                     Image(systemName: "checkmark")
-                                        .fontWeight(.semibold)
                                         .foregroundStyle(AppTheme.primaryAccent)
+                                        .fontWeight(.semibold)
                                 }
                             }
                         }
+                        .buttonStyle(.plain)
                     }
                 }
 
-                Section(String(localized: "Categories")) {
-                    Button {
-                        showingCategories = true
-                    } label: {
-                        Label(String(localized: "Manage Categories"), systemImage: "square.grid.2x2")
-                    }
-                }
-
-                Section(String(localized: "Budget")) {
+                Section(String(localized: "Planning Rules")) {
                     Toggle(String(localized: "Rollover unused budget"), isOn: $rolloverEnabled)
                 }
 
-                Section(String(localized: "Manage")) {
-                    Button {
-                        showingSubscriptions = true
-                    } label: {
-                        Label(String(localized: "Subscriptions"), systemImage: "repeat.circle")
-                            .foregroundStyle(AppTheme.primaryAccent)
+                Section(String(localized: "Notifications & Live Activity")) {
+                    Toggle(String(localized: "Budget alerts"), isOn: $budgetNotificationsEnabled)
+                    Toggle(String(localized: "Subscription reminders"), isOn: $subscriptionRemindersEnabled)
+                    Toggle(String(localized: "Debt reminders"), isOn: $debtRemindersEnabled)
+                    if debtRemindersEnabled {
+                        Stepper(
+                            String(format: String(localized: "%lld days before"), Int64(debtReminderDays)),
+                            value: $debtReminderDays,
+                            in: 1...14
+                        )
                     }
-                    Button {
-                        showingDebts = true
-                    } label: {
-                        Label(String(localized: "Debts"), systemImage: "creditcard.trianglebadge.exclamationmark")
-                            .foregroundStyle(.red)
+                    Toggle(String(localized: "Daily Budget in Dynamic Island"), isOn: $liveActivityEnabled)
+                    Text(String(localized: "Controls reminders, budget alerts, and Dynamic Island progress surfaces."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    if !notificationsAuthorized {
+                        Button(notificationPermissionButtonTitle) {
+                            handleNotificationPermissionAction()
+                        }
+                        .foregroundStyle(AppTheme.primaryAccent)
                     }
                 }
 
-                Section(String(localized: "Data")) {
+                Section(String(localized: "Data & Backup")) {
                     Button {
                         showingExport = true
                     } label: {
@@ -110,9 +159,6 @@ struct SettingsView: View {
                         Label(String(localized: "Import CSV"), systemImage: "arrow.down.doc.fill")
                             .foregroundStyle(AppTheme.secondaryAccent)
                     }
-                }
-
-                Section(String(localized: "Backup")) {
                     Button {
                         createBackup()
                     } label: {
@@ -131,32 +177,15 @@ struct SettingsView: View {
                         }
                     }
                     if lastAutoBackupTimestamp > 0 {
-                        LabeledContent(String(localized: "Last Auto-Backup"),
+                        LabeledContent(
+                            String(localized: "Last Auto-Backup"),
                             value: Date(timeIntervalSince1970: lastAutoBackupTimestamp)
-                                .formatted(date: .abbreviated, time: .shortened))
+                                .formatted(date: .abbreviated, time: .shortened)
+                        )
                     }
                 }
 
-                Section(String(localized: "Notifications")) {
-                    Toggle(String(localized: "Budget alerts"), isOn: $budgetNotificationsEnabled)
-                    Toggle(String(localized: "Subscription reminders"), isOn: $subscriptionRemindersEnabled)
-                    Toggle(String(localized: "Debt payment reminders"), isOn: $debtRemindersEnabled)
-                    if !notificationsAuthorized {
-                        Button(String(localized: "Enable in Settings")) {
-                            openSystemNotificationSettings()
-                        }
-                        .foregroundStyle(AppTheme.primaryAccent)
-                    }
-                }
-
-                Section(String(localized: "Live Activity")) {
-                    Toggle(String(localized: "Daily Budget in Dynamic Island"), isOn: $liveActivityEnabled)
-                    Text(String(localized: "Shows today's spending progress in Dynamic Island and Lock Screen."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                }
-
-                Section(String(localized: "Auto-Capture Purchases")) {
+                Section(String(localized: "Capture & Shortcuts")) {
                     if let shortcutsURL = URL(string: "shortcuts://") {
                         Link(destination: shortcutsURL) {
                             Label(String(localized: "Open Shortcuts"), systemImage: "square.grid.2x2")
@@ -175,13 +204,23 @@ struct SettingsView: View {
                         Text(String(localized: "1) In Shortcuts create Personal Automation with Transaction trigger."))
                         Text(String(localized: "2) Select cards and map Amount/Merchant/Date/Currency to URL query fields."))
                         Text(String(localized: "3) Use URL financeapp://capture and run a test payment flow."))
+                        Text(String(localized: "4) Add the Quick Add shortcut to Home Screen for faster capture."))
                     }
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 2)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label(String(localized: "Quick Add on Home Screen"), systemImage: "plus.app")
+                            .font(.body)
+                        Text(String(localized: "Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
                 }
 
-                Section(String(localized: "Capture Diagnostics")) {
+                Section(String(localized: "Advanced & Diagnostics")) {
                     LabeledContent(String(localized: "Last Received"), value: formattedCaptureTimestamp(captureDiagnostics.lastReceivedAt))
                     LabeledContent(String(localized: "Last Opened in Quick Add"), value: formattedCaptureTimestamp(captureDiagnostics.lastConsumedAt))
 
@@ -206,35 +245,14 @@ struct SettingsView: View {
                         refreshCaptureDiagnostics()
                     }
                 }
-
-                Section {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(String(localized: "Quick Add on Home Screen"), systemImage: "plus.app")
-                            .font(.body)
-                        Text(String(localized: "Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                } header: {
-                    Text(String(localized: "Home Screen"))
-                }
             }
             .scrollContentBackground(.hidden)
             .background(AppTheme.canvas)
             .tint(AppTheme.primaryAccent)
+            .accessibilityIdentifier("settings.screen")
             .navigationTitle(String(localized: "Settings"))
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(AppTheme.surface, for: .navigationBar)
-            .sheet(isPresented: $showingCategories) {
-                CategoriesView()
-            }
-            .sheet(isPresented: $showingSubscriptions) {
-                SubscriptionsView()
-            }
-            .sheet(isPresented: $showingDebts) {
-                DebtsView()
-            }
             .sheet(isPresented: $showingExport) {
                 ExportView()
             }
@@ -286,6 +304,16 @@ struct SettingsView: View {
             } message: {
                 Text(String(localized: "All data has been restored successfully."))
             }
+            .alert(String(localized: "Restart Required"), isPresented: $showingLanguageRestart) {
+                Button(String(localized: "Restart Now"), role: .destructive) {
+                    applyLanguage(pendingLanguage)
+                }
+                Button(String(localized: "Cancel"), role: .cancel) {
+                    pendingLanguage = ""
+                }
+            } message: {
+                Text(String(localized: "The app will restart to apply the new language."))
+            }
             .onAppear {
                 refreshCaptureDiagnostics()
                 Task { await checkNotificationStatus() }
@@ -320,7 +348,6 @@ struct SettingsView: View {
             defer { url.stopAccessingSecurityScopedResource() }
             do {
                 let data = try Data(contentsOf: url)
-                // Validate JSON before confirming
                 let decoder = JSONDecoder()
                 decoder.dateDecodingStrategy = .iso8601
                 _ = try decoder.decode(BackupData.self, from: data)
@@ -385,7 +412,25 @@ struct SettingsView: View {
 
     private func checkNotificationStatus() async {
         let settings = await UNUserNotificationCenter.current().notificationSettings()
+        notificationAuthorizationStatus = settings.authorizationStatus
         notificationsAuthorized = settings.authorizationStatus == .authorized
+    }
+
+    private var notificationPermissionButtonTitle: String {
+        notificationAuthorizationStatus == .notDetermined
+            ? String(localized: "Allow Notifications")
+            : String(localized: "Enable in Settings")
+    }
+
+    private func handleNotificationPermissionAction() {
+        if notificationAuthorizationStatus == .notDetermined {
+            Task {
+                _ = await NotificationService.requestPermission()
+                await checkNotificationStatus()
+            }
+        } else {
+            openSystemNotificationSettings()
+        }
     }
 
     private func openSystemNotificationSettings() {
@@ -408,5 +453,17 @@ struct SettingsView: View {
         let f = DateFormatter()
         f.dateFormat = "yyyy-MM-dd"
         return f.string(from: Date())
+    }
+
+    private func applyLanguage(_ code: String) {
+        selectedLanguage = code
+        if code == "system" {
+            UserDefaults.standard.removeObject(forKey: "AppleLanguages")
+        } else {
+            UserDefaults.standard.set([code], forKey: "AppleLanguages")
+        }
+        UserDefaults.standard.synchronize()
+        // Force restart to apply new language — acceptable for personal local-only app
+        exit(0)
     }
 }

@@ -319,6 +319,15 @@
 "of expenses" = "от расходов";
 "No data for this year" = "Нет данных за этот год";
 
+/* Annual Overview */
+"Annual Overview" = "Годовой обзор";
+"Total Expenses" = "Всего расходов";
+"Net Savings" = "Чистые сбережения";
+"Monthly Breakdown" = "По месяцам";
+"Year Overview" = "Обзор года";
+"No transactions this year" = "Нет транзакций за этот год";
+"Full-year income, expenses, savings rate, top categories, and year-over-year comparison." = "Годовые доходы, расходы, доля сбережений, топ категорий и сравнение с прошлым годом.";
+
 /* Charts */
 "Daily Expenses" = "Ежедневные расходы";
 "No expenses this month" = "В этом месяце расходов нет";
@@ -354,17 +363,47 @@
 "Budget alerts" = "Предупреждения о бюджете";
 "Subscription reminders" = "Напоминания о подписках";
 "Debt payment reminders" = "Напоминания о платежах по долгам";
+"Debt reminders" = "Напоминания о долгах";
+"%lld days before" = "За %lld дней";
 "Enable in Settings" = "Включить в Настройках";
 "Budget exceeded!" = "Бюджет превышен!";
 "Budget warning: %d%%" = "Предупреждение: %d%%";
+"Budget Warning" = "Предупреждение о бюджете";
+"Budget Exceeded" = "Бюджет превышен";
+"Category %@: 80%% of limit spent" = "Категория %@: потрачено 80%% лимита";
+"Category %@: limit reached" = "Категория %@: лимит достигнут";
 "Subscription reminder" = "Напоминание о подписке";
+"Subscription Renewal Tomorrow" = "Продление подписки завтра";
 "Tomorrow: %@ — %@" = "Завтра: %@ — %@";
+"%@ — %@" = "%@ — %@";
 "Payment due in 3 days: %@" = "Платёж через 3 дня: %@";
+"Payment Due Soon" = "Скоро платёж";
+"%@ — due in %lld days" = "%@ — через %lld дн.";
 
 /* Category suggestions */
-"Suggested:" = "Предлагаем:";
+"Suggested: %@" = "Предложение: %@";
+"Tap to apply" = "Нажмите, чтобы применить";
 
 /* What-If Scenarios */
+"What If" = "Что если";
+"Reduce Spending" = "Снизить расходы";
+"Reduce expenses by %lld%% and see the impact" = "Снизить расходы на %lld%% и увидеть результат";
+"Monthly savings gained" = "Дополнительные сбережения в мес.";
+"Projected annual savings" = "Прогнозируемые годовые сбережения";
+"Save Monthly" = "Копить ежемесячно";
+"Monthly savings target" = "Цель ежемесячных сбережений";
+"Savings goal" = "Цель накопления";
+"Months to goal" = "Месяцев до цели";
+"Goal date" = "Дата достижения";
+"Pay Off Debt Faster" = "Погасить долг быстрее";
+"Extra monthly payment" = "Доп. платёж в мес.";
+"Months saved" = "Месяцев сэкономлено";
+"Interest saved" = "Сэкономлено на процентах";
+"New payoff date" = "Новая дата погашения";
+"No debt data" = "Нет данных о долгах";
+"reduction" = "снижение";
+"%lld months" = "%lld мес.";
+"%lld yr %lld mo" = "%lld л. %lld мес.";
 "What If..." = "Что если...";
 "What-If Scenarios" = "Сценарии «Что если»";
 "Save More" = "Копить больше";
@@ -430,3 +469,133 @@
 "Total Payments" = "Всего платежей";
 "Auto" = "Авто";
 "Auto (%lld)" = "Авто (%lld)";
+
+/* Analytics period switcher */
+"Month" = "Месяц";
+"This Week" = "Эта неделя";
+"This Year" = "Этот год";
+"vs last week" = "vs прошлая нед.";
+"vs last year" = "vs прошлый год";
+"vs same week last year" = "vs та же нед. год назад";
+"vs same month last year" = "vs тот же мес. год назад";
+"Daily Spending" = "Расходы по дням";
+"No data for this period" = "Нет данных за период";
+"Over by %@" = "Перерасход %@";
+"%@ left · %lld days" = "осталось %@ · %lld дн.";
+"of %@" = "из %@";
+"Dashboard" = "Дашборд";
+"Dashboard Settings" = "Настройки дашборда";
+"Dashboard Sections" = "Разделы дашборда";
+"Quick Actions" = "Быстрые действия";
+"Weekly Budget" = "Недельный бюджет";
+"Monthly Health" = "Здоровье месяца";
+"Commitments" = "Обязательства";
+"Recent Activity" = "Последние операции";
+"Name is required" = "Укажите название";
+"Enter the total debt amount" = "Укажите общую сумму долга";
+"Enter the remaining balance" = "Укажите остаток долга";
+"Remaining cannot exceed total" = "Остаток не может быть больше общей суммы";
+"Enter the monthly payment amount" = "Укажите размер платежа";
+"%lld payments due in %lld days" = "%lld платежей через %lld дн.";
+" +%lld more" = " и ещё %lld";
+"Onboarding.Welcome.Title" = "Финансы под контролем";
+"Onboarding.Welcome.Subtitle" = "Все счета, расходы и доходы в одном месте";
+"Onboarding.Accounts.Title" = "Счета и транзакции";
+"Onboarding.Accounts.Subtitle" = "Отслеживайте балансы карт, наличных и депозитов";
+"Onboarding.Budget.Title" = "Бюджет и аналитика";
+"Onboarding.Budget.Subtitle" = "Ставьте лимиты по категориям и следите за расходами";
+"Onboarding.Goals.Title" = "Долги и цели";
+"Onboarding.Goals.Subtitle" = "Контролируйте кредиты, рассрочки и накопления";
+"Get Started" = "Начать";
+"Next" = "Далее";
+
+/* Success burst */
+"Saved!" = "Сохранено!";
+
+/* Dashboard redesign */
+"Budget Rings" = "Кольца бюджета";
+"All Budgets" = "Все бюджеты";
+"Language" = "Язык";
+"System" = "Системный";
+"Restart Required" = "Требуется перезапуск";
+"Restart Now" = "Перезапустить";
+"The app will restart to apply the new language." = "Приложение перезапустится для применения нового языка.";
+"Monthly health and top overspend pressure" = "Здоровье месяца и ключевое давление перерасхода";
+"Posted in this month" = "Проведено в этом месяце";
+"Positive balance" = "Положительный баланс";
+"Negative balance" = "Отрицательный баланс";
+"Based on free-to-spend and days left" = "На основе свободного остатка и оставшихся дней";
+"No active budgets" = "Нет активных бюджетов";
+"Set limits" = "Задать лимиты";
+"Create monthly category limits to track overspend pressure." = "Создайте месячные лимиты по категориям, чтобы отслеживать риск перерасхода.";
+"Goal Reached! 🎉" = "Цель достигнута! 🎉";
+"Debt Paid Off! 🎉" = "Долг погашен! 🎉";
+"Upcoming Payments" = "Предстоящие платежи";
+"No upcoming payments" = "Нет предстоящих платежей";
+"View All" = "Все";
+"No recent activity" = "Нет последних операций";
+"Good morning 👋" = "Доброе утро 👋";
+"Good afternoon 👋" = "Добрый день 👋";
+"Good evening 👋" = "Добрый вечер 👋";
+"Good night 🌙" = "Спокойной ночи 🌙";
+"Accounts" = "Счета";
+
+/* Daily Quote Card */
+"Anime" = "Аниме";
+"Game" = "Игра";
+"Movie" = "Фильм";
+
+/* Hero Profile / Gamification */
+"Beginner Saver" = "Начинающий Копилщик";
+"Budget Apprentice" = "Ученик Бюджета";
+"Money Mage" = "Денежный Маг";
+"Finance Warrior" = "Финансовый Воин";
+"Wealth Master" = "Мастер Богатства";
+"Hero Profile" = "Профиль Героя";
+"Your name" = "Ваше имя";
+"Level Progress" = "Прогресс Уровня";
+"Level %d" = "Уровень %d";
+"%d / %d XP" = "%d / %d ОО";
+"%d Day Streak 🔥" = "Серия %d дней 🔥";
+"Achievements" = "Достижения";
+"Lv.%d" = "Ур.%d";
+
+/* Achievement titles & descriptions */
+"First Step" = "Первый Шаг";
+"Add your first transaction" = "Добавьте первую транзакцию";
+"Budget Keeper" = "Хранитель Бюджета";
+"Stay under budget for a full month" = "Не превышайте бюджет целый месяц";
+"Debt Slayer" = "Победитель Долгов";
+"Pay off your first debt" = "Погасите первый долг";
+"Goal Getter" = "Достигатель Целей";
+"Complete your first financial goal" = "Выполните первую финансовую цель";
+"7-Day Streak" = "Серия 7 Дней";
+"7 consecutive days with transactions" = "7 дней подряд с транзакциями";
+"30-Day Streak" = "Серия 30 Дней";
+"30 consecutive days with transactions" = "30 дней подряд с транзакциями";
+"Saver" = "Экономный";
+"Save rate ≥ 20% for a month" = "Норма сбережений ≥ 20% за месяц";
+"Big Spender" = "Большие Траты";
+"Single transaction over 10,000" = "Одна транзакция более 10 000";
+"Debt Free" = "Без Долгов";
+"All debts paid off" = "Все долги погашены";
+"Portfolio" = "Портфель";
+"Have 3 or more accounts" = "Иметь 3 или более счёта";
+"Planner" = "Планировщик";
+"Set budgets for 5 or more categories" = "Установить бюджеты для 5+ категорий";
+"Legend" = "Легенда";
+"Reach Level 20" = "Достичь 20 уровня";
+
+/* UX Polish */
+"Duplicate" = "Дублировать";
+"Delete Transaction?" = "Удалить транзакцию?";
+"This cannot be undone." = "Это действие нельзя отменить.";
+"No Categories" = "Нет категорий";
+"No Accounts" = "Нет счетов";
+"No Debts" = "Нет долгов";
+"Add your first income or expense to get started" = "Добавьте первый доход или расход, чтобы начать";
+"Create categories to organise your spending" = "Создайте категории для организации расходов";
+"Add your first account to track balances" = "Добавьте первый счёт для отслеживания баланса";
+"Set a financial goal to start saving" = "Поставьте финансовую цель, чтобы начать копить";
+"Add a loan or installment to track payments" = "Добавьте кредит или рассрочку для отслеживания платежей";
+"Drag to reorder" = "Перетащите для сортировки";

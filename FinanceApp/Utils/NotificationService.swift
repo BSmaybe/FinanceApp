@@ -18,6 +18,28 @@ enum NotificationService {
         return settings.authorizationStatus == .authorized
     }
 
+    // MARK: - Schedule all (primary entry point)
+
+    /// Schedule all notification types from current data.
+    /// `debtReminderDays`: how many days before dueDay to fire the debt reminder.
+    @MainActor
+    static func scheduleAll(
+        subscriptions: [Subscription],
+        debts: [Debt],
+        budgets: [Budget],
+        spentByCategory: [UUID: Decimal],
+        categoryById: [UUID: Category],
+        debtReminderDays: Int = 3
+    ) {
+        scheduleSubscriptionReminders(subscriptions: subscriptions)
+        scheduleDebtReminders(debts: debts, reminderDays: debtReminderDays)
+        scheduleBudgetNotifications(
+            budgets: budgets,
+            spentByCategory: spentByCategory,
+            categoryById: categoryById
+        )
+    }
+
     // MARK: - Budget notifications
 
     static func scheduleBudgetNotifications(
@@ -48,24 +70,69 @@ enum NotificationService {
                 let categoryName = categoryById[categoryId]?.name ?? String(localized: "Category")
 
                 if ratio >= 1.0 {
-                    let identifier = "budget_\(categoryId.uuidString)_100"
+                    let identifier = "budget_over_\(categoryId.uuidString)"
                     scheduleImmediate(
                         identifier: identifier,
-                        title: String(localized: "Budget exceeded!"),
-                        body: categoryName,
+                        title: String(localized: "Budget Exceeded"),
+                        body: String(format: String(localized: "Category %@: limit reached"), categoryName),
                         center: center
                     )
                 } else if ratio >= 0.8 {
-                    let identifier = "budget_\(categoryId.uuidString)_80"
-                    let percent = Int(ratio * 100)
+                    let identifier = "budget_warn_\(categoryId.uuidString)"
                     scheduleImmediate(
                         identifier: identifier,
-                        title: String(format: String(localized: "Budget warning: %d%%"), percent),
-                        body: categoryName,
+                        title: String(localized: "Budget Warning"),
+                        body: String(format: String(localized: "Category %@: 80%% of limit spent"), categoryName),
                         center: center
                     )
                 }
             }
+        }
+    }
+
+    // MARK: - Check budget after transaction save
+
+    /// Called after a budget-affecting transaction is saved.
+    /// Fires an immediate notification if 80% or 100% threshold was crossed.
+    static func checkBudget(
+        categoryId: UUID?,
+        budgets: [Budget],
+        spentByCategory: [UUID: Decimal],
+        categoryById: [UUID: Category]
+    ) {
+        guard let categoryId else { return }
+
+        let cal = Calendar.current
+        let now = Date()
+        let currentMonth = cal.component(.month, from: now)
+        let currentYear = cal.component(.year, from: now)
+
+        guard let budget = budgets.first(where: {
+            $0.categoryId == categoryId && $0.month == currentMonth && $0.year == currentYear
+        }) else { return }
+
+        let limit = budget.limitAmount
+        guard limit > 0 else { return }
+
+        let spent = spentByCategory[categoryId, default: .zero]
+        let ratio = NSDecimalNumber(decimal: spent / limit).doubleValue
+        let categoryName = categoryById[categoryId]?.name ?? String(localized: "Category")
+        let center = UNUserNotificationCenter.current()
+
+        if ratio >= 1.0 {
+            scheduleImmediate(
+                identifier: "budget_over_\(categoryId.uuidString)",
+                title: String(localized: "Budget Exceeded"),
+                body: String(format: String(localized: "Category %@: limit reached"), categoryName),
+                center: center
+            )
+        } else if ratio >= 0.8 {
+            scheduleImmediate(
+                identifier: "budget_warn_\(categoryId.uuidString)",
+                title: String(localized: "Budget Warning"),
+                body: String(format: String(localized: "Category %@: 80%% of limit spent"), categoryName),
+                center: center
+            )
         }
     }
 
@@ -98,9 +165,9 @@ enum NotificationService {
                 guard reminderDate > now else { continue }
 
                 let content = UNMutableNotificationContent()
-                content.title = String(localized: "Subscription reminder")
+                content.title = String(localized: "Subscription Renewal Tomorrow")
                 content.body = String(
-                    format: String(localized: "Tomorrow: %@ — %@"),
+                    format: String(localized: "%@ — %@"),
                     sub.name,
                     sub.amountString
                 )
@@ -121,24 +188,28 @@ enum NotificationService {
         }
     }
 
-    // MARK: - Debt payment reminders
+    // MARK: - Debt payment reminders (grouped by reminder date → 1 push per day)
 
     @MainActor
-    static func scheduleDebtReminders(debts: [Debt]) {
-        let debtsData = debts
+    static func scheduleDebtReminders(debts: [Debt], reminderDays: Int = 3) {
+        struct DebtInfo {
+            let name: String
+            let dueDay: Int
+        }
+        let activeDebts = debts
             .filter { $0.remainingAmount > 0 && $0.dueDay > 0 }
-            .map { debt -> (id: UUID, name: String, paymentString: String, dueDay: Int) in
-                (id: debt.id, name: debt.name, paymentString: CurrencyFormatter.string(from: debt.minimumPayment), dueDay: debt.dueDay)
-            }
+            .map { DebtInfo(name: $0.name, dueDay: $0.dueDay) }
+        let days = reminderDays
 
         Task {
             let center = UNUserNotificationCenter.current()
             let settings = await center.notificationSettings()
             guard settings.authorizationStatus == .authorized else { return }
 
+            // Remove all old grouped debt notifications
             let pending = await center.pendingNotificationRequests()
             let oldIds = pending
-                .filter { $0.identifier.hasPrefix("debt_") }
+                .filter { $0.identifier.hasPrefix("debts_group_") }
                 .map(\.identifier)
             center.removePendingNotificationRequests(withIdentifiers: oldIds)
 
@@ -147,43 +218,64 @@ enum NotificationService {
             let currentComps = cal.dateComponents([.year, .month], from: now)
             guard let currentYear = currentComps.year, let currentMonth = currentComps.month else { return }
 
-            for debt in debtsData {
-                // Build the due date for this month; if already past, use next month
+            // Calculate reminder date for each debt, group by day-of-year
+            var groups: [String: (reminderDate: Date, names: [String], daysUntilDue: Int)] = [:]
+
+            for debt in activeDebts {
                 var dueDateComps = DateComponents()
                 dueDateComps.year = currentYear
                 dueDateComps.month = currentMonth
                 dueDateComps.day = debt.dueDay
-                dueDateComps.hour = 9
-                dueDateComps.minute = 0
-
                 guard let dueDate = cal.date(from: dueDateComps) else { continue }
 
-                let targetDue: Date
-                if dueDate > now {
-                    targetDue = dueDate
-                } else {
-                    // Move to next month
-                    var nextComps = dueDateComps
-                    nextComps.month = currentMonth + 1
-                    guard let nextDue = cal.date(from: nextComps) else { continue }
-                    targetDue = nextDue
+                let targetDue = dueDate > now ? dueDate : {
+                    var next = dueDateComps
+                    next.month = currentMonth + 1
+                    return cal.date(from: next) ?? dueDate
+                }()
+
+                guard let reminderDate = cal.date(byAdding: .day, value: -days, to: targetDue),
+                      reminderDate > now else { continue }
+
+                // Key = "YYYY-MM-DD" of reminder date
+                let key = cal.dateComponents([.year, .month, .day], from: reminderDate)
+                let keyStr = "\(key.year ?? 0)-\(key.month ?? 0)-\(key.day ?? 0)"
+
+                if groups[keyStr] == nil {
+                    groups[keyStr] = (reminderDate: reminderDate, names: [], daysUntilDue: days)
                 }
+                groups[keyStr]?.names.append(debt.name)
+            }
 
-                guard let reminderDate = cal.date(byAdding: .day, value: -3, to: targetDue) else { continue }
-                guard reminderDate > now else { continue }
-
+            // One notification per group
+            for (key, group) in groups {
                 let content = UNMutableNotificationContent()
-                content.title = debt.name
-                content.body = String(
-                    format: String(localized: "Payment due in 3 days: %@"),
-                    debt.paymentString
-                )
+                let count = group.names.count
+
+                if count == 1 {
+                    content.title = String(localized: "Payment Due Soon")
+                    content.body = String(
+                        format: String(localized: "%@ — due in %lld days"),
+                        group.names[0],
+                        Int64(group.daysUntilDue)
+                    )
+                } else {
+                    content.title = String(
+                        format: String(localized: "%lld payments due in %lld days"),
+                        Int64(count),
+                        Int64(group.daysUntilDue)
+                    )
+                    // Show up to 3 names, then "+N more"
+                    let shown = group.names.prefix(3).joined(separator: ", ")
+                    let extra = count > 3 ? String(format: String(localized: " +%lld more"), Int64(count - 3)) : ""
+                    content.body = shown + extra
+                }
                 content.sound = .default
 
-                let triggerComps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: reminderDate)
+                let triggerComps = cal.dateComponents([.year, .month, .day, .hour, .minute], from: group.reminderDate)
                 let trigger = UNCalendarNotificationTrigger(dateMatching: triggerComps, repeats: false)
                 let request = UNNotificationRequest(
-                    identifier: "debt_\(debt.id.uuidString)",
+                    identifier: "debts_group_\(key)",
                     content: content,
                     trigger: trigger
                 )
@@ -192,7 +284,7 @@ enum NotificationService {
         }
     }
 
-    // MARK: - Reschedule all
+    // MARK: - Reschedule all (legacy, used by DashboardView)
 
     @MainActor
     static func rescheduleAll(
@@ -200,14 +292,16 @@ enum NotificationService {
         debts: [Debt],
         budgets: [Budget],
         spentByCategory: [UUID: Decimal],
-        categoryById: [UUID: Category]
+        categoryById: [UUID: Category],
+        debtReminderDays: Int = 3
     ) {
-        scheduleSubscriptionReminders(subscriptions: subscriptions)
-        scheduleDebtReminders(debts: debts)
-        scheduleBudgetNotifications(
+        scheduleAll(
+            subscriptions: subscriptions,
+            debts: debts,
             budgets: budgets,
             spentByCategory: spentByCategory,
-            categoryById: categoryById
+            categoryById: categoryById,
+            debtReminderDays: debtReminderDays
         )
     }
 
