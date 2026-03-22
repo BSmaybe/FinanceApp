@@ -132,6 +132,7 @@ struct YearlyOverviewView: View {
         }
         .navigationTitle(String(localized: "Yearly Overview"))
         .navigationBarTitleDisplayMode(.inline)
+        .accessibilityIdentifier("yearlyOverview.screen")
     }
 
     // MARK: - Year Header

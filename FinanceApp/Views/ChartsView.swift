@@ -425,6 +425,7 @@ struct ChartsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("analytics.planning.whatIf")
 
             NavigationLink(destination: YearlyOverviewView()) {
                 InsightCard(
@@ -436,6 +437,7 @@ struct ChartsView: View {
                 )
             }
             .buttonStyle(.plain)
+            .accessibilityIdentifier("analytics.planning.yearlyOverview")
         }
     }
 

@@ -21,6 +21,12 @@ final class FinanceAppUITests: XCTestCase {
         tab.tap()
     }
 
+    private func openAnalyticsTab(_ app: XCUIApplication) {
+        let tab = app.tabBars.buttons.element(boundBy: 2)
+        XCTAssertTrue(tab.waitForExistence(timeout: 8))
+        tab.tap()
+    }
+
     private func preferredElement(
         primary: XCUIElement,
         secondary: XCUIElement,
@@ -54,6 +60,30 @@ final class FinanceAppUITests: XCTestCase {
             secondary: idAny,
             fallback: app.buttons["Detailed"]
         )
+    }
+
+    private func planningCard(
+        _ app: XCUIApplication,
+        identifier: String,
+        fallbackLabel: String
+    ) -> XCUIElement {
+        let idButton = app.buttons[identifier]
+        let idAny = app.descendants(matching: .any)
+            .matching(identifier: identifier)
+            .firstMatch
+        return preferredElement(
+            primary: idButton,
+            secondary: idAny,
+            fallback: app.buttons[fallbackLabel]
+        )
+    }
+
+    private func reveal(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 5) {
+        guard element.exists, !element.isHittable else { return }
+        for _ in 0..<maxSwipes {
+            app.swipeUp()
+            if element.isHittable { return }
+        }
     }
 
     private func openQuickAdd(_ app: XCUIApplication) {
@@ -126,5 +156,47 @@ final class FinanceAppUITests: XCTestCase {
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "transactions.row."))
             .firstMatch
         XCTAssertTrue(transactionRow.waitForExistence(timeout: 8))
+    }
+
+    func testAnalyticsPlanningOpensWhatIf() {
+        let app = makeApp()
+        app.launch()
+
+        openAnalyticsTab(app)
+
+        let whatIfCard = planningCard(
+            app,
+            identifier: "analytics.planning.whatIf",
+            fallbackLabel: "What If"
+        )
+        XCTAssertTrue(whatIfCard.waitForExistence(timeout: 8))
+        reveal(whatIfCard, in: app)
+        whatIfCard.tap()
+
+        let whatIfScreen = app.descendants(matching: .any)
+            .matching(identifier: "whatIf.screen")
+            .firstMatch
+        XCTAssertTrue(whatIfScreen.waitForExistence(timeout: 8))
+    }
+
+    func testAnalyticsPlanningOpensYearlyOverview() {
+        let app = makeApp()
+        app.launch()
+
+        openAnalyticsTab(app)
+
+        let yearlyOverviewCard = planningCard(
+            app,
+            identifier: "analytics.planning.yearlyOverview",
+            fallbackLabel: "Yearly Overview"
+        )
+        XCTAssertTrue(yearlyOverviewCard.waitForExistence(timeout: 8))
+        reveal(yearlyOverviewCard, in: app)
+        yearlyOverviewCard.tap()
+
+        let yearlyOverviewScreen = app.descendants(matching: .any)
+            .matching(identifier: "yearlyOverview.screen")
+            .firstMatch
+        XCTAssertTrue(yearlyOverviewScreen.waitForExistence(timeout: 8))
     }
 }

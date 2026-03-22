@@ -138,6 +138,7 @@ struct WhatIfView: View {
         }
         .navigationTitle(String(localized: "What-If Scenarios"))
         .navigationBarTitleDisplayMode(.large)
+        .accessibilityIdentifier("whatIf.screen")
     }
 }
 
