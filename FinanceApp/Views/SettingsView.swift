@@ -32,6 +32,7 @@ struct SettingsView: View {
     @AppStorage("selectedLanguage") private var selectedLanguage = "system"
     @State private var showingLanguageRestart = false
     @State private var pendingLanguage = ""
+    @State private var pickerLanguage = "system"
 
     private static let languages: [(code: String, label: String, native: String)] = [
         ("system", "System",   "Авто"),
@@ -92,31 +93,22 @@ struct SettingsView: View {
                 }
 
                 Section(String(localized: "Language")) {
-                    ForEach(Self.languages, id: \.code) { lang in
-                        Button {
-                            guard lang.code != selectedLanguage else { return }
-                            pendingLanguage = lang.code
-                            HapticManager.impact(.light)
-                            showingLanguageRestart = true
-                        } label: {
-                            HStack {
-                                Text(lang.native)
-                                    .foregroundStyle(.primary)
-                                if lang.code != "system" {
-                                    Text("· \(lang.label)")
-                                        .foregroundStyle(.secondary)
-                                        .font(.subheadline)
-                                }
-                                Spacer()
-                                if selectedLanguage == lang.code {
-                                    Image(systemName: "checkmark")
-                                        .foregroundStyle(AppTheme.primaryAccent)
-                                        .fontWeight(.semibold)
-                                }
+                    LabeledContent(String(localized: "Language")) {
+                        Picker("", selection: $pickerLanguage) {
+                            ForEach(Self.languages, id: \.code) { lang in
+                                Text(lang.native).tag(lang.code)
                             }
                         }
-                        .buttonStyle(.plain)
+                        .pickerStyle(.menu)
+                        .onChange(of: pickerLanguage) { _, newValue in
+                            guard newValue != selectedLanguage else { return }
+                            pendingLanguage = newValue
+                            pickerLanguage = selectedLanguage  // revert until confirmed
+                            HapticManager.impact(.light)
+                            showingLanguageRestart = true
+                        }
                     }
+                    .onAppear { pickerLanguage = selectedLanguage }
                 }
 
                 Section(String(localized: "Planning Rules")) {

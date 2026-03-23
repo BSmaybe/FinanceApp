@@ -221,6 +221,14 @@ struct AccountsView: View {
                         .listRowBackground(Color.clear)
                         .listRowSeparator(.hidden)
                         .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 4, trailing: 0))
+                        .swipeActions(edge: .leading) {
+                            Button {
+                                editingAccount = snapshot.account
+                            } label: {
+                                Label(String(localized: "Edit"), systemImage: "pencil")
+                            }
+                            .tint(AppTheme.primaryAccent)
+                        }
                         .swipeActions(edge: .trailing) {
                             Button(role: .destructive) {
                                 accountPendingDelete = snapshot.account
