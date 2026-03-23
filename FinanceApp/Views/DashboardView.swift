@@ -12,8 +12,6 @@ struct DashboardView: View {
     @Query(sort: \Goal.createdDate, order: .reverse) private var goals: [Goal]
     @AppStorage("budgetRollover") private var rolloverEnabled = false
     @AppStorage("quoteDismissedDate") private var quoteDismissedDate = ""
-    @AppStorage("heroName") private var heroName = "Trader"
-    @AppStorage("heroEmoji") private var heroEmoji = "🦸"
 
     @Query(filter: #Predicate<Subscription> { $0.isActive == true })
     private var activeSubscriptions: [Subscription]
@@ -40,7 +38,7 @@ struct DashboardView: View {
     @State private var showingForecast = false
     @State private var showingBudgetManager = false
     @State private var showingDashboardSettings = false
-    @State private var showingHeroProfile = false
+    @State private var showingQuoteOverlay = false
 
     private struct DashboardStats {
         let netWorthByAccount: [UUID: Decimal]
@@ -208,17 +206,6 @@ struct DashboardView: View {
             previousMonth: previousMonth
         )
         let monthlyNetValue = dashboardStats.monthlyIncome - dashboardStats.monthlyExpense
-        let heroStats = GamificationEngine.compute(
-            transactions: Array(transactions),
-            goals: Array(goals),
-            debts: Array(debts)
-        )
-        let todayDateString: String = {
-            let fmt = DateFormatter()
-            fmt.dateFormat = "yyyy-MM-dd"
-            return fmt.string(from: Date())
-        }()
-        let quoteVisible = quoteDismissedDate != todayDateString
         let budgetPressures = budgetPressureList(
             stats: dashboardStats,
             expenseCategories: expenseCategoriesList,
@@ -244,19 +231,12 @@ struct DashboardView: View {
                         heroFloatingSection(
                             netWorth: netWorthValue,
                             income: dashboardStats.monthlyIncome,
-                            expense: dashboardStats.monthlyExpense,
-                            heroStats: heroStats
+                            expense: dashboardStats.monthlyExpense
                         )
                         .accessibilityIdentifier("dashboard.hero.section")
 
                         // Content area: rounded top, canvas colour
                         LazyVStack(spacing: 14) {
-                            if quoteVisible {
-                                DailyQuoteCardView()
-                            }
-
-                            HeroProfileCardView(stats: heroStats)
-
                             statStripSection(
                                 income: dashboardStats.monthlyIncome,
                                 expense: dashboardStats.monthlyExpense,
@@ -351,8 +331,15 @@ struct DashboardView: View {
             .sheet(isPresented: $showingForecast) {
                 CashFlowForecastView()
             }
-            .sheet(isPresented: $showingHeroProfile) {
-                HeroProfileView(stats: heroStats)
+            .overlay {
+                if showingQuoteOverlay {
+                    DailyQuoteOverlayView {
+                        let fmt = DateFormatter()
+                        fmt.dateFormat = "yyyy-MM-dd"
+                        quoteDismissedDate = fmt.string(from: Date())
+                        showingQuoteOverlay = false
+                    }
+                }
             }
             .onAppear {
                 WidgetDataProvider.save(
@@ -371,6 +358,15 @@ struct DashboardView: View {
                         previousMonth: previousMonth,
                         dashStats: dashboardStats
                     )
+                }
+                // Show daily quote overlay if not dismissed today
+                let fmt = DateFormatter()
+                fmt.dateFormat = "yyyy-MM-dd"
+                let today = fmt.string(from: Date())
+                if quoteDismissedDate != today {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+                        showingQuoteOverlay = true
+                    }
                 }
             }
             .onChange(of: scenePhase) { _, newPhase in
@@ -422,8 +418,7 @@ struct DashboardView: View {
     private func heroFloatingSection(
         netWorth: Decimal,
         income: Decimal,
-        expense: Decimal,
-        heroStats: HeroStats
+        expense: Decimal
     ) -> some View {
         let isCurrentMonth = monthOffset == 0
         let monthLabel = currentMonthLabel(from: currentComponents)
@@ -454,34 +449,6 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("dashboard.openLayoutSettings")
             }
-
-            // Hero inline strip: avatar, name, level, streak
-            Button {
-                showingHeroProfile = true
-            } label: {
-                HStack(spacing: 8) {
-                    Text(heroEmoji)
-                        .font(.system(size: 16))
-                        .frame(width: 28, height: 28)
-                        .background(.white.opacity(0.18))
-                        .clipShape(Circle())
-                    Text(heroName)
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppTheme.heroCardLabel)
-                    Text(String(format: String(localized: "Lv.%d"), heroStats.level))
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 2)
-                        .background(.white.opacity(0.25))
-                        .clipShape(Capsule())
-                    Text("🔥 \(heroStats.streak)")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(AppTheme.heroCardLabel)
-                }
-            }
-            .buttonStyle(.plain)
-            .padding(.top, 10)
 
             Spacer().frame(height: 22)
 
