@@ -29,6 +29,10 @@ struct SettingsView: View {
     @AppStorage("lastAutoBackupDate") private var lastAutoBackupTimestamp: Double = 0
     @AppStorage("liveActivityEnabled") private var liveActivityEnabled = false
     @State private var captureDiagnostics = PendingCaptureStore.diagnostics()
+    @State private var showingDebts = false
+    @State private var showingGoals = false
+    @State private var showingSubscriptions = false
+    @State private var showingRecurring = false
     @AppStorage("selectedLanguage") private var selectedLanguage = "system"
     @State private var showingLanguageRestart = false
     @State private var pendingLanguage = ""
@@ -113,6 +117,33 @@ struct SettingsView: View {
 
                 Section(String(localized: "Planning Rules")) {
                     Toggle(String(localized: "Rollover unused budget"), isOn: $rolloverEnabled)
+                }
+
+                Section(String(localized: "Financial Tools")) {
+                    Button {
+                        showingDebts = true
+                    } label: {
+                        Label(String(localized: "Debts"), systemImage: "creditcard.fill")
+                            .foregroundStyle(AppTheme.warning)
+                    }
+                    Button {
+                        showingGoals = true
+                    } label: {
+                        Label(String(localized: "Goals"), systemImage: "target")
+                            .foregroundStyle(AppTheme.success)
+                    }
+                    Button {
+                        showingSubscriptions = true
+                    } label: {
+                        Label(String(localized: "Subscriptions"), systemImage: "repeat")
+                            .foregroundStyle(AppTheme.primaryAccent)
+                    }
+                    Button {
+                        showingRecurring = true
+                    } label: {
+                        Label(String(localized: "Recurring Transactions"), systemImage: "arrow.clockwise")
+                            .foregroundStyle(AppTheme.secondaryAccent)
+                    }
                 }
 
                 Section(String(localized: "Notifications & Live Activity")) {
@@ -245,6 +276,18 @@ struct SettingsView: View {
             .navigationTitle(String(localized: "Settings"))
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(AppTheme.surface, for: .navigationBar)
+            .sheet(isPresented: $showingDebts) {
+                DebtsView()
+            }
+            .sheet(isPresented: $showingGoals) {
+                GoalsView()
+            }
+            .sheet(isPresented: $showingSubscriptions) {
+                SubscriptionsView()
+            }
+            .sheet(isPresented: $showingRecurring) {
+                RecurringTransactionsView()
+            }
             .sheet(isPresented: $showingExport) {
                 ExportView()
             }

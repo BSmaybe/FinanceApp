@@ -5,6 +5,7 @@ struct DashboardSettingsView: View {
 
     @AppStorage("dash.showQuickActions") private var showQuickActions = true
     @AppStorage("dash.showThisMonth") private var showThisMonth = true
+    @AppStorage("dash.showDebts") private var showDebts = true
     @AppStorage("dash.showCommitments") private var showCommitments = true
     @AppStorage("dash.showRecentActivity") private var showRecentActivity = true
     @Environment(\.dismiss) private var dismiss
@@ -14,6 +15,7 @@ struct DashboardSettingsView: View {
             Section(String(localized: "Dashboard Sections")) {
                 Toggle(String(localized: "Quick Actions"), isOn: $showQuickActions)
                 Toggle(String(localized: "This Month"), isOn: $showThisMonth)
+                Toggle(String(localized: "Debts"), isOn: $showDebts)
                 Toggle(String(localized: "Commitments"), isOn: $showCommitments)
                 Toggle(String(localized: "Recent Activity"), isOn: $showRecentActivity)
             }

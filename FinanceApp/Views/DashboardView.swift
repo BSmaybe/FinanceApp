@@ -23,6 +23,7 @@ struct DashboardView: View {
     @AppStorage("liveActivityEnabled") private var liveActivityEnabled = false
     @AppStorage("dash.showQuickActions") private var showQuickActions = true
     @AppStorage("dash.showThisMonth") private var showThisMonth = true
+    @AppStorage("dash.showDebts") private var showDebts = true
     @AppStorage("dash.showCommitments") private var showCommitments = true
     @AppStorage("dash.showRecentActivity") private var showRecentActivity = true
 
@@ -251,6 +252,11 @@ struct DashboardView: View {
                                     current: current
                                 )
                                 .accessibilityIdentifier("dashboard.thisMonth.section")
+                            }
+
+                            if showDebts && !activeDebts.isEmpty {
+                                debtsSummarySection
+                                    .accessibilityIdentifier("dashboard.debts.section")
                             }
 
                             if showCommitments {
@@ -848,6 +854,68 @@ struct DashboardView: View {
         }
         .buttonStyle(.plain)
         .accessibilityIdentifier("dashboard.budgetRing.\(risk.category.id.uuidString)")
+    }
+
+    // MARK: - Debts Summary
+
+    private var debtsSummarySection: some View {
+        let totalRemaining = activeDebts.reduce(Decimal.zero) { $0 + $1.remainingAmount }
+        let totalMonthly   = activeDebts.reduce(Decimal.zero) { $0 + $1.minimumPayment }
+
+        return VStack(alignment: .leading, spacing: 12) {
+            HStack {
+                Text(String(localized: "Debts"))
+                    .font(.headline.weight(.semibold))
+                Spacer()
+                Button(String(localized: "View All")) { showingDebts = true }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .buttonStyle(.plain)
+            }
+
+            HStack(spacing: 0) {
+                debtStatCell(
+                    label: String(localized: "Total Remaining"),
+                    value: CurrencyFormatter.string(from: totalRemaining),
+                    tint: AppTheme.danger
+                )
+                Divider().frame(height: 36)
+                debtStatCell(
+                    label: String(localized: "Monthly Payment"),
+                    value: CurrencyFormatter.string(from: totalMonthly),
+                    tint: AppTheme.warning
+                )
+                Divider().frame(height: 36)
+                debtStatCell(
+                    label: String(localized: "Active"),
+                    value: "\(activeDebts.count)",
+                    tint: AppTheme.info
+                )
+            }
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(AppTheme.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.5), lineWidth: 1)
+                )
+        )
+    }
+
+    private func debtStatCell(label: String, value: String, tint: Color) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(.subheadline.weight(.bold).monospacedDigit())
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(label)
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Upcoming Payments
