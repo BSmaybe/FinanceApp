@@ -33,6 +33,7 @@ struct SettingsView: View {
     @State private var showingGoals = false
     @State private var showingSubscriptions = false
     @State private var showingRecurring = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = true
     @AppStorage("selectedLanguage") private var selectedLanguage = "system"
     @State private var showingLanguageRestart = false
     @State private var pendingLanguage = ""
@@ -247,6 +248,15 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                     }
                     .padding(.vertical, 4)
+                }
+
+                Section {
+                    Button {
+                        hasCompletedOnboarding = false
+                    } label: {
+                        Label(String(localized: "Replay Onboarding"), systemImage: "arrow.counterclockwise")
+                            .foregroundStyle(AppTheme.primaryAccent)
+                    }
                 }
 
                 Section(String(localized: "Advanced & Diagnostics")) {
