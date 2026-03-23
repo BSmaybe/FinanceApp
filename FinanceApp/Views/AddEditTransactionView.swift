@@ -306,6 +306,7 @@ struct AddEditTransactionView: View {
         }
         .accessibilityIdentifier("addEditTransaction.screen")
         .overlay(alignment: .center) { SuccessBurst(isShowing: $showSuccessBurst) }
+        .modalEntrance()
     }
 
 }

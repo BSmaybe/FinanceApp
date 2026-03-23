@@ -218,8 +218,10 @@ struct QuickAddView: View {
                         prefillNote: draft.note
                     )
                 }
+                .modalEntrance()
             }
         }
+        .modalEntrance()
     }
 
     // MARK: - Amount display
@@ -289,10 +291,10 @@ struct QuickAddView: View {
                             selected: selectedAccountId == account.id,
                             tint: AppTheme.info
                         ) { selectedAccountId = account.id }
-                    }
                 }
             }
         }
+    }
     }
 
     // MARK: - Category chips

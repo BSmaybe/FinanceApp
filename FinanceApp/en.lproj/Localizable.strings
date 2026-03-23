@@ -633,3 +633,20 @@
 "Replay Onboarding" = "Replay Onboarding";
 "Choose your currency" = "Choose your currency";
 "Default currency for new accounts" = "Default currency for new accounts";
+
+// Onboarding A2/A3 new keys
+"Choose at least one feature" = "Choose at least one feature";
+"Know your net worth instantly" = "Know your net worth instantly";
+"Set budgets that actually work" = "Set budgets that actually work";
+"See where every tenge goes" = "See where every tenge goes";
+// Dashboard B1/B2/B3 new keys
+"Today −%@" = "Today −%@";
+"%lld payments this week" = "%lld payments this week";
+"Budget %lld%% healthy" = "Budget %lld%% healthy";
+"Saved %lld%% this month" = "Saved %lld%% this month";
+"No transactions today · add one!" = "No transactions today · add one!";
+"this month" = "this month";
+"Add your first account" = "Add your first account";
+"Your net worth and balances will appear here" = "Your net worth and balances will appear here";
+// Dashboard B4 swipe hint
+"swipe" = "swipe";

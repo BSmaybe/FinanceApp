@@ -44,6 +44,10 @@ struct DashboardView: View {
     @State private var showingBudgetManager = false
     @State private var showingDashboardSettings = false
 
+    // B4: Swipe hint (shown once)
+    @AppStorage("dash.swipeHintShown") private var swipeHintShown = false
+    @State private var showSwipeHint = false
+
     private struct DashboardStats {
         let netWorthByAccount: [UUID: Decimal]
         let monthlyIncome: Decimal
@@ -222,13 +226,20 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Hero: gradient background auto-sized to content
+                    let heroInsightText = heroInsight(
+                        income: dashboardStats.monthlyIncome,
+                        expense: dashboardStats.monthlyExpense,
+                        spentByCategory: dashboardStats.spentByCategory,
+                        current: current
+                    )
                     heroFloatingSection(
                         netWorth: netWorthValue,
                         income: dashboardStats.monthlyIncome,
                         expense: dashboardStats.monthlyExpense,
                         savingsRate: dashboardStats.monthlyIncome > 0
                             ? max(.zero, (dashboardStats.monthlyIncome - dashboardStats.monthlyExpense) / dashboardStats.monthlyIncome)
-                            : .zero
+                            : .zero,
+                        insight: heroInsightText
                     )
                     .background(
                         AppTheme.heroGradient
@@ -238,11 +249,13 @@ struct DashboardView: View {
 
                     // Content area: rounded top, canvas colour
                     LazyVStack(spacing: 10) {
-                        if !accounts.isEmpty {
-                                accountsScrollSection(
-                                    balances: dashboardStats.netWorthByAccount
-                                )
-                            }
+                        if accounts.isEmpty {
+                            emptyAccountsCard
+                        } else {
+                            accountsScrollSection(
+                                balances: dashboardStats.netWorthByAccount
+                            )
+                        }
 
                             if showQuickActions {
                                 fabAddTransactionButton
@@ -300,6 +313,8 @@ struct DashboardView: View {
                 NavigationStack {
                     DashboardSettingsView(showsDoneButton: true)
                 }
+                .presentationCornerRadius(24)
+                .presentationDragIndicator(.visible)
             }
             .sheet(item: $settingBudgetForCategory) { category in
                 SetBudgetView(
@@ -308,29 +323,55 @@ struct DashboardView: View {
                     year: current.year,
                     existing: budget(for: category, month: current.month, year: current.year)
                 )
+                .presentationCornerRadius(24)
+                .presentationDragIndicator(.visible)
             }
             .sheet(item: $quickAddCategory) { category in
                 QuickAddView(prefillCategoryId: category.id)
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingQuickAdd) {
                 QuickAddView()
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingBudgetManager) {
                 BudgetManagerView(month: current.month, year: current.year)
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingGoals) {
                 GoalsView()
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingSubscriptions) {
                 SubscriptionsView()
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingDebts) {
                 DebtsView()
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingForecast) {
                 CashFlowForecastView()
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
             }
             .onAppear {
+                // B4: show swipe hint once
+                if !swipeHintShown {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                        withAnimation(.easeIn(duration: 0.3)) { showSwipeHint = true }
+                        swipeHintShown = true
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                            withAnimation(.easeOut(duration: 0.4)) { showSwipeHint = false }
+                        }
+                    }
+                }
                 WidgetDataProvider.save(
                     netWorth: netWorthValue,
                     monthlyIncome: dashboardStats.monthlyIncome,
@@ -395,11 +436,85 @@ struct DashboardView: View {
         }
     }
 
+    // B1: Smart financial insight for hero strip
+    private func heroInsight(
+        income: Decimal,
+        expense: Decimal,
+        spentByCategory: [UUID: Decimal],
+        current: (year: Int, month: Int, day: Int)
+    ) -> String {
+        let cal = Calendar.current
+        // Priority 1: today's spending
+        let todayExpense = transactions
+            .filter { cal.isDateInToday($0.date) && $0.type == .expense }
+            .reduce(Decimal.zero) { $0 + $1.amount }
+        if todayExpense > 0 {
+            return String(format: String(localized: "Today −%@"), CurrencyFormatter.string(from: todayExpense))
+        }
+        // Priority 2: upcoming subscriptions within 7 days
+        let now = Date()
+        let in7 = cal.date(byAdding: .day, value: 7, to: now) ?? now
+        let upcomingCount = activeSubscriptions.filter { $0.nextBillingDate >= now && $0.nextBillingDate <= in7 }.count
+        if upcomingCount > 0 {
+            return String(format: String(localized: "%lld payments this week"), Int64(upcomingCount))
+        }
+        // Priority 3: budget health this month
+        if featureBudgets && monthOffset == 0 {
+            let thisMonthBudgets = budgets.filter { $0.month == current.month && $0.year == current.year }
+            if !thisMonthBudgets.isEmpty {
+                let totalLimit = thisMonthBudgets.reduce(Decimal.zero) { $0 + $1.limitAmount }
+                let totalSpent = spentByCategory.values.reduce(Decimal.zero, +)
+                if totalLimit > 0 {
+                    let pct = Int(((totalSpent / totalLimit * 100) as NSDecimalNumber).doubleValue.rounded())
+                    let healthy = max(0, 100 - pct)
+                    return String(format: String(localized: "Budget %lld%% healthy"), Int64(healthy))
+                }
+            }
+        }
+        // Priority 4: savings rate if income exists
+        if income > 0 && expense < income {
+            let savedPct = Int((((income - expense) / income * 100) as NSDecimalNumber).doubleValue.rounded())
+            return String(format: String(localized: "Saved %lld%% this month"), Int64(savedPct))
+        }
+        return String(localized: "No transactions today · add one!")
+    }
+
+    // B3: Empty state when user has no accounts yet
+    private var emptyAccountsCard: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "creditcard.fill")
+                .font(.system(size: 32))
+                .foregroundStyle(AppTheme.info)
+            Text(String(localized: "Add your first account"))
+                .font(.headline)
+                .foregroundStyle(.primary)
+            Text(String(localized: "Your net worth and balances will appear here"))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button(String(localized: "Get Started")) {
+                selectedTab = .accounts
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.primaryAccent)
+            .controlSize(.regular)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(24)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
+        )
+    }
+
     private func heroFloatingSection(
         netWorth: Decimal,
         income: Decimal,
         expense: Decimal,
-        savingsRate: Decimal
+        savingsRate: Decimal,
+        insight: String
     ) -> some View {
         let isCurrentMonth = monthOffset == 0
         let monthLabel = currentMonthLabel(from: currentComponents)
@@ -442,12 +557,24 @@ struct DashboardView: View {
                 .lineLimit(1)
                 .padding(.top, 1)
 
-            // Quote strip
-            let quote = DailyQuoteStore.today
-            Text("\u{201C}\(quote.localizedText)\u{201D} — \(quote.source)")
-                .font(.system(size: 10, design: .serif))
-                .italic()
-                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.55))
+            // B2: Monthly change indicator
+            let monthlyChange = income - expense
+            if monthlyChange != 0 {
+                let isPositive = monthlyChange > 0
+                HStack(spacing: 3) {
+                    Image(systemName: isPositive ? "arrow.up" : "arrow.down")
+                        .font(.system(size: 9, weight: .bold))
+                    Text("\(CurrencyFormatter.string(from: monthlyChange > 0 ? monthlyChange : -monthlyChange)) \(String(localized: "this month"))")
+                        .font(.system(size: 11, weight: .medium))
+                }
+                .foregroundStyle(isPositive ? AppTheme.success.opacity(0.85) : AppTheme.danger.opacity(0.85))
+                .padding(.top, 1)
+            }
+
+            // B1: Smart financial insight instead of random quote
+            Text(insight)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.65))
                 .lineLimit(1)
                 .padding(.top, 4)
 
@@ -471,6 +598,18 @@ struct DashboardView: View {
                 Text(monthLabel)
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(AppTheme.heroCardLabel)
+
+                // B4: one-time swipe hint
+                if showSwipeHint {
+                    HStack(spacing: 2) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 8, weight: .bold))
+                        Text(String(localized: "swipe"))
+                            .font(.system(size: 9))
+                    }
+                    .foregroundStyle(AppTheme.heroCardLabel.opacity(0.45))
+                    .transition(.opacity)
+                }
 
                 Button {
                     guard monthOffset < 0 else { return }

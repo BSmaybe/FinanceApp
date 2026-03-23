@@ -46,12 +46,14 @@ struct OnboardingView: View {
     @State private var logoScale: CGFloat = 0
     @State private var titleOpacity: Double = 0
     @State private var titleOffset: CGFloat = 24
+    @State private var bulletRevealCount = 0
 
     // Currency
     @State private var selectedCurrency = "KZT"
 
-    // Features
-    @State private var selected: [Bool] = Array(repeating: true, count: allFeatures.count)
+    // Features (A2: start empty — user picks what they need)
+    @State private var selected: [Bool] = Array(repeating: false, count: allFeatures.count)
+    @State private var showSelectionHint = false
 
     // Demo
     @State private var revealedCount = 0
@@ -101,31 +103,51 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: Welcome
+    // MARK: Welcome (A3: bullets instead of single subtitle)
 
     private var welcomeSlide: some View {
-        VStack(spacing: 0) {
+        let bullets: [(icon: String, text: String)] = [
+            ("banknote.fill",               String(localized: "Know your net worth instantly")),
+            ("chart.bar.fill",              String(localized: "Set budgets that actually work")),
+            ("magnifyingglass.circle.fill", String(localized: "See where every tenge goes"))
+        ]
+
+        return VStack(spacing: 0) {
             ZStack {
                 Circle().fill(.white.opacity(0.06)).frame(width: 150, height: 150).blur(radius: 30)
                 Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
                     .font(.system(size: 64, weight: .bold))
-                    .foregroundStyle(.linearGradient(colors: [Color(red: 0.24, green: 0.48, blue: 0.98), Color(red: 0.44, green: 0.68, blue: 1.0)], startPoint: .top, endPoint: .bottom))
+                    .foregroundStyle(.linearGradient(
+                        colors: [Color(red: 0.24, green: 0.48, blue: 0.98), Color(red: 0.44, green: 0.68, blue: 1.0)],
+                        startPoint: .top, endPoint: .bottom))
             }
             .scaleEffect(logoScale)
 
             Spacer().frame(height: 32)
 
-            VStack(spacing: 12) {
+            VStack(spacing: 16) {
                 Text("FinanceApp")
                     .font(.system(size: 34, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
 
-                Text(String(localized: "Onboarding.Welcome.Subtitle"))
-                    .font(.system(size: 16))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-                    .padding(.horizontal, 40)
+                VStack(alignment: .leading, spacing: 10) {
+                    ForEach(bullets.indices, id: \.self) { i in
+                        if bulletRevealCount > i {
+                            HStack(spacing: 10) {
+                                Image(systemName: bullets[i].icon)
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .foregroundStyle(accentForPage)
+                                    .frame(width: 20)
+                                Text(bullets[i].text)
+                                    .font(.system(size: 14))
+                                    .foregroundStyle(.white.opacity(0.75))
+                            }
+                            .transition(.move(edge: .leading).combined(with: .opacity))
+                        }
+                    }
+                }
+                .padding(.horizontal, 40)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             .opacity(titleOpacity)
             .offset(y: titleOffset)
@@ -193,7 +215,11 @@ struct OnboardingView: View {
             removal: .move(edge: .leading).combined(with: .opacity)))
     }
 
-    // MARK: Questionnaire
+    // MARK: Questionnaire (A2: starts empty)
+
+    private var canAdvanceFromQuestionnaire: Bool {
+        selected.contains(true)
+    }
 
     private var questionnaireSlide: some View {
         VStack(spacing: 18) {
@@ -214,6 +240,14 @@ struct OnboardingView: View {
                 }
             }
             .padding(.horizontal, 24)
+
+            // A2: Selection hint
+            if showSelectionHint {
+                Text(String(localized: "Choose at least one feature"))
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.55))
+                    .transition(.opacity)
+            }
         }
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -258,11 +292,10 @@ struct OnboardingView: View {
         .buttonStyle(.plain)
     }
 
-    // MARK: Demo
+    // MARK: Demo (A4: mini-dashboard card instead of chips)
 
     private var demoSlide: some View {
         let green = Color(red: 0.18, green: 0.72, blue: 0.56)
-        let enabledFeatures = allFeatures.enumerated().filter { selected[$0.offset] }.map(\.element)
 
         return VStack(spacing: 24) {
             // Seal icon
@@ -283,55 +316,103 @@ struct OnboardingView: View {
             }
             .multilineTextAlignment(.center)
 
-            // Mini dashboard mockup
-            VStack(spacing: 6) {
-                // Currency badge
-                demoChip(
-                    icon: "banknote.fill",
-                    color: Color(red: 0.92, green: 0.75, blue: 0.20),
-                    label: currencyOptions.first(where: { $0.code == selectedCurrency })?.symbol ?? "₸",
-                    sublabel: selectedCurrency,
-                    visible: revealedCount >= 1
-                )
-
-                ForEach(enabledFeatures.indices, id: \.self) { pos in
-                    let f = enabledFeatures[pos]
-                    demoChip(icon: f.icon, color: f.color, label: f.title, sublabel: "", visible: revealedCount >= pos + 2)
-                }
-            }
-            .padding(.horizontal, 44)
+            miniDashboardCard
         }
-        .onAppear { startReveal(count: 1 + enabledFeatures.count) }
+        .onAppear {
+            let enabledCount = selected.filter { $0 }.count
+            startReveal(count: 1 + enabledCount)
+        }
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
             removal: .move(edge: .leading).combined(with: .opacity)))
     }
 
-    private func demoChip(icon: String, color: Color, label: String, sublabel: String, visible: Bool) -> some View {
+    private var miniDashboardCard: some View {
+        let enabledFeatures = allFeatures.enumerated().filter { selected[$0.offset] }.map(\.element)
+        let curSymbol = currencyOptions.first(where: { $0.code == selectedCurrency })?.symbol ?? "₸"
+
+        return VStack(spacing: 0) {
+            // Header: Net Worth strip
+            HStack {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(String(localized: "NET WORTH"))
+                        .font(.system(size: 8, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.45))
+                        .tracking(0.5)
+                    Text("2.4M \(curSymbol)")
+                        .font(.system(size: 20, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                Spacer()
+                miniHeroChip(icon: "arrow.down", color: Color(red: 0.18, green: 0.72, blue: 0.56), label: "180K")
+                miniHeroChip(icon: "arrow.up",   color: Color(red: 0.90, green: 0.28, blue: 0.30), label: "120K")
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+
+            Rectangle().fill(.white.opacity(0.08)).frame(height: 1)
+
+            // Feature rows
+            VStack(spacing: 0) {
+                miniDashRow(
+                    icon: "creditcard.fill",
+                    color: Color(red: 0.92, green: 0.75, blue: 0.20),
+                    label: String(localized: "Accounts"),
+                    visible: revealedCount >= 1,
+                    index: 0
+                )
+                ForEach(enabledFeatures.indices, id: \.self) { pos in
+                    let f = enabledFeatures[pos]
+                    miniDashRow(icon: f.icon, color: f.color, label: f.title,
+                                visible: revealedCount >= pos + 2, index: pos + 1)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous).fill(.white.opacity(0.07))
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(.white.opacity(0.12), lineWidth: 1)
+        )
+        .padding(.horizontal, 24)
+    }
+
+    private func miniHeroChip(icon: String, color: Color, label: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 9, weight: .bold))
+                .foregroundStyle(color)
+            Text(label)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white.opacity(0.8))
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(Capsule().fill(.white.opacity(0.10)))
+    }
+
+    private func miniDashRow(icon: String, color: Color, label: String, visible: Bool, index: Int) -> some View {
         HStack(spacing: 10) {
             Image(systemName: icon)
-                .font(.system(size: 14, weight: .semibold))
+                .font(.system(size: 13, weight: .semibold))
                 .foregroundStyle(color)
-                .frame(width: 24)
+                .frame(width: 28, height: 28)
+                .background(Circle().fill(color.opacity(0.15)))
             Text(label)
-                .font(.system(size: 14, weight: .medium))
+                .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(.white)
-            if !sublabel.isEmpty {
-                Text(sublabel)
-                    .font(.system(size: 12))
-                    .foregroundStyle(.white.opacity(0.40))
-            }
             Spacer()
             Image(systemName: "checkmark")
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(color)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundStyle(color.opacity(0.8))
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(.white.opacity(0.06)))
+        .padding(.vertical, 7)
         .opacity(visible ? 1 : 0)
-        .offset(x: visible ? 0 : -20)
-        .animation(.spring(response: 0.4, dampingFraction: 0.75), value: visible)
+        .offset(x: visible ? 0 : -16)
+        .animation(.spring(response: 0.4, dampingFraction: 0.75).delay(Double(index) * 0.05), value: visible)
     }
 
     private func startReveal(count: Int) {
@@ -343,21 +424,50 @@ struct OnboardingView: View {
         }
     }
 
-    // MARK: - Controls
+    // MARK: - Controls (A1: back button)
 
     private var controls: some View {
         VStack(spacing: 22) {
-            // Dots
-            HStack(spacing: 7) {
-                ForEach(0..<totalPages, id: \.self) { i in
-                    Capsule()
-                        .fill(i == page ? .white : .white.opacity(0.28))
-                        .frame(width: i == page ? 22 : 7, height: 7)
-                        .animation(.spring(response: 0.35, dampingFraction: 0.75), value: page)
+            // A1: Nav row with back button + dots
+            HStack(spacing: 0) {
+                // Back button (pages 1–3)
+                if page > 0 {
+                    Button {
+                        HapticManager.impact(.light)
+                        if page == 3 { revealedCount = 0 }
+                        withAnimation(.spring(response: 0.45, dampingFraction: 0.78)) { page -= 1 }
+                    } label: {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white.opacity(0.60))
+                            .frame(width: 32, height: 32)
+                            .background(Circle().fill(.white.opacity(0.10)))
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    Spacer().frame(width: 32)
                 }
-            }
 
-            // Button
+                Spacer()
+
+                // Dots
+                HStack(spacing: 7) {
+                    ForEach(0..<totalPages, id: \.self) { i in
+                        Capsule()
+                            .fill(i == page ? .white : .white.opacity(0.28))
+                            .frame(width: i == page ? 22 : 7, height: 7)
+                            .animation(.spring(response: 0.35, dampingFraction: 0.75), value: page)
+                    }
+                }
+
+                Spacer()
+
+                // Placeholder to balance back button
+                Spacer().frame(width: 32)
+            }
+            .padding(.horizontal, 24)
+
+            // Next / Get Started button
             let isLast = page == totalPages - 1
             Button(action: advance) {
                 HStack(spacing: 8) {
@@ -389,6 +499,16 @@ struct OnboardingView: View {
     // MARK: - Actions
 
     private func advance() {
+        // A2: block advance on questionnaire if nothing selected
+        if page == 2 && !canAdvanceFromQuestionnaire {
+            HapticManager.impact(.light)
+            withAnimation { showSelectionHint = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                withAnimation { showSelectionHint = false }
+            }
+            return
+        }
+
         HapticManager.impact(.medium)
         if page == totalPages - 1 {
             saveAndFinish()
@@ -417,5 +537,11 @@ struct OnboardingView: View {
         withAnimation(.easeIn(duration: 0.3)) { bgOpacity = 1 }
         withAnimation(.spring(response: 0.55, dampingFraction: 0.65).delay(0.2)) { logoScale = 1 }
         withAnimation(.easeOut(duration: 0.4).delay(0.3)) { titleOpacity = 1; titleOffset = 0 }
+        // A3: staggered bullet reveal
+        for i in 0..<3 {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5 + Double(i) * 0.2) {
+                withAnimation(.easeOut(duration: 0.35)) { bulletRevealCount = i + 1 }
+            }
+        }
     }
 }

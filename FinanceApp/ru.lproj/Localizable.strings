@@ -629,3 +629,20 @@
 "Replay Onboarding" = "Повторить онбординг";
 "Choose your currency" = "Выберите валюту";
 "Default currency for new accounts" = "Валюта по умолчанию для новых счетов";
+
+// Onboarding A2/A3 new keys
+"Choose at least one feature" = "Выберите хотя бы одну функцию";
+"Know your net worth instantly" = "Знайте свой капитал в любой момент";
+"Set budgets that actually work" = "Бюджеты, которые реально работают";
+"See where every tenge goes" = "Видите, куда уходят деньги";
+// Dashboard B1/B2/B3 new keys
+"Today −%@" = "Сегодня −%@";
+"%lld payments this week" = "%lld платежей на этой неделе";
+"Budget %lld%% healthy" = "Бюджет здоров на %lld%%";
+"Saved %lld%% this month" = "Накоплено %lld%% за месяц";
+"No transactions today · add one!" = "Нет транзакций сегодня · добавьте!";
+"this month" = "в этом месяце";
+"Add your first account" = "Добавьте первый счёт";
+"Your net worth and balances will appear here" = "Ваш капитал и балансы появятся здесь";
+// Dashboard B4 swipe hint
+"swipe" = "свайп";

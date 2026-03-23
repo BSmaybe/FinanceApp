@@ -24,6 +24,9 @@ struct TransactionsView: View {
     @State private var transactionToDelete: Transaction?
     @State private var showingDeleteConfirmation = false
 
+    // C3: skeleton on first load
+    @State private var isFirstLoad = true
+
     private var accountById: [UUID: Account] {
         Dictionary(uniqueKeysWithValues: accounts.map { ($0.id, $0) })
     }
@@ -77,7 +80,10 @@ struct TransactionsView: View {
                         .padding(.horizontal, 16)
                         .padding(.top, 12)
 
-                    if filteredTransactions.isEmpty {
+                    if isFirstLoad && transactions.isEmpty {
+                        skeletonList
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else if filteredTransactions.isEmpty {
                         emptyStateView
                             .accessibilityIdentifier("transactions.emptyState")
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -100,7 +106,7 @@ struct TransactionsView: View {
                                         .accessibilityIdentifier("transactions.row.\(txn.id.uuidString)")
                                         .listRowBackground(Color.clear)
                                         .listRowSeparator(.hidden)
-                                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                                        .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
                                         .swipeActions(edge: .leading, allowsFullSwipe: true) {
                                             Button {
                                                 duplicateTransaction(txn)
@@ -209,6 +215,13 @@ struct TransactionsView: View {
             .sheet(item: $repeatingTransaction) { txn in
                 AddEditTransactionView(template: txn)
             }
+            .onAppear {
+                if isFirstLoad {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        withAnimation(.easeOut(duration: 0.3)) { isFirstLoad = false }
+                    }
+                }
+            }
             .alert(
                 String(localized: "Delete Transaction?"),
                 isPresented: $showingDeleteConfirmation,
@@ -233,6 +246,36 @@ struct TransactionsView: View {
             filterStrip
             summaryStrip
         }
+    }
+
+    // C3: Skeleton loading rows
+    private var skeletonList: some View {
+        List {
+            ForEach(0..<5, id: \.self) { _ in
+                skeletonTransactionRow
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+            }
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .allowsHitTesting(false)
+    }
+
+    private var skeletonTransactionRow: some View {
+        HStack(spacing: 12) {
+            SkeletonView()
+                .frame(width: 36, height: 36)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 6) {
+                SkeletonView().frame(width: 140, height: 11).clipShape(Capsule())
+                SkeletonView().frame(width: 90, height: 9).clipShape(Capsule())
+            }
+            Spacer()
+            SkeletonView().frame(width: 68, height: 13).clipShape(Capsule())
+        }
+        .padding(.vertical, 6)
     }
 
     private var emptyStateView: some View {

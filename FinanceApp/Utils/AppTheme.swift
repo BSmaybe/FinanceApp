@@ -378,8 +378,18 @@ struct FilterChip: View {
     var tint: Color = AppTheme.primaryAccent
     let action: () -> Void
 
+    // C4: bounce animation state
+    @State private var bounceScale: CGFloat = 1.0
+
     var body: some View {
-        Button(action: action) {
+        Button {
+            // Tick bounce: compress then spring back
+            withAnimation(.spring(response: 0.22, dampingFraction: 0.5)) { bounceScale = 0.88 }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.45)) { bounceScale = 1.0 }
+            }
+            action()
+        } label: {
             HStack(spacing: 6) {
                 if let systemImage {
                     Image(systemName: systemImage)
@@ -400,8 +410,34 @@ struct FilterChip: View {
                             .stroke(selected ? tint : AppTheme.outline.opacity(0.55), lineWidth: 1)
                     )
             )
+            .shadow(color: selected ? tint.opacity(0.28) : .clear, radius: 5, y: 2)
+            .scaleEffect(bounceScale)
         }
         .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.18), value: selected)
+    }
+}
+
+// MARK: - Modal Entrance Modifier (C1)
+
+struct ModalEntranceModifier: ViewModifier {
+    @State private var appeared = false
+
+    func body(content: Content) -> some View {
+        content
+            .scaleEffect(appeared ? 1.0 : 0.96)
+            .opacity(appeared ? 1.0 : 0.0)
+            .onAppear {
+                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                    appeared = true
+                }
+            }
+    }
+}
+
+extension View {
+    func modalEntrance() -> some View {
+        modifier(ModalEntranceModifier())
     }
 }
 

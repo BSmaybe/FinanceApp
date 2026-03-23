@@ -619,3 +619,20 @@
 "Replay Onboarding" = "Онбордингті қайталау";
 "Choose your currency" = "Валютаңызды таңдаңыз";
 "Default currency for new accounts" = "Жаңа шоттар үшін әдепкі валюта";
+
+// Onboarding A2/A3 new keys
+"Choose at least one feature" = "Кем болса да бір мүмкіндікті таңдаңыз";
+"Know your net worth instantly" = "Активтеріңізді бірден біліңіз";
+"Set budgets that actually work" = "Жұмыс істейтін бюджеттер";
+"See where every tenge goes" = "Ақшаңыздың кететін жерін біліңіз";
+// Dashboard B1/B2/B3 new keys
+"Today −%@" = "Бүгін −%@";
+"%lld payments this week" = "Осы аптада %lld төлем";
+"Budget %lld%% healthy" = "Бюджет %lld%% сау";
+"Saved %lld%% this month" = "Осы айда %lld%% жинадыңыз";
+"No transactions today · add one!" = "Бүгін транзакция жоқ · қосыңыз!";
+"this month" = "осы айда";
+"Add your first account" = "Бірінші шотты қосыңыз";
+"Your net worth and balances will appear here" = "Активтеріңіз бен балансыңыз осында";
+// Dashboard B4 swipe hint
+"swipe" = "сырғытыңыз";

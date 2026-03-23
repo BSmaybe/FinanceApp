@@ -12,6 +12,8 @@ struct AccountsView: View {
     @State private var accountPendingDelete: Account?
     @State private var showingDeleteConfirmation = false
     @State private var editMode: EditMode = .inactive
+    // C3: skeleton on first load
+    @State private var isFirstLoad = true
 
     private var balanceByAccountId: [UUID: Decimal] {
         var result: [UUID: Decimal] = [:]
@@ -46,6 +48,22 @@ struct AccountsView: View {
             : accounts.sorted { balance(for: $0) > balance(for: $1) }
     }
 
+    // C3: Skeleton row while loading
+    private var skeletonAccountRow: some View {
+        HStack(spacing: 12) {
+            SkeletonView()
+                .frame(width: 36, height: 36)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            VStack(alignment: .leading, spacing: 6) {
+                SkeletonView().frame(width: 120, height: 11).clipShape(Capsule())
+                SkeletonView().frame(width: 80, height: 9).clipShape(Capsule())
+            }
+            Spacer()
+            SkeletonView().frame(width: 72, height: 13).clipShape(Capsule())
+        }
+        .padding(.vertical, 6)
+    }
+
     var body: some View {
         NavigationStack {
             List {
@@ -63,7 +81,13 @@ struct AccountsView: View {
 
                 // Account list
                 Section(String(localized: "Accounts")) {
-                    if accounts.isEmpty {
+                    if isFirstLoad && accounts.isEmpty {
+                        ForEach(0..<3, id: \.self) { _ in
+                            skeletonAccountRow
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        }
+                    } else if accounts.isEmpty {
                         EmptyStateView(
                             icon: "creditcard.fill",
                             title: String(localized: "No Accounts"),
@@ -109,6 +133,13 @@ struct AccountsView: View {
             .accessibilityIdentifier("accounts.screen")
             .navigationTitle(String(localized: "Accounts"))
             .environment(\.editMode, $editMode)
+            .onAppear {
+                if isFirstLoad {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                        withAnimation(.easeOut(duration: 0.3)) { isFirstLoad = false }
+                    }
+                }
+            }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     HStack {
@@ -210,6 +241,6 @@ private struct AccountRow: View {
                 .font(.subheadline.monospacedDigit().weight(.semibold))
                 .foregroundStyle(balance >= 0 ? .primary : AppTheme.danger)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
     }
 }
