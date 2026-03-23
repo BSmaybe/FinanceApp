@@ -452,7 +452,7 @@ struct DashboardView: View {
             Text("\u{201C}\(quote.localizedText)\u{201D}  — \(quote.source)")
                 .font(.system(size: 11, weight: .regular, design: .serif))
                 .italic()
-                .foregroundStyle(.white.opacity(0.45))
+                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.65))
                 .lineLimit(2)
                 .multilineTextAlignment(.leading)
                 .padding(.top, 6)
