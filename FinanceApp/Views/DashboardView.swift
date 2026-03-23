@@ -11,7 +11,6 @@ struct DashboardView: View {
     @Query private var budgets: [Budget]
     @Query(sort: \Goal.createdDate, order: .reverse) private var goals: [Goal]
     @AppStorage("budgetRollover") private var rolloverEnabled = false
-    @AppStorage("quoteDismissedDate") private var quoteDismissedDate = ""
 
     @Query(filter: #Predicate<Subscription> { $0.isActive == true })
     private var activeSubscriptions: [Subscription]
@@ -38,7 +37,6 @@ struct DashboardView: View {
     @State private var showingForecast = false
     @State private var showingBudgetManager = false
     @State private var showingDashboardSettings = false
-    @State private var showingQuoteOverlay = false
 
     private struct DashboardStats {
         let netWorthByAccount: [UUID: Decimal]
@@ -329,16 +327,6 @@ struct DashboardView: View {
             .sheet(isPresented: $showingForecast) {
                 CashFlowForecastView()
             }
-            .overlay {
-                if showingQuoteOverlay {
-                    DailyQuoteOverlayView {
-                        let fmt = DateFormatter()
-                        fmt.dateFormat = "yyyy-MM-dd"
-                        quoteDismissedDate = fmt.string(from: Date())
-                        showingQuoteOverlay = false
-                    }
-                }
-            }
             .onAppear {
                 WidgetDataProvider.save(
                     netWorth: netWorthValue,
@@ -356,15 +344,6 @@ struct DashboardView: View {
                         previousMonth: previousMonth,
                         dashStats: dashboardStats
                     )
-                }
-                // Show daily quote overlay if not dismissed today
-                let fmt = DateFormatter()
-                fmt.dateFormat = "yyyy-MM-dd"
-                let today = fmt.string(from: Date())
-                if quoteDismissedDate != today {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-                        showingQuoteOverlay = true
-                    }
                 }
             }
             .onChange(of: scenePhase) { _, newPhase in
@@ -462,9 +441,24 @@ struct DashboardView: View {
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
 
-            Spacer().frame(height: 22)
+            // Daily quote — compact, integrated into the gradient, non-intrusive
+            let quote = DailyQuoteStore.today
+            Text("\u{201C}\(quote.localizedText)\u{201D}")
+                .font(.system(size: 12, weight: .regular, design: .serif))
+                .italic()
+                .foregroundStyle(.white.opacity(0.6))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .padding(.top, 8)
+            Text("— \(quote.source)")
+                .font(.system(size: 10, weight: .medium))
+                .foregroundStyle(.white.opacity(0.4))
+                .lineLimit(1)
+                .padding(.top, 2)
 
-            // Month navigation + income/expense chips
+            Spacer().frame(height: 16)
+
+            // Month navigation
             HStack(spacing: 10) {
                 Button {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { monthOffset -= 1 }
