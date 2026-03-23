@@ -2,15 +2,8 @@ import Foundation
 import SwiftUI
 
 enum CurrencyFormatter {
-    @MainActor static let shared: NumberFormatter = {
-        let f = NumberFormatter()
-        f.numberStyle = .currency
-        f.locale = Locale.current
-        return f
-    }()
-
     @MainActor static func string(from decimal: Decimal) -> String {
-        shared.string(from: decimal as NSDecimalNumber) ?? "\(decimal)"
+        string(from: decimal, currencyCode: "KZT")
     }
 
     @MainActor private static var formatterCache: [String: NumberFormatter] = [:]
