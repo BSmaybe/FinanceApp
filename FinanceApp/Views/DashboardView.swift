@@ -27,6 +27,11 @@ struct DashboardView: View {
     @AppStorage("dash.showCommitments") private var showCommitments = true
     @AppStorage("dash.showRecentActivity") private var showRecentActivity = true
 
+    @AppStorage("feature.budgets")       private var featureBudgets = true
+    @AppStorage("feature.goals")         private var featureGoals = true
+    @AppStorage("feature.debts")         private var featureDebts = true
+    @AppStorage("feature.subscriptions") private var featureSubscriptions = true
+
     @State private var monthOffset: Int = 0
 
     @State private var settingBudgetForCategory: Category?
@@ -245,7 +250,7 @@ struct DashboardView: View {
                                 featureShortcutsRow
                             }
 
-                            if showThisMonth {
+                            if featureBudgets && showThisMonth {
                                 budgetRingsSection(
                                     budgetPressures: budgetPressures,
                                     freeToSpend: freeToSpendValue,
@@ -254,12 +259,12 @@ struct DashboardView: View {
                                 .accessibilityIdentifier("dashboard.thisMonth.section")
                             }
 
-                            if showDebts && !activeDebts.isEmpty {
+                            if featureDebts && showDebts && !activeDebts.isEmpty {
                                 debtsSummarySection
                                     .accessibilityIdentifier("dashboard.debts.section")
                             }
 
-                            if showCommitments {
+                            if featureSubscriptions && showCommitments {
                                 upcomingPaymentsSection
                                     .accessibilityIdentifier("dashboard.commitments.section")
                             }
@@ -672,9 +677,15 @@ struct DashboardView: View {
     private var featureShortcutsRow: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                shortcutChip(icon: "target", label: String(localized: "Goals")) { showingGoals = true }
-                shortcutChip(icon: "creditcard.fill", label: String(localized: "Debts")) { showingDebts = true }
-                shortcutChip(icon: "repeat", label: String(localized: "Subscriptions")) { showingSubscriptions = true }
+                if featureGoals {
+                    shortcutChip(icon: "target", label: String(localized: "Goals")) { showingGoals = true }
+                }
+                if featureDebts {
+                    shortcutChip(icon: "creditcard.fill", label: String(localized: "Debts")) { showingDebts = true }
+                }
+                if featureSubscriptions {
+                    shortcutChip(icon: "repeat", label: String(localized: "Subscriptions")) { showingSubscriptions = true }
+                }
                 shortcutChip(icon: "chart.line.uptrend.xyaxis", label: String(localized: "Forecast")) { showingForecast = true }
             }
             .padding(.horizontal, 2)

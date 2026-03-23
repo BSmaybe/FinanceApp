@@ -8,6 +8,9 @@ struct ContentView: View {
     @State private var tabBarOffset: CGFloat = 60
     @State private var tabBarOpacity: Double = 0
 
+    @AppStorage("feature.transactions") private var featureTransactions = true
+    @AppStorage("feature.analytics")    private var featureAnalytics = true
+
     var body: some View {
         TabView(selection: $selectedTab) {
             DashboardView(selectedTab: $selectedTab)
@@ -16,17 +19,21 @@ struct ContentView: View {
                     Label(String(localized: "Dashboard"), systemImage: "house")
                 }
 
-            TransactionsView()
-                .tag(AppRootTab.transactions)
-                .tabItem {
-                    Label(String(localized: "Transactions"), systemImage: "list.bullet.rectangle")
-                }
+            if featureTransactions {
+                TransactionsView()
+                    .tag(AppRootTab.transactions)
+                    .tabItem {
+                        Label(String(localized: "Transactions"), systemImage: "list.bullet.rectangle")
+                    }
+            }
 
-            ChartsView(selectedTab: $selectedTab)
-                .tag(AppRootTab.analytics)
-                .tabItem {
-                    Label(String(localized: "Analytics"), systemImage: "chart.bar.fill")
-                }
+            if featureAnalytics {
+                ChartsView(selectedTab: $selectedTab)
+                    .tag(AppRootTab.analytics)
+                    .tabItem {
+                        Label(String(localized: "Analytics"), systemImage: "chart.bar.fill")
+                    }
+            }
 
             AccountsView()
                 .tag(AppRootTab.accounts)
@@ -57,6 +64,12 @@ struct ContentView: View {
         }
         .onChange(of: showOnboarding) { _, visible in
             if !visible { hasCompletedOnboarding = true }
+        }
+        .onChange(of: featureTransactions) { _, on in
+            if !on && selectedTab == .transactions { selectedTab = .dashboard }
+        }
+        .onChange(of: featureAnalytics) { _, on in
+            if !on && selectedTab == .analytics { selectedTab = .dashboard }
         }
     }
 

@@ -94,6 +94,12 @@ struct SettingsView: View {
                     } label: {
                         Label(String(localized: "Dashboard Sections"), systemImage: "square.grid.3x1.below.line.grid.1x2")
                     }
+
+                    NavigationLink {
+                        FeaturesSettingsView()
+                    } label: {
+                        Label(String(localized: "Features"), systemImage: "square.stack.3d.up")
+                    }
                 }
 
                 Section(String(localized: "Language")) {
