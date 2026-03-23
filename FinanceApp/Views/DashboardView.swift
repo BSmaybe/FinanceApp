@@ -205,7 +205,6 @@ struct DashboardView: View {
             currentYear: current.year,
             previousMonth: previousMonth
         )
-        let monthlyNetValue = dashboardStats.monthlyIncome - dashboardStats.monthlyExpense
         let budgetPressures = budgetPressureList(
             stats: dashboardStats,
             expenseCategories: expenseCategoriesList,
@@ -214,32 +213,26 @@ struct DashboardView: View {
         )
 
         return NavigationStack {
-            ZStack(alignment: .top) {
-                // Full-bleed gradient behind status bar
-                AppTheme.heroGradient
-                    .frame(height: 340)
-                    .ignoresSafeArea(edges: .top)
+            ScrollView {
+                VStack(spacing: 0) {
+                    // Hero: gradient background auto-sized to content
+                    heroFloatingSection(
+                        netWorth: netWorthValue,
+                        income: dashboardStats.monthlyIncome,
+                        expense: dashboardStats.monthlyExpense,
+                        savingsRate: dashboardStats.monthlyIncome > 0
+                            ? max(.zero, (dashboardStats.monthlyIncome - dashboardStats.monthlyExpense) / dashboardStats.monthlyIncome)
+                            : .zero
+                    )
+                    .background(
+                        AppTheme.heroGradient
+                            .ignoresSafeArea(edges: .top)
+                    )
+                    .accessibilityIdentifier("dashboard.hero.section")
 
-                // Canvas fills everything below the gradient
-                AppTheme.canvas
-                    .ignoresSafeArea()
-                    .padding(.top, 240)
-
-                ScrollView {
-                    VStack(spacing: 0) {
-                        // Hero floats on gradient — no card, gradient IS the background
-                        heroFloatingSection(netWorth: netWorthValue)
-                        .accessibilityIdentifier("dashboard.hero.section")
-
-                        // Content area: rounded top, canvas colour
-                        LazyVStack(spacing: 14) {
-                            statStripSection(
-                                income: dashboardStats.monthlyIncome,
-                                expense: dashboardStats.monthlyExpense,
-                                net: monthlyNetValue
-                            )
-
-                            if !accounts.isEmpty {
+                    // Content area: rounded top, canvas colour
+                    LazyVStack(spacing: 12) {
+                        if !accounts.isEmpty {
                                 accountsScrollSection(
                                     balances: dashboardStats.netWorthByAccount
                                 )
@@ -272,25 +265,23 @@ struct DashboardView: View {
                                 .accessibilityIdentifier("dashboard.recentActivity.section")
                             }
                         }
-                        .padding(.horizontal, 16)
-                        .padding(.top, 22)
-                        .padding(.bottom, 32)
-                        // extend background well past last card
-                        .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.75)
-                        .background(
-                            UnevenRoundedRectangle(
-                                topLeadingRadius: 28,
-                                bottomLeadingRadius: 0,
-                                bottomTrailingRadius: 0,
-                                topTrailingRadius: 28
-                            )
-                            .fill(AppTheme.canvas)
-                            .ignoresSafeArea(edges: .bottom)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 20)
+                    .padding(.bottom, 32)
+                    .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.7)
+                    .background(
+                        UnevenRoundedRectangle(
+                            topLeadingRadius: 24,
+                            bottomLeadingRadius: 0,
+                            bottomTrailingRadius: 0,
+                            topTrailingRadius: 24
                         )
-                    }
+                        .fill(AppTheme.canvas)
+                        .ignoresSafeArea(edges: .bottom)
+                    )
                 }
-                .scrollContentBackground(.hidden)
             }
+            .background(AppTheme.canvas.ignoresSafeArea())
             .accessibilityIdentifier("dashboard.screen")
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingDashboardSettings) {
@@ -392,20 +383,26 @@ struct DashboardView: View {
         }
     }
 
-    private func heroFloatingSection(netWorth: Decimal) -> some View {
+    private func heroFloatingSection(
+        netWorth: Decimal,
+        income: Decimal,
+        expense: Decimal,
+        savingsRate: Decimal
+    ) -> some View {
         let isCurrentMonth = monthOffset == 0
         let monthLabel = currentMonthLabel(from: currentComponents)
+        let savingsPct = Int((savingsRate * 100 as NSDecimalNumber).doubleValue.rounded())
 
         return VStack(alignment: .leading, spacing: 0) {
-            // Top row: greeting + settings button
+            // Top row: greeting + settings
             HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 2) {
                     Text(greetingText)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(AppTheme.heroCardLabel)
-                    Text(Date().formatted(.dateTime.weekday(.wide).month(.wide).day()))
-                        .font(.caption)
-                        .foregroundStyle(AppTheme.heroCardLabel.opacity(0.55))
+                    Text(Date().formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                        .font(.caption2)
+                        .foregroundStyle(AppTheme.heroCardLabel.opacity(0.5))
                 }
                 Spacer()
                 Button {
@@ -413,9 +410,9 @@ struct DashboardView: View {
                     showingDashboardSettings = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.body.weight(.semibold))
+                        .font(.callout.weight(.semibold))
                         .foregroundStyle(AppTheme.heroCardLabel)
-                        .frame(width: 38, height: 38)
+                        .frame(width: 34, height: 34)
                         .background(.white.opacity(0.15))
                         .clipShape(Circle())
                 }
@@ -423,51 +420,43 @@ struct DashboardView: View {
                 .accessibilityIdentifier("dashboard.openLayoutSettings")
             }
 
-            Spacer().frame(height: 22)
+            Spacer().frame(height: 14)
 
-            // Net worth label
+            // Net worth
             Text(String(localized: "Net Worth"))
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(AppTheme.heroCardLabel)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.7))
                 .textCase(.uppercase)
-                .tracking(1.0)
-
-            Spacer().frame(height: 4)
-
-            // Big number — the centrepiece
+                .tracking(0.8)
             Text(NumberAbbreviator.string(from: netWorth))
-                .font(.system(size: 52, weight: .bold, design: .rounded))
+                .font(.system(size: 42, weight: .bold, design: .rounded))
                 .foregroundStyle(AppTheme.heroCardTitle)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
-
-            // Daily quote — compact, integrated into the gradient, non-intrusive
-            let quote = DailyQuoteStore.today
-            Text("\u{201C}\(quote.localizedText)\u{201D}")
-                .font(.system(size: 12, weight: .regular, design: .serif))
-                .italic()
-                .foregroundStyle(.white.opacity(0.6))
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .padding(.top, 8)
-            Text("— \(quote.source)")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.white.opacity(0.4))
-                .lineLimit(1)
                 .padding(.top, 2)
 
-            Spacer().frame(height: 16)
+            // Quote strip
+            let quote = DailyQuoteStore.today
+            Text("\u{201C}\(quote.localizedText)\u{201D}  — \(quote.source)")
+                .font(.system(size: 11, weight: .regular, design: .serif))
+                .italic()
+                .foregroundStyle(.white.opacity(0.45))
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .padding(.top, 6)
 
-            // Month navigation
-            HStack(spacing: 10) {
+            Spacer().frame(height: 14)
+
+            // Month nav + income/expense/savings chips
+            HStack(spacing: 8) {
                 Button {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { monthOffset -= 1 }
                     HapticManager.impact(.light)
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.caption.weight(.bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(AppTheme.heroCardLabel)
-                        .frame(width: 30, height: 30)
+                        .frame(width: 26, height: 26)
                         .background(.white.opacity(0.15))
                         .clipShape(Circle())
                 }
@@ -483,19 +472,27 @@ struct DashboardView: View {
                     HapticManager.impact(.light)
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.bold))
+                        .font(.caption2.weight(.bold))
                         .foregroundStyle(isCurrentMonth ? .clear : AppTheme.heroCardLabel)
-                        .frame(width: 30, height: 30)
+                        .frame(width: 26, height: 26)
                         .background(isCurrentMonth ? .clear : .white.opacity(0.15))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .disabled(isCurrentMonth)
+
+                Spacer()
+
+                heroChip(icon: "arrow.down", value: NumberAbbreviator.string(from: income), color: AppTheme.success)
+                heroChip(icon: "arrow.up",   value: NumberAbbreviator.string(from: expense), color: AppTheme.danger)
+                if income > 0 {
+                    heroChip(icon: "chart.pie", value: "\(savingsPct)%", color: .white.opacity(0.9))
+                }
             }
         }
         .padding(.horizontal, 20)
         .padding(.top, 8)
-        .padding(.bottom, 28)
+        .padding(.bottom, 22)
         .gesture(
             DragGesture(minimumDistance: 30).onEnded { val in
                 if val.translation.width < -30 {
@@ -584,24 +581,19 @@ struct DashboardView: View {
         }
     }
 
-    private func heroChip(icon: String, label: String, value: String, color: Color) -> some View {
-        HStack(spacing: 6) {
+    private func heroChip(icon: String, value: String, color: Color) -> some View {
+        HStack(spacing: 4) {
             Image(systemName: icon)
-                .font(.caption2.weight(.bold))
+                .font(.system(size: 9, weight: .bold))
                 .foregroundStyle(color)
-            VStack(alignment: .leading, spacing: 1) {
-                Text(label)
-                    .font(.caption2.weight(.medium))
-                    .foregroundStyle(AppTheme.heroCardLabel)
-                Text(value)
-                    .font(.caption.weight(.bold).monospacedDigit())
-                    .foregroundStyle(AppTheme.heroCardTitle)
-            }
+            Text(value)
+                .font(.caption2.weight(.bold).monospacedDigit())
+                .foregroundStyle(AppTheme.heroCardTitle)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
         .background(.white.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .clipShape(Capsule())
     }
 
     // MARK: - Stat Strip
