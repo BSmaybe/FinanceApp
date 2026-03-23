@@ -237,7 +237,7 @@ struct DashboardView: View {
                     .accessibilityIdentifier("dashboard.hero.section")
 
                     // Content area: rounded top, canvas colour
-                    LazyVStack(spacing: 12) {
+                    LazyVStack(spacing: 10) {
                         if !accounts.isEmpty {
                                 accountsScrollSection(
                                     balances: dashboardStats.netWorthByAccount
@@ -277,9 +277,9 @@ struct DashboardView: View {
                                 .accessibilityIdentifier("dashboard.recentActivity.section")
                             }
                         }
-                    .padding(.horizontal, 16)
-                    .padding(.top, 20)
-                    .padding(.bottom, 32)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 16)
+                    .padding(.bottom, 24)
                     .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.7)
                     .background(
                         UnevenRoundedRectangle(
@@ -406,76 +406,70 @@ struct DashboardView: View {
         let savingsPct = Int((savingsRate * 100 as NSDecimalNumber).doubleValue.rounded())
 
         return VStack(alignment: .leading, spacing: 0) {
-            // Top row: greeting + settings
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(greetingText)
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(AppTheme.heroCardLabel)
-                    Text(Date().formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
-                        .font(.caption2)
-                        .foregroundStyle(AppTheme.heroCardLabel.opacity(0.5))
-                }
+            // Top row: date + settings
+            HStack {
+                Text(Date().formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day()))
+                    .font(.caption2.weight(.medium))
+                    .foregroundStyle(AppTheme.heroCardLabel.opacity(0.55))
                 Spacer()
                 Button {
                     HapticManager.impact(.light)
                     showingDashboardSettings = true
                 } label: {
                     Image(systemName: "slider.horizontal.3")
-                        .font(.callout.weight(.semibold))
+                        .font(.caption.weight(.semibold))
                         .foregroundStyle(AppTheme.heroCardLabel)
-                        .frame(width: 34, height: 34)
-                        .background(.white.opacity(0.15))
+                        .frame(width: 30, height: 30)
+                        .background(.white.opacity(0.12))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("dashboard.openLayoutSettings")
             }
 
-            Spacer().frame(height: 14)
+            Spacer().frame(height: 8)
 
             // Net worth
             Text(String(localized: "Net Worth"))
-                .font(.caption2.weight(.semibold))
-                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.7))
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.6))
                 .textCase(.uppercase)
-                .tracking(0.8)
+                .tracking(0.6)
             Text(NumberAbbreviator.string(from: netWorth))
-                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .font(.system(size: 36, weight: .bold, design: .rounded))
                 .foregroundStyle(AppTheme.heroCardTitle)
                 .minimumScaleFactor(0.5)
                 .lineLimit(1)
-                .padding(.top, 2)
+                .padding(.top, 1)
 
             // Quote strip
             let quote = DailyQuoteStore.today
-            Text("\u{201C}\(quote.localizedText)\u{201D}  — \(quote.source)")
-                .font(.system(size: 11, weight: .regular, design: .serif))
+            Text("\u{201C}\(quote.localizedText)\u{201D} — \(quote.source)")
+                .font(.system(size: 10, design: .serif))
                 .italic()
-                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.65))
-                .lineLimit(2)
-                .multilineTextAlignment(.leading)
-                .padding(.top, 6)
+                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.55))
+                .lineLimit(1)
+                .padding(.top, 4)
 
-            Spacer().frame(height: 14)
+            Spacer().frame(height: 10)
 
-            // Month nav + income/expense/savings chips
-            HStack(spacing: 8) {
+            // Month nav + income/expense/savings
+            HStack(spacing: 6) {
                 Button {
                     withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) { monthOffset -= 1 }
                     HapticManager.impact(.light)
                 } label: {
                     Image(systemName: "chevron.left")
-                        .font(.caption2.weight(.bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(AppTheme.heroCardLabel)
-                        .frame(width: 26, height: 26)
-                        .background(.white.opacity(0.15))
+                        .frame(width: 22, height: 22)
+                        .background(.white.opacity(0.12))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
 
                 Text(monthLabel)
-                    .font(.caption.weight(.semibold))
+                    .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(AppTheme.heroCardLabel)
 
                 Button {
@@ -484,10 +478,10 @@ struct DashboardView: View {
                     HapticManager.impact(.light)
                 } label: {
                     Image(systemName: "chevron.right")
-                        .font(.caption2.weight(.bold))
+                        .font(.system(size: 10, weight: .bold))
                         .foregroundStyle(isCurrentMonth ? .clear : AppTheme.heroCardLabel)
-                        .frame(width: 26, height: 26)
-                        .background(isCurrentMonth ? .clear : .white.opacity(0.15))
+                        .frame(width: 22, height: 22)
+                        .background(isCurrentMonth ? .clear : .white.opacity(0.12))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -502,9 +496,9 @@ struct DashboardView: View {
                 }
             }
         }
-        .padding(.horizontal, 20)
-        .padding(.top, 8)
-        .padding(.bottom, 22)
+        .padding(.horizontal, 16)
+        .padding(.top, 6)
+        .padding(.bottom, 16)
         .gesture(
             DragGesture(minimumDistance: 30).onEnded { val in
                 if val.translation.width < -30 {
@@ -722,19 +716,18 @@ struct DashboardView: View {
         Button {
             showingQuickAdd = true
         } label: {
-            HStack(spacing: 10) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.title3.weight(.semibold))
+            HStack(spacing: 8) {
+                Image(systemName: "plus")
+                    .font(.system(size: 14, weight: .bold))
                 Text(String(localized: "Add Transaction"))
-                    .font(.subheadline.weight(.semibold))
+                    .font(.system(size: 13, weight: .semibold))
             }
             .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 14)
+            .padding(.vertical, 11)
             .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
                     .fill(AppTheme.fabGradient)
-                    .shadow(color: AppTheme.shadowSoft, radius: 6, x: 0, y: 2)
             )
         }
         .buttonStyle(.plain)
@@ -773,13 +766,13 @@ struct DashboardView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(AppTheme.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.5), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
                 )
         )
     }
@@ -904,13 +897,13 @@ struct DashboardView: View {
                 )
             }
         }
-        .padding(16)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(AppTheme.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.5), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
                 )
         )
     }
@@ -970,13 +963,13 @@ struct DashboardView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(AppTheme.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.5), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
                 )
         )
     }
@@ -1121,13 +1114,13 @@ struct DashboardView: View {
                 }
             }
         }
-        .padding(16)
+        .padding(12)
         .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(AppTheme.surface)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.5), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
                 )
         )
     }

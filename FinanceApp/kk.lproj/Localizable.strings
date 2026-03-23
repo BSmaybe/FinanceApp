@@ -617,3 +617,5 @@
 "You can turn features on or off at any time." = "Мүмкіндіктерді кез келген уақытта қосып немесе өшіруге болады.";
 "Transactions tab" = "Транзакциялар қойындысы";
 "Replay Onboarding" = "Онбордингті қайталау";
+"Choose your currency" = "Валютаңызды таңдаңыз";
+"Default currency for new accounts" = "Жаңа шоттар үшін әдепкі валюта";
