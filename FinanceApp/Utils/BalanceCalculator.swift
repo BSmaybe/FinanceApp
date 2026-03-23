@@ -10,7 +10,7 @@ enum BalanceCalculator {
     }
 
     static func balance(for account: Account, in transactions: [Transaction], asOf date: Date = Date()) -> Decimal {
-        var total: Decimal = 0
+        var total: Decimal = account.openingBalance
         for txn in transactions {
             guard isPosted(txn, asOf: date) else { continue }
             if txn.accountId == account.id {

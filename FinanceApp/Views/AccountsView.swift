@@ -327,9 +327,20 @@ private struct AccountRow: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(account.name)
                         .font(.subheadline.weight(.semibold))
-                    Text("\(account.type.localizedName) • \(account.currencyCode)")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    HStack(spacing: 6) {
+                        Text("\(account.type.localizedName) • \(account.currencyCode)")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        if account.interestRate > 0 {
+                            Text("\(NSDecimalNumber(decimal: account.interestRate).doubleValue, specifier: "%.1f")% p.a.")
+                                .font(.caption2.weight(.semibold))
+                                .foregroundStyle(AppTheme.success)
+                                .padding(.horizontal, 5)
+                                .padding(.vertical, 2)
+                                .background(AppTheme.success.opacity(0.12))
+                                .clipShape(Capsule())
+                        }
+                    }
                 }
 
                 Spacer()

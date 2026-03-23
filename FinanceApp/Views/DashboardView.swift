@@ -87,7 +87,9 @@ struct DashboardView: View {
         let cal = Calendar.current
         let now = Date()
 
-        var balances: [UUID: Decimal] = [:]
+        var balances: [UUID: Decimal] = Dictionary(
+            uniqueKeysWithValues: accounts.map { ($0.id, $0.openingBalance) }
+        )
         var income = Decimal.zero
         var expense = Decimal.zero
         var spentByCat: [UUID: Decimal] = [:]
@@ -228,11 +230,7 @@ struct DashboardView: View {
                 ScrollView {
                     VStack(spacing: 0) {
                         // Hero floats on gradient — no card, gradient IS the background
-                        heroFloatingSection(
-                            netWorth: netWorthValue,
-                            income: dashboardStats.monthlyIncome,
-                            expense: dashboardStats.monthlyExpense
-                        )
+                        heroFloatingSection(netWorth: netWorthValue)
                         .accessibilityIdentifier("dashboard.hero.section")
 
                         // Content area: rounded top, canvas colour
@@ -415,11 +413,7 @@ struct DashboardView: View {
         }
     }
 
-    private func heroFloatingSection(
-        netWorth: Decimal,
-        income: Decimal,
-        expense: Decimal
-    ) -> some View {
+    private func heroFloatingSection(netWorth: Decimal) -> some View {
         let isCurrentMonth = monthOffset == 0
         let monthLabel = currentMonthLabel(from: currentComponents)
 
@@ -503,21 +497,6 @@ struct DashboardView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(isCurrentMonth)
-
-                Spacer()
-
-                heroChip(
-                    icon: "arrow.down",
-                    label: String(localized: "Income"),
-                    value: NumberAbbreviator.string(from: income),
-                    color: AppTheme.success
-                )
-                heroChip(
-                    icon: "arrow.up",
-                    label: String(localized: "Expense"),
-                    value: NumberAbbreviator.string(from: expense),
-                    color: AppTheme.danger
-                )
             }
         }
         .padding(.horizontal, 20)

@@ -590,3 +590,8 @@
 "Anime" = "Аниме";
 "Game" = "Ойын";
 "Movie" = "Фильм";
+"Opening Balance" = "Бастапқы баланс";
+"Annual Interest %" = "Жылдық пайыз %";
+"Balance & Interest" = "Баланс және пайыз";
+"Opening balance is not counted as income — it represents money already in this account." = "Бастапқы баланс кіріс болып есептелмейді — бұл шотта бұрыннан бар сома.";
+"Projected in 1 yr" = "1 жылдық болжам";

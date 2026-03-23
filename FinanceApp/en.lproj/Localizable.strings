@@ -604,3 +604,8 @@
 "Anime" = "Anime";
 "Game" = "Game";
 "Movie" = "Movie";
+"Opening Balance" = "Opening Balance";
+"Annual Interest %" = "Annual Interest %";
+"Balance & Interest" = "Balance & Interest";
+"Opening balance is not counted as income — it represents money already in this account." = "Opening balance is not counted as income — it represents money already in this account.";
+"Projected in 1 yr" = "Projected in 1 yr";

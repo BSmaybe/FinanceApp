@@ -600,3 +600,8 @@
 "Add a loan or installment to track payments" = "Добавьте кредит или рассрочку для отслеживания платежей";
 "Drag to reorder" = "Перетащите для сортировки";
 "Tap anywhere to continue" = "Нажмите в любом месте, чтобы продолжить";
+"Opening Balance" = "Начальный баланс";
+"Annual Interest %" = "Годовая ставка %";
+"Balance & Interest" = "Баланс и процент";
+"Opening balance is not counted as income — it represents money already in this account." = "Начальный баланс не считается доходом — это сумма, которая уже была на счёте.";
+"Projected in 1 yr" = "Прогноз на 1 год";

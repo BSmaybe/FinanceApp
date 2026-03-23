@@ -29,7 +29,7 @@ struct AccountDetailView: View {
     }
 
     private var balanceHistory: [BalancePoint] {
-        var running: Decimal = 0
+        var running: Decimal = account.openingBalance
         return accountTransactions.map { txn -> BalancePoint in
             if txn.accountId == account.id {
                 switch txn.type {
@@ -68,6 +68,26 @@ struct AccountDetailView: View {
                         .font(.title.monospacedDigit())
                         .foregroundStyle(currentBalance >= 0 ? Color.primary : Color.red)
                         .padding(.top, 2)
+                    if account.interestRate > 0 {
+                        let rateDouble = NSDecimalNumber(decimal: account.interestRate).doubleValue
+                        let projected = currentBalance * (1 + account.interestRate / 100)
+                        HStack(spacing: 6) {
+                            Image(systemName: "chart.line.uptrend.xyaxis")
+                                .font(.caption)
+                                .foregroundStyle(AppTheme.success)
+                            Text(String(localized: "Projected in 1 yr"))
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                            Spacer()
+                            Text(CurrencyFormatter.string(from: projected, currencyCode: account.currencyCode))
+                                .font(.caption.monospacedDigit().weight(.semibold))
+                                .foregroundStyle(AppTheme.success)
+                            Text("+\(rateDouble, specifier: "%.1f")%")
+                                .font(.caption2)
+                                .foregroundStyle(AppTheme.success)
+                        }
+                        .padding(.top, 6)
+                    }
                 }
                 .padding(.vertical, 4)
             }

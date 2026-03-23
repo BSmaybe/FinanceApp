@@ -11,6 +11,8 @@ struct AddEditAccountView: View {
     @State private var type: AccountType = .checking
     @State private var note: String = ""
     @State private var currencyCode: String = "KZT"
+    @State private var openingBalanceText: String = ""
+    @State private var interestRateText: String = ""
 
     init(account: Account? = nil) {
         self.existingAccount = account
@@ -19,6 +21,8 @@ struct AddEditAccountView: View {
             _type = State(initialValue: a.type)
             _note = State(initialValue: a.note)
             _currencyCode = State(initialValue: a.currencyCode)
+            _openingBalanceText = State(initialValue: a.openingBalance > 0 ? a.openingBalanceValue : "")
+            _interestRateText = State(initialValue: a.interestRate > 0 ? a.interestRateValue : "")
         }
     }
 
@@ -47,6 +51,23 @@ struct AddEditAccountView: View {
                         }
                     }
                 }
+                Section {
+                    LabeledContent(String(localized: "Opening Balance")) {
+                        TextField("0", text: $openingBalanceText)
+                            .financeNumericKeyboard()
+                            .multilineTextAlignment(.trailing)
+                    }
+                    LabeledContent(String(localized: "Annual Interest %")) {
+                        TextField("0", text: $interestRateText)
+                            .financeNumericKeyboard()
+                            .multilineTextAlignment(.trailing)
+                    }
+                } header: {
+                    Text(String(localized: "Balance & Interest"))
+                } footer: {
+                    Text(String(localized: "Opening balance is not counted as income — it represents money already in this account."))
+                        .font(.caption)
+                }
                 Section(String(localized: "Note")) {
                     TextField(String(localized: "Optional note"), text: $note)
                 }
@@ -72,13 +93,24 @@ struct AddEditAccountView: View {
 
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
+        let openingBalance = Decimal(string: openingBalanceText) ?? .zero
+        let interestRate   = Decimal(string: interestRateText)   ?? .zero
         if let existing = existingAccount {
             existing.name = trimmedName
             existing.type = type
             existing.note = note
             existing.currencyCode = currencyCode
+            existing.openingBalance = openingBalance
+            existing.interestRate   = interestRate
         } else {
-            modelContext.insert(Account(name: trimmedName, type: type, note: note, currencyCode: currencyCode))
+            modelContext.insert(Account(
+                name: trimmedName,
+                type: type,
+                note: note,
+                currencyCode: currencyCode,
+                openingBalance: openingBalance,
+                interestRate: interestRate
+            ))
         }
         do {
             try modelContext.save()
