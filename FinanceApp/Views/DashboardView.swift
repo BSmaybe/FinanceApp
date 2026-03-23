@@ -241,6 +241,7 @@ struct DashboardView: View {
                             if showQuickActions {
                                 fabAddTransactionButton
                                     .accessibilityIdentifier("dashboard.primaryActions.section")
+                                featureShortcutsRow
                             }
 
                             if showThisMonth {
@@ -660,6 +661,44 @@ struct DashboardView: View {
             .frame(width: 1, height: 36)
     }
 
+    // MARK: - Feature Shortcuts Row
+
+    private var featureShortcutsRow: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                shortcutChip(icon: "target", label: String(localized: "Goals")) { showingGoals = true }
+                shortcutChip(icon: "creditcard.fill", label: String(localized: "Debts")) { showingDebts = true }
+                shortcutChip(icon: "repeat", label: String(localized: "Subscriptions")) { showingSubscriptions = true }
+                shortcutChip(icon: "chart.line.uptrend.xyaxis", label: String(localized: "Forecast")) { showingForecast = true }
+            }
+            .padding(.horizontal, 2)
+            .padding(.vertical, 2)
+        }
+    }
+
+    private func shortcutChip(icon: String, label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.caption.weight(.semibold))
+                Text(label)
+                    .font(.caption.weight(.semibold))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .fill(AppTheme.surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .stroke(AppTheme.outline.opacity(0.4), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     // MARK: - FAB Add Transaction
 
     private var fabAddTransactionButton: some View {
@@ -819,12 +858,17 @@ struct DashboardView: View {
                 Text(String(localized: "Upcoming Payments"))
                     .font(.headline.weight(.semibold))
                 Spacer()
-                Button(String(localized: "View All")) {
-                    showingSubscriptions = true
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.primaryAccent)
-                .buttonStyle(.plain)
+                Button(String(localized: "Debts")) { showingDebts = true }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.warning)
+                    .buttonStyle(.plain)
+                Text("·")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Button(String(localized: "Subscriptions")) { showingSubscriptions = true }
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .buttonStyle(.plain)
             }
 
             let upcomingItems = buildUpcomingItems()
