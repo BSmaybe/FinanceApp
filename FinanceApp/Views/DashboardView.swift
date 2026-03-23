@@ -531,24 +531,24 @@ struct DashboardView: View {
     private func accountMiniCard(account: Account, balance: Decimal) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Image(systemName: accountTypeIcon(for: account.type))
-                .font(.callout.weight(.semibold))
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.85))
             Spacer()
             Text(account.name)
-                .font(.caption2.weight(.medium))
+                .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.white.opacity(0.75))
                 .lineLimit(1)
-            Spacer().frame(height: 3)
+            Spacer().frame(height: 2)
             Text(NumberAbbreviator.string(from: balance))
-                .font(.subheadline.weight(.bold).monospacedDigit())
+                .font(.footnote.weight(.bold).monospacedDigit())
                 .foregroundStyle(.white)
                 .lineLimit(1)
-                .minimumScaleFactor(0.65)
+                .minimumScaleFactor(0.7)
         }
-        .padding(14)
-        .frame(width: 150, height: 92)
+        .padding(10)
+        .frame(width: 100, height: 64)
         .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(accountTypeGradient(for: account.type))
         )
     }
