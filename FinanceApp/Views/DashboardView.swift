@@ -593,10 +593,10 @@ struct DashboardView: View {
 
             actionRailItem(
                 icon: "chart.line.uptrend.xyaxis",
-                label: String(localized: "Stats"),
+                label: String(localized: "Forecast"),
                 tint: AppTheme.info
             ) {
-                selectedTab = .analytics
+                showingForecast = true
             }
         }
     }
