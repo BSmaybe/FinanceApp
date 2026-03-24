@@ -650,3 +650,8 @@
 "Your net worth and balances will appear here" = "Your net worth and balances will appear here";
 // Dashboard B4 swipe hint
 "swipe" = "swipe";
+// Dashboard Focus Strip section summaries
+"All on track" = "All on track";
+"No budgets" = "No budgets";
+"%lld over budget" = "%lld over budget";
+"%lld near limit" = "%lld near limit";
