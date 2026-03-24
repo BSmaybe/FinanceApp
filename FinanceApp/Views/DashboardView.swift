@@ -47,6 +47,11 @@ struct DashboardView: View {
     // B4: Swipe hint (shown once)
     @AppStorage("dash.swipeHintShown") private var swipeHintShown = false
     @State private var showSwipeHint = false
+    @State private var expandedAccounts = true
+    @State private var expandedBudgets = false
+    @State private var expandedDebts = false
+    @State private var expandedUpcoming = false
+    @State private var expandedActivity = false
 
     private struct DashboardStats {
         let netWorthByAccount: [UUID: Decimal]
@@ -208,13 +213,6 @@ struct DashboardView: View {
         let recentTransactionsList = recentTransactions
         let categoryById = Dictionary(uniqueKeysWithValues: categories.map { ($0.id, $0) })
         let netWorthValue = netWorth(from: dashboardStats)
-        let freeToSpendValue = freeToSpend(
-            stats: dashboardStats,
-            expenseCategories: expenseCategoriesList,
-            currentMonth: current.month,
-            currentYear: current.year,
-            previousMonth: previousMonth
-        )
         let budgetPressures = budgetPressureList(
             stats: dashboardStats,
             expenseCategories: expenseCategoriesList,
@@ -226,20 +224,13 @@ struct DashboardView: View {
             ScrollView {
                 VStack(spacing: 0) {
                     // Hero: gradient background auto-sized to content
-                    let heroInsightText = heroInsight(
-                        income: dashboardStats.monthlyIncome,
-                        expense: dashboardStats.monthlyExpense,
-                        spentByCategory: dashboardStats.spentByCategory,
-                        current: current
-                    )
                     heroFloatingSection(
                         netWorth: netWorthValue,
                         income: dashboardStats.monthlyIncome,
                         expense: dashboardStats.monthlyExpense,
                         savingsRate: dashboardStats.monthlyIncome > 0
                             ? max(.zero, (dashboardStats.monthlyIncome - dashboardStats.monthlyExpense) / dashboardStats.monthlyIncome)
-                            : .zero,
-                        insight: heroInsightText
+                            : .zero
                     )
                     .background(
                         AppTheme.heroGradient
@@ -252,44 +243,72 @@ struct DashboardView: View {
                         if accounts.isEmpty {
                             emptyAccountsCard
                         } else {
-                            accountsScrollSection(
-                                balances: dashboardStats.netWorthByAccount
-                            )
+                            collapsibleSection(
+                                title: String(localized: "Accounts"),
+                                summary: accountsSummary(balances: dashboardStats.netWorthByAccount),
+                                expanded: $expandedAccounts,
+                                accessibilityId: "dashboard.accounts.section"
+                            ) {
+                                accountsScrollContent(balances: dashboardStats.netWorthByAccount)
+                            }
                         }
 
-                            if showQuickActions {
-                                fabAddTransactionButton
-                                    .accessibilityIdentifier("dashboard.primaryActions.section")
-                                featureShortcutsRow
-                            }
+                        if showQuickActions {
+                            fabAddTransactionButton
+                                .accessibilityIdentifier("dashboard.primaryActions.section")
+                            featureShortcutsRow
+                        }
 
-                            if featureBudgets && showThisMonth {
-                                budgetRingsSection(
-                                    budgetPressures: budgetPressures,
-                                    freeToSpend: freeToSpendValue,
-                                    current: current
-                                )
-                                .accessibilityIdentifier("dashboard.thisMonth.section")
+                        if featureBudgets && showThisMonth {
+                            collapsibleSection(
+                                title: String(localized: "Budget Rings"),
+                                summary: budgetsSummary(budgetPressures: budgetPressures),
+                                expanded: $expandedBudgets,
+                                accessibilityId: "dashboard.thisMonth.section"
+                            ) {
+                                budgetRingsContent(budgetPressures: budgetPressures)
                             }
+                        }
 
-                            if featureDebts && showDebts && !activeDebts.isEmpty {
-                                debtsSummarySection
-                                    .accessibilityIdentifier("dashboard.debts.section")
+                        if featureDebts && showDebts && !activeDebts.isEmpty {
+                            collapsibleSection(
+                                title: String(localized: "Debts"),
+                                summary: debtsSummaryText,
+                                expanded: $expandedDebts,
+                                accessibilityId: "dashboard.debts.section"
+                            ) {
+                                debtsSummaryContent
                             }
+                        }
 
-                            if featureSubscriptions && showCommitments {
-                                upcomingPaymentsSection
-                                    .accessibilityIdentifier("dashboard.commitments.section")
+                        if featureSubscriptions && showCommitments {
+                            collapsibleSection(
+                                title: String(localized: "Upcoming Payments"),
+                                summary: upcomingSummary,
+                                expanded: $expandedUpcoming,
+                                accessibilityId: "dashboard.commitments.section"
+                            ) {
+                                upcomingPaymentsContent
                             }
+                        }
 
-                            if showRecentActivity {
-                                recentActivitySection(
+                        if showRecentActivity {
+                            collapsibleSection(
+                                title: String(localized: "Recent Activity"),
+                                summary: activitySummary(
+                                    recentTransactions: recentTransactionsList,
+                                    categoryById: categoryById
+                                ),
+                                expanded: $expandedActivity,
+                                accessibilityId: "dashboard.recentActivity.section"
+                            ) {
+                                recentActivityContent(
                                     recentTransactions: recentTransactionsList,
                                     categoryById: categoryById
                                 )
-                                .accessibilityIdentifier("dashboard.recentActivity.section")
                             }
                         }
+                    }
                     .padding(.horizontal, 14)
                     .padding(.top, 16)
                     .padding(.bottom, 24)
@@ -426,59 +445,6 @@ struct DashboardView: View {
 
     // MARK: - Hero (floating, no card — gradient is the background)
 
-    private var greetingText: String {
-        let h = Calendar.current.component(.hour, from: Date())
-        switch h {
-        case 6..<12:  return String(localized: "Good morning 👋")
-        case 12..<17: return String(localized: "Good afternoon 👋")
-        case 17..<22: return String(localized: "Good evening 👋")
-        default:      return String(localized: "Good night 🌙")
-        }
-    }
-
-    // B1: Smart financial insight for hero strip
-    private func heroInsight(
-        income: Decimal,
-        expense: Decimal,
-        spentByCategory: [UUID: Decimal],
-        current: (year: Int, month: Int, day: Int)
-    ) -> String {
-        let cal = Calendar.current
-        // Priority 1: today's spending
-        let todayExpense = transactions
-            .filter { cal.isDateInToday($0.date) && $0.type == .expense }
-            .reduce(Decimal.zero) { $0 + $1.amount }
-        if todayExpense > 0 {
-            return String(format: String(localized: "Today −%@"), CurrencyFormatter.string(from: todayExpense))
-        }
-        // Priority 2: upcoming subscriptions within 7 days
-        let now = Date()
-        let in7 = cal.date(byAdding: .day, value: 7, to: now) ?? now
-        let upcomingCount = activeSubscriptions.filter { $0.nextBillingDate >= now && $0.nextBillingDate <= in7 }.count
-        if upcomingCount > 0 {
-            return String(format: String(localized: "%lld payments this week"), Int64(upcomingCount))
-        }
-        // Priority 3: budget health this month
-        if featureBudgets && monthOffset == 0 {
-            let thisMonthBudgets = budgets.filter { $0.month == current.month && $0.year == current.year }
-            if !thisMonthBudgets.isEmpty {
-                let totalLimit = thisMonthBudgets.reduce(Decimal.zero) { $0 + $1.limitAmount }
-                let totalSpent = spentByCategory.values.reduce(Decimal.zero, +)
-                if totalLimit > 0 {
-                    let pct = Int(((totalSpent / totalLimit * 100) as NSDecimalNumber).doubleValue.rounded())
-                    let healthy = max(0, 100 - pct)
-                    return String(format: String(localized: "Budget %lld%% healthy"), Int64(healthy))
-                }
-            }
-        }
-        // Priority 4: savings rate if income exists
-        if income > 0 && expense < income {
-            let savedPct = Int((((income - expense) / income * 100) as NSDecimalNumber).doubleValue.rounded())
-            return String(format: String(localized: "Saved %lld%% this month"), Int64(savedPct))
-        }
-        return String(localized: "No transactions today · add one!")
-    }
-
     // B3: Empty state when user has no accounts yet
     private var emptyAccountsCard: some View {
         VStack(spacing: 12) {
@@ -513,8 +479,7 @@ struct DashboardView: View {
         netWorth: Decimal,
         income: Decimal,
         expense: Decimal,
-        savingsRate: Decimal,
-        insight: String
+        savingsRate: Decimal
     ) -> some View {
         let isCurrentMonth = monthOffset == 0
         let monthLabel = currentMonthLabel(from: currentComponents)
@@ -570,13 +535,6 @@ struct DashboardView: View {
                 .foregroundStyle(isPositive ? AppTheme.success.opacity(0.85) : AppTheme.danger.opacity(0.85))
                 .padding(.top, 1)
             }
-
-            // B1: Smart financial insight instead of random quote
-            Text(insight)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(AppTheme.heroCardLabel.opacity(0.65))
-                .lineLimit(1)
-                .padding(.top, 4)
 
             Spacer().frame(height: 10)
 
@@ -651,27 +609,120 @@ struct DashboardView: View {
         )
     }
 
+    // MARK: - Collapsible Section Shell
+
+    private func collapsibleSection<Content: View>(
+        title: String,
+        summary: String,
+        expanded: Binding<Bool>,
+        accessibilityId: String = "",
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.85)) {
+                    expanded.wrappedValue.toggle()
+                }
+                HapticManager.impact(.light)
+            } label: {
+                HStack(spacing: 8) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    if !expanded.wrappedValue {
+                        Text(summary)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(.tertiary)
+                        .rotationEffect(.degrees(expanded.wrappedValue ? 90 : 0))
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 12)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if expanded.wrappedValue {
+                Divider()
+                    .padding(.horizontal, 14)
+                content()
+                    .padding(12)
+            }
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(AppTheme.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
+                )
+        )
+        .accessibilityIdentifier(accessibilityId)
+    }
+
+    // MARK: - Section Summary Strings
+
+    private func accountsSummary(balances: [UUID: Decimal]) -> String {
+        let total = accounts.reduce(Decimal.zero) { $0 + balances[$1.id, default: .zero] }
+        return "\(accounts.count) · \(NumberAbbreviator.string(from: total))"
+    }
+
+    private func budgetsSummary(budgetPressures: [BudgetRisk]) -> String {
+        let over = budgetPressures.filter { $0.isOverBudget }.count
+        let near = budgetPressures.filter { !$0.isOverBudget && $0.ratio >= 0.8 }.count
+        if over > 0 {
+            return String(format: String(localized: "%lld over budget"), Int64(over))
+        }
+        if near > 0 {
+            return String(format: String(localized: "%lld near limit"), Int64(near))
+        }
+        return budgetPressures.isEmpty ? String(localized: "No budgets") : String(localized: "All on track")
+    }
+
+    private var debtsSummaryText: String {
+        let total = activeDebts.reduce(Decimal.zero) { $0 + $1.remainingAmount }
+        return "\(NumberAbbreviator.string(from: total)) · \(activeDebts.count)"
+    }
+
+    private var upcomingSummary: String {
+        let items = buildUpcomingItems()
+        guard let first = items.first else {
+            return String(localized: "No upcoming payments")
+        }
+        return "\(first.name) · \(first.subtitle)"
+    }
+
+    private func activitySummary(recentTransactions: [Transaction], categoryById: [UUID: Category]) -> String {
+        guard let last = recentTransactions.first else {
+            return String(localized: "No recent activity")
+        }
+        let cat = last.categoryId.flatMap { categoryById[$0] }
+        let title = !last.note.isEmpty ? last.note : (cat?.name ?? last.type.localizedName)
+        let sign = last.type == .income ? "+" : (last.type == .expense ? "−" : "")
+        return "\(sign)\(CurrencyFormatter.string(from: last.amount)) \(title)"
+    }
+
     // MARK: - Accounts Scroll
 
-    private func accountsScrollSection(balances: [UUID: Decimal]) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "Accounts"))
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.primary)
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(accounts) { account in
-                        let balance = balances[account.id, default: .zero]
-                        accountMiniCard(account: account, balance: balance)
-                    }
+    private func accountsScrollContent(balances: [UUID: Decimal]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(accounts) { account in
+                    let balance = balances[account.id, default: .zero]
+                    accountMiniCard(account: account, balance: balance)
                 }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 2)
             }
-            .padding(.horizontal, -16)
+            .padding(.horizontal, 16)
+            .padding(.vertical, 2)
         }
+        .padding(.horizontal, -16)
     }
+
 
     private func accountMiniCard(account: Account, balance: Decimal) -> some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -739,70 +790,6 @@ struct DashboardView: View {
         .padding(.vertical, 5)
         .background(.white.opacity(0.12))
         .clipShape(Capsule())
-    }
-
-    // MARK: - Stat Strip
-
-    private func statStripSection(
-        income: Decimal,
-        expense: Decimal,
-        net: Decimal
-    ) -> some View {
-        let savingsRate: Int = {
-            guard income > 0 else { return 0 }
-            let rate = NSDecimalNumber(decimal: net / income).doubleValue
-            return max(0, Int((rate * 100).rounded()))
-        }()
-
-        return HStack(spacing: 0) {
-            statStripItem(
-                label: String(localized: "Income"),
-                value: NumberAbbreviator.string(from: income),
-                valueColor: AppTheme.success
-            )
-            statStripDivider
-            statStripItem(
-                label: String(localized: "Expense"),
-                value: NumberAbbreviator.string(from: expense),
-                valueColor: AppTheme.danger
-            )
-            statStripDivider
-            statStripItem(
-                label: String(localized: "Savings Rate"),
-                value: "\(savingsRate)%",
-                valueColor: net >= 0 ? AppTheme.primaryAccent : AppTheme.warning
-            )
-        }
-        .frame(maxWidth: .infinity)
-        .frame(height: 70)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.5), lineWidth: 1)
-                )
-        )
-    }
-
-    private func statStripItem(label: String, value: String, valueColor: Color) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(.subheadline.weight(.bold).monospacedDigit())
-                .foregroundStyle(valueColor)
-                .lineLimit(1)
-                .minimumScaleFactor(0.7)
-            Text(label)
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-    }
-
-    private var statStripDivider: some View {
-        Rectangle()
-            .fill(AppTheme.outline.opacity(0.4))
-            .frame(width: 1, height: 36)
     }
 
     // MARK: - Feature Shortcuts Row
@@ -874,24 +861,9 @@ struct DashboardView: View {
 
     // MARK: - Budget Rings
 
-    private func budgetRingsSection(
-        budgetPressures: [BudgetRisk],
-        freeToSpend: Decimal,
-        current: (year: Int, month: Int, day: Int)
-    ) -> some View {
+    private func budgetRingsContent(budgetPressures: [BudgetRisk]) -> some View {
         let topRisks = Array(budgetPressures.prefix(4))
-
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(String(localized: "Budget Rings"))
-                    .font(.headline.weight(.semibold))
-                Spacer()
-                Button(String(localized: "All Budgets")) { showingBudgetManager = true }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryAccent)
-                    .buttonStyle(.plain)
-            }
-
+        return VStack(spacing: 12) {
             if topRisks.isEmpty {
                 emptyBudgetState
             } else {
@@ -904,16 +876,16 @@ struct DashboardView: View {
                     }
                 }
             }
+            Button {
+                showingBudgetManager = true
+            } label: {
+                Text(String(localized: "All Budgets"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .buttonStyle(.plain)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
-                )
-        )
     }
 
     private var emptyBudgetState: some View {
@@ -1001,21 +973,11 @@ struct DashboardView: View {
 
     // MARK: - Debts Summary
 
-    private var debtsSummarySection: some View {
+    private var debtsSummaryContent: some View {
         let totalRemaining = activeDebts.reduce(Decimal.zero) { $0 + $1.remainingAmount }
         let totalMonthly   = activeDebts.reduce(Decimal.zero) { $0 + $1.minimumPayment }
 
-        return VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(String(localized: "Debts"))
-                    .font(.headline.weight(.semibold))
-                Spacer()
-                Button(String(localized: "View All")) { showingDebts = true }
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryAccent)
-                    .buttonStyle(.plain)
-            }
-
+        return VStack(alignment: .trailing, spacing: 8) {
             HStack(spacing: 0) {
                 debtStatCell(
                     label: String(localized: "Total Remaining"),
@@ -1035,16 +997,15 @@ struct DashboardView: View {
                     tint: AppTheme.info
                 )
             }
+            Button {
+                showingDebts = true
+            } label: {
+                Text(String(localized: "View All"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+            }
+            .buttonStyle(.plain)
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
-                )
-        )
     }
 
     private func debtStatCell(label: String, value: String, tint: Color) -> some View {
@@ -1063,54 +1024,26 @@ struct DashboardView: View {
 
     // MARK: - Upcoming Payments
 
-    private var upcomingPaymentsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(String(localized: "Upcoming Payments"))
-                    .font(.headline.weight(.semibold))
-                Spacer()
-                Button(String(localized: "Debts")) { showingDebts = true }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.warning)
-                    .buttonStyle(.plain)
-                Text("·")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Button(String(localized: "Subscriptions")) { showingSubscriptions = true }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.primaryAccent)
-                    .buttonStyle(.plain)
-            }
-
-            let upcomingItems = buildUpcomingItems()
-
-            if upcomingItems.isEmpty {
-                Text(String(localized: "No upcoming payments"))
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 12)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 12) {
-                        ForEach(upcomingItems) { item in
-                            upcomingPaymentCard(item: item)
-                        }
+    @ViewBuilder
+    private var upcomingPaymentsContent: some View {
+        let upcomingItems = buildUpcomingItems()
+        if upcomingItems.isEmpty {
+            Text(String(localized: "No upcoming payments"))
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.vertical, 12)
+        } else {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    ForEach(upcomingItems) { item in
+                        upcomingPaymentCard(item: item)
                     }
-                    .padding(.horizontal, 2)
-                    .padding(.vertical, 4)
                 }
+                .padding(.horizontal, 2)
+                .padding(.vertical, 4)
             }
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
-                )
-        )
     }
 
     private struct UpcomingItem: Identifiable {
@@ -1209,31 +1142,14 @@ struct DashboardView: View {
 
     // MARK: - Recent Activity
 
-    private func recentActivitySection(
+    private func recentActivityContent(
         recentTransactions: [Transaction],
         categoryById: [UUID: Category]
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text(String(localized: "Recent Activity"))
-                    .font(.headline.weight(.semibold))
-                Spacer()
-                Button(String(localized: "View All")) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedTab = .transactions
-                    }
-                }
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(AppTheme.primaryAccent)
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("dashboard.recentActivity.openTransactions")
-            }
-
+        VStack(spacing: 2) {
             if recentTransactions.isEmpty && transactions.isEmpty && accounts.isEmpty {
-                VStack(spacing: 2) {
-                    ForEach(0..<3, id: \.self) { _ in
-                        SkeletonTransactionRow()
-                    }
+                ForEach(0..<3, id: \.self) { _ in
+                    SkeletonTransactionRow()
                 }
             } else if recentTransactions.isEmpty {
                 Text(String(localized: "No recent activity"))
@@ -1242,26 +1158,26 @@ struct DashboardView: View {
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 12)
             } else {
-                VStack(spacing: 2) {
-                    ForEach(recentTransactions.prefix(5)) { txn in
-                        recentTransactionRow(txn, categoryById: categoryById)
-                        if txn.id != recentTransactions.prefix(5).last?.id {
-                            Divider()
-                                .padding(.leading, 58)
-                        }
+                ForEach(recentTransactions.prefix(5)) { txn in
+                    recentTransactionRow(txn, categoryById: categoryById)
+                    if txn.id != recentTransactions.prefix(5).last?.id {
+                        Divider()
+                            .padding(.leading, 58)
                     }
                 }
             }
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) { selectedTab = .transactions }
+            } label: {
+                Text(String(localized: "View All"))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+            .buttonStyle(.plain)
+            .padding(.top, 4)
+            .accessibilityIdentifier("dashboard.recentActivity.openTransactions")
         }
-        .padding(12)
-        .background(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .fill(AppTheme.surface)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
-                )
-        )
     }
 
     private func recentTransactionRow(_ txn: Transaction, categoryById: [UUID: Category]) -> some View {
@@ -1361,41 +1277,6 @@ struct DashboardView: View {
         let formatter = DateFormatter()
         formatter.dateFormat = "MMMM yyyy"
         return formatter.string(from: Calendar.current.date(from: comps) ?? Date())
-    }
-
-    private func dailyAllowance(
-        freeToSpend: Decimal,
-        current: (year: Int, month: Int, day: Int)
-    ) -> Decimal {
-        var comps = DateComponents()
-        comps.year = current.year
-        comps.month = current.month
-        comps.day = 1
-        let monthDate = Calendar.current.date(from: comps) ?? Date()
-        let daysInMonth = Calendar.current.range(of: .day, in: .month, for: monthDate)?.count ?? 30
-        let daysLeft = max(1, daysInMonth - current.day + 1)
-        return freeToSpend / Decimal(daysLeft)
-    }
-
-    private func freeToSpend(
-        stats s: DashboardStats,
-        expenseCategories: [Category],
-        currentMonth: Int,
-        currentYear: Int,
-        previousMonth: (year: Int, month: Int)
-    ) -> Decimal {
-        let totalLimit = expenseCategories.reduce(Decimal.zero) {
-            $0 + effectiveLimit(
-                for: $1,
-                month: currentMonth,
-                year: currentYear,
-                previousMonth: previousMonth,
-                previousSpentByCategory: s.prevSpentByCategory
-            )
-        }
-        let totalSpent = expenseCategories.reduce(Decimal.zero) { $0 + s.spentByCategory[$1.id, default: .zero] }
-        guard totalLimit > 0 else { return s.monthlyIncome - s.monthlyExpense }
-        return totalLimit - totalSpent
     }
 
     private func liveActivityCurrencySymbol() -> String {
