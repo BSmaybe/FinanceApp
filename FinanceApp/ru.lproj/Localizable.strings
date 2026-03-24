@@ -651,3 +651,7 @@
 "No budgets" = "Нет бюджетов";
 "%lld over budget" = "%lld превышен";
 "%lld near limit" = "%lld у предела";
+/* Cash Flows redesign */
+"Cash Flows" = "Денежные потоки";
+"History" = "История";
+"Transfers" = "Переводы";

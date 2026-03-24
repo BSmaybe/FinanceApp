@@ -641,3 +641,7 @@
 "No budgets" = "Бюджет жоқ";
 "%lld over budget" = "%lld асып кетті";
 "%lld near limit" = "%lld шекке жақын";
+/* Cash Flows redesign */
+"Cash Flows" = "Ақша ағыны";
+"History" = "Тарих";
+"Transfers" = "Аударымдар";

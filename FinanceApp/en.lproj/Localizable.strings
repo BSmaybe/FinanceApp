@@ -655,3 +655,7 @@
 "No budgets" = "No budgets";
 "%lld over budget" = "%lld over budget";
 "%lld near limit" = "%lld near limit";
+/* Cash Flows redesign */
+"Cash Flows" = "Cash Flows";
+"History" = "History";
+"Transfers" = "Transfers";
