@@ -268,6 +268,50 @@
 "Installments are typically interest-free (0%)." = "Бөліп төлеу әдетте пайызсыз (0%).";
 "Other" = "Басқа";
 
+/* Dashboard reference redesign */
+"Dashboard" = "Басты бет";
+"👋 Hi" = "👋 Сәлем";
+"Net worth" = "Таза капитал";
+"History" = "Тарих";
+"Latest transaction" = "Соңғы транзакция";
+"See all" = "Барлығын көру";
+"Scan QR" = "QR сканерлеу";
+"SPENDING" = "ШЫҒЫН";
+"BILLS" = "ТӨЛЕМДЕР";
+"PLANNING" = "ЖОСПАРЛАУ";
+"No budgets yet" = "Бюджет әлі жоқ";
+"Create budgets to track monthly pressure" = "Айлық жүктемені бақылау үшін бюджеттер құрыңыз";
+"You reached %lld%% of %@ budget" = "%@ бюджетінің %lld%%-ына жеттіңіз";
+"%lld active bills this month" = "Осы айда %lld белсенді төлем";
+"Create your first goal" = "Алғашқы мақсатыңызды жасаңыз";
+"%lld goals in progress" = "%lld мақсат орындалу үстінде";
+"Tap to add your first transaction" = "Бірінші транзакцияны қосу үшін түртіңіз";
+"in progress" = "орындалу үстінде";
+"Free to spend: %@" = "Еркін жұмсауға: %@";
+"Over" = "Артық";
+
+/* Capture scanner */
+"Receipt" = "Чек";
+"Barcode" = "Штрихкод";
+"Scan mode" = "Сканерлеу режимі";
+"Scan Receipt or Barcode" = "Чек немесе штрихкодты сканерлеу";
+"Align QR/barcode inside the frame to continue." = "Жалғастыру үшін QR/штрихкодты жақтауға келтіріңіз.";
+"Point camera at receipt line with total amount." = "Камераны чектегі жалпы сома жолына бағыттаңыз.";
+"Scanning is unavailable on this device." = "Бұл құрылғыда сканерлеу қолжетімсіз.";
+"Try using this feature on a device with camera scanning support." = "Бұл мүмкіндікті камерамен сканерлеуді қолдайтын құрылғыда қолданып көріңіз.";
+"Requesting camera access..." = "Камераға рұқсат сұралуда...";
+"Please allow camera usage to scan receipts and barcodes." = "Чек пен штрихкодты сканерлеу үшін камераға рұқсат беріңіз.";
+"Scanner is currently unavailable." = "Қазір сканер қолжетімсіз.";
+"Close other apps using camera and try again." = "Камераны қолданып тұрған басқа қолданбаларды жауып, қайта көріңіз.";
+"Camera access is required to scan receipts and barcodes." = "Чек пен штрихкодты сканерлеу үшін камераға рұқсат қажет.";
+"Enable camera access in Settings and try again." = "Баптауларда камераға рұқсат беріп, қайта көріңіз.";
+"Open Settings" = "Баптауларды ашу";
+"Unable to start scanner." = "Сканерді іске қосу мүмкін болмады.";
+"Scanner unavailable" = "Сканер қолжетімсіз";
+"OK" = "ОК";
+"Receipt Scan" = "Чек сканы";
+"Barcode Scan" = "Штрихкод сканы";
+
 /* Debt Detail */
 "Payment Schedule" = "Төлем кестесі";
 "Remaining Payments" = "Қалған төлемдер";
@@ -306,8 +350,8 @@
 
 /* Appearance */
 "Appearance" = "Сыртқы көрініс";
-"Finance Blue" = "Finance Blue";
-"Midnight Green" = "Midnight Green";
+"Finance Blue" = "Қаржылық көк";
+"Midnight Green" = "Түнгі жасыл";
 "Sunset" = "Күн батысы";
 "Lavender" = "Лаванда";
 "Midnight" = "Түнгі";
@@ -339,7 +383,7 @@
 "Total transactions" = "Барлық транзакциялар";
 
 /* Live Activity */
-"Live Activity" = "Live Activity";
+"Live Activity" = "Тікелей белсенділік";
 "Daily Budget in Dynamic Island" = "Күнлік бюджет Dynamic Island-та";
 "Shows today's spending progress in Dynamic Island and Lock Screen." = "Бүгінгі шығыстарды Dynamic Island мен құлыптау экранында көрсетеді.";
 "Daily Budget" = "Күнделікті бюджет";
@@ -470,7 +514,7 @@
 "Over by %@" = "%@ асып кетті";
 "%@ left · %lld days" = "%@ қалды · %lld күн";
 "of %@" = "%@ ішінен";
-"Dashboard" = "Басқы бет";
+"Dashboard" = "Басты бет";
 "Dashboard Settings" = "Бақылау тақтасы параметрлері";
 "Dashboard Sections" = "Бақылау тақтасы бөлімдері";
 "Quick Actions" = "Жылдам әрекеттер";
@@ -530,7 +574,7 @@
 /* Daily Quote Card */
 "Anime" = "Аниме";
 "Game" = "Ойын";
-"Movie" = "Кино";
+"Movie" = "Фильм";
 
 /* Hero Profile / Gamification */
 "Beginner Saver" = "Жаңадан Бастаушы";

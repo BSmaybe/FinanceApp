@@ -1,6 +1,8 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import VisionKit
+import AVFoundation
 
 struct DashboardView: View {
     @Binding var selectedTab: AppRootTab
@@ -43,6 +45,9 @@ struct DashboardView: View {
     @State private var showingForecast = false
     @State private var showingBudgetManager = false
     @State private var showingDashboardSettings = false
+    @State private var showingCaptureScanner = false
+    @State private var scannerErrorMessage: String?
+    @State private var quickAddCapturePayload: PendingCapturePayload?
 
     // B4: Swipe hint (shown once)
     @AppStorage("dash.swipeHintShown") private var swipeHintShown = false
@@ -289,9 +294,27 @@ struct DashboardView: View {
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingQuickAdd) {
-                QuickAddView()
+                QuickAddView(capturePayload: quickAddCapturePayload)
                     .presentationCornerRadius(24)
                     .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingCaptureScanner) {
+                DashboardCaptureScannerView(
+                    onCapture: { payload in
+                        showingCaptureScanner = false
+                        quickAddCapturePayload = payload
+                        showingQuickAdd = true
+                    },
+                    onCancel: {
+                        showingCaptureScanner = false
+                    },
+                    onError: { message in
+                        showingCaptureScanner = false
+                        scannerErrorMessage = message
+                    }
+                )
+                .presentationCornerRadius(24)
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingBudgetManager) {
                 BudgetManagerView(month: current.month, year: current.year)
@@ -317,6 +340,16 @@ struct DashboardView: View {
                 CashFlowForecastView()
                     .presentationCornerRadius(24)
                     .presentationDragIndicator(.visible)
+            }
+            .alert(String(localized: "Scanner unavailable"), isPresented: Binding(
+                get: { scannerErrorMessage != nil },
+                set: { newValue in
+                    if !newValue { scannerErrorMessage = nil }
+                }
+            )) {
+                Button(String(localized: "OK"), role: .cancel) { scannerErrorMessage = nil }
+            } message: {
+                Text(scannerErrorMessage ?? "")
             }
             .onAppear {
                 // B4: show swipe hint once
@@ -493,6 +526,7 @@ struct DashboardView: View {
                 icon: "creditcard",
                 label: String(localized: "Payment")
             ) {
+                quickAddCapturePayload = nil
                 showingQuickAdd = true
             }
 
@@ -514,7 +548,7 @@ struct DashboardView: View {
                 icon: "qrcode.viewfinder",
                 label: String(localized: "Scan QR")
             ) {
-                showingQuickAdd = true
+                showingCaptureScanner = true
             }
         }
         .padding(.vertical, 10)
@@ -1996,5 +2030,447 @@ struct DashboardView: View {
                 categoryById: categoryById
             )
         }
+    }
+}
+
+private enum DashboardScanMode: String, CaseIterable, Identifiable {
+    case receipt
+    case barcode
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .receipt:
+            return String(localized: "Receipt")
+        case .barcode:
+            return String(localized: "Barcode")
+        }
+    }
+}
+
+private struct DashboardCaptureScannerView: View {
+    let onCapture: (PendingCapturePayload) -> Void
+    let onCancel: () -> Void
+    let onError: (String) -> Void
+
+    @Environment(\.openURL) private var openURL
+    @State private var mode: DashboardScanMode = .barcode
+    @State private var cameraAuthorized = false
+    @State private var cameraPermissionResolved = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 14) {
+                Picker(String(localized: "Scan mode"), selection: $mode) {
+                    ForEach(DashboardScanMode.allCases) { m in
+                        Text(m.title).tag(m)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Group {
+                    if !DataScannerViewController.isSupported {
+                        scannerMessageView(
+                            title: String(localized: "Scanning is unavailable on this device."),
+                            subtitle: String(localized: "Try using this feature on a device with camera scanning support.")
+                        )
+                    } else if !cameraPermissionResolved {
+                        scannerMessageView(
+                            title: String(localized: "Requesting camera access..."),
+                            subtitle: String(localized: "Please allow camera usage to scan receipts and barcodes.")
+                        )
+                    } else if !cameraAuthorized {
+                        scannerDeniedView
+                    } else if !DataScannerViewController.isAvailable {
+                        scannerMessageView(
+                            title: String(localized: "Scanner is currently unavailable."),
+                            subtitle: String(localized: "Close other apps using camera and try again.")
+                        )
+                    } else {
+                        DashboardDataScannerRepresentable(
+                            mode: mode,
+                            onCapture: onCapture,
+                            onError: onError
+                        )
+                        .id(mode.id)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                Text(mode == .barcode
+                     ? String(localized: "Align QR/barcode inside the frame to continue.")
+                     : String(localized: "Point camera at receipt line with total amount."))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(16)
+            .background(AppTheme.canvas.ignoresSafeArea())
+            .navigationTitle(String(localized: "Scan Receipt or Barcode"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(String(localized: "Cancel")) { onCancel() }
+                }
+            }
+            .onAppear {
+                resolveCameraPermission()
+            }
+        }
+    }
+
+    private var scannerDeniedView: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(AppTheme.warning)
+            Text(String(localized: "Camera access is required to scan receipts and barcodes."))
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text(String(localized: "Enable camera access in Settings and try again."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button(String(localized: "Open Settings")) {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                openURL(url)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.primaryAccent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(18)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func scannerMessageView(title: String, subtitle: String) -> some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(18)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func resolveCameraPermission() {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .authorized:
+            cameraAuthorized = true
+            cameraPermissionResolved = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    cameraAuthorized = granted
+                    cameraPermissionResolved = true
+                }
+            }
+        case .denied, .restricted:
+            cameraAuthorized = false
+            cameraPermissionResolved = true
+        @unknown default:
+            cameraAuthorized = false
+            cameraPermissionResolved = true
+        }
+    }
+}
+
+private struct DashboardDataScannerRepresentable: UIViewControllerRepresentable {
+    let mode: DashboardScanMode
+    let onCapture: (PendingCapturePayload) -> Void
+    let onError: (String) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(mode: mode, onCapture: onCapture, onError: onError)
+    }
+
+    func makeUIViewController(context: Context) -> DataScannerViewController {
+        let recognizedDataTypes: Set<DataScannerViewController.RecognizedDataType> = {
+            switch mode {
+            case .receipt:
+                return [.text()]
+            case .barcode:
+                return [
+                    .barcode(symbologies: [.qr, .ean8, .ean13, .upce, .code39, .code128, .itf14, .pdf417, .aztec, .dataMatrix])
+                ]
+            }
+        }()
+
+        let scanner = DataScannerViewController(
+            recognizedDataTypes: recognizedDataTypes,
+            qualityLevel: .balanced,
+            recognizesMultipleItems: true,
+            isHighFrameRateTrackingEnabled: false,
+            isPinchToZoomEnabled: true,
+            isGuidanceEnabled: true,
+            isHighlightingEnabled: true
+        )
+        scanner.delegate = context.coordinator
+
+        do {
+            try scanner.startScanning()
+        } catch {
+            context.coordinator.emitErrorIfNeeded(String(localized: "Unable to start scanner."))
+        }
+        return scanner
+    }
+
+    func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {}
+
+    static func dismantleUIViewController(_ uiViewController: DataScannerViewController, coordinator: Coordinator) {
+        uiViewController.stopScanning()
+    }
+
+    final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        private let mode: DashboardScanMode
+        private let onCapture: (PendingCapturePayload) -> Void
+        private let onError: (String) -> Void
+        private var didEmitResult = false
+        private var receiptFragments: [String] = []
+
+        init(
+            mode: DashboardScanMode,
+            onCapture: @escaping (PendingCapturePayload) -> Void,
+            onError: @escaping (String) -> Void
+        ) {
+            self.mode = mode
+            self.onCapture = onCapture
+            self.onError = onError
+        }
+
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            process(item)
+        }
+
+        func dataScanner(
+            _ dataScanner: DataScannerViewController,
+            didAdd addedItems: [RecognizedItem],
+            allItems: [RecognizedItem]
+        ) {
+            for item in addedItems {
+                if process(item) {
+                    return
+                }
+            }
+        }
+
+        func emitErrorIfNeeded(_ message: String) {
+            guard !didEmitResult else { return }
+            didEmitResult = true
+            DispatchQueue.main.async {
+                self.onError(message)
+            }
+        }
+
+        @discardableResult
+        private func process(_ item: RecognizedItem) -> Bool {
+            guard !didEmitResult else { return true }
+
+            let payload: PendingCapturePayload?
+            switch item {
+            case .barcode(let barcode):
+                guard mode == .barcode else { return false }
+                payload = DashboardScanPayloadBuilder.payload(fromBarcode: barcode.payloadStringValue)
+            case .text(let text):
+                guard mode == .receipt else { return false }
+                let fragment = text.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !fragment.isEmpty else { return false }
+                if !receiptFragments.contains(fragment) {
+                    receiptFragments.append(fragment)
+                    if receiptFragments.count > 40 {
+                        receiptFragments.removeFirst(receiptFragments.count - 40)
+                    }
+                }
+                payload = DashboardScanPayloadBuilder.payload(fromReceiptText: receiptFragments.joined(separator: "\n"))
+            @unknown default:
+                payload = nil
+            }
+
+            guard let payload else { return false }
+            if mode == .receipt, payload.amount == nil {
+                // Keep scanning until we detect a line with an amount.
+                return false
+            }
+            didEmitResult = true
+            DispatchQueue.main.async {
+                self.onCapture(payload)
+            }
+            return true
+        }
+    }
+}
+
+private enum DashboardScanPayloadBuilder {
+    static func payload(fromBarcode rawValue: String?) -> PendingCapturePayload? {
+        guard let rawValue else { return nil }
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+
+        let amount = extractAmountFromBarcode(value)
+        let merchant = extractMerchantFromBarcode(value)
+        let currency = detectCurrencyCode(in: value)
+
+        return PendingCapturePayload(
+            amount: amount,
+            merchant: merchant,
+            currency: currency,
+            source: "barcode_scan"
+        )
+    }
+
+    static func payload(fromReceiptText rawText: String) -> PendingCapturePayload? {
+        let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+
+        let amount = extractAmount(from: text)
+        let merchant = extractMerchant(from: text)
+        let currency = detectCurrencyCode(in: text)
+
+        return PendingCapturePayload(
+            amount: amount,
+            merchant: merchant,
+            currency: currency,
+            source: "receipt_scan"
+        )
+    }
+
+    private static func detectCurrencyCode(in text: String) -> String? {
+        let uppercase = text.uppercased()
+        if uppercase.contains("KZT") || text.contains("₸") || uppercase.contains("ТГ") { return "KZT" }
+        if uppercase.contains("USD") || text.contains("$") { return "USD" }
+        if uppercase.contains("RUB") || text.contains("₽") { return "RUB" }
+        if uppercase.contains("EUR") || text.contains("€") { return "EUR" }
+        return nil
+    }
+
+    private static func extractMerchant(from text: String) -> String {
+        let lines = text
+            .split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        if let firstTextLine = lines.first(where: {
+            let letters = $0.unicodeScalars.filter(CharacterSet.letters.contains).count
+            return letters >= 2
+        }) {
+            return String(firstTextLine.prefix(80))
+        }
+        return String(text.prefix(80))
+    }
+
+    private static func extractAmount(from text: String) -> Decimal? {
+        let pattern = "(?:\\d{1,3}(?:[\\s.,]\\d{3})+|\\d+)(?:[.,]\\d{1,2})?"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = regex.matches(in: text, options: [], range: range)
+
+        var bestCandidate: Decimal?
+        for match in matches {
+            guard let tokenRange = Range(match.range, in: text) else { continue }
+            let token = String(text[tokenRange])
+            guard let parsed = parseAmountToken(token) else { continue }
+            let value = NSDecimalNumber(decimal: parsed).doubleValue
+            guard value >= 1, value <= 100_000_000 else { continue }
+            if let existing = bestCandidate {
+                if parsed > existing { bestCandidate = parsed }
+            } else {
+                bestCandidate = parsed
+            }
+        }
+        return bestCandidate
+    }
+
+    private static func parseAmountToken(_ token: String) -> Decimal? {
+        let compact = token.replacingOccurrences(of: " ", with: "")
+        let digitsOnly = compact.filter(\.isNumber)
+        guard !digitsOnly.isEmpty else { return nil }
+
+        if let lastSeparator = compact.lastIndex(where: { $0 == "," || $0 == "." }) {
+            let fractionalDigits = compact.distance(from: compact.index(after: lastSeparator), to: compact.endIndex)
+            if fractionalDigits > 0, fractionalDigits <= 2, digitsOnly.count > fractionalDigits {
+                let splitIndex = digitsOnly.count - fractionalDigits
+                let intPart = digitsOnly.prefix(splitIndex)
+                let fractionPart = digitsOnly.suffix(fractionalDigits)
+                return Decimal(string: "\(String(intPart)).\(String(fractionPart))")
+            }
+        }
+
+        return Decimal(string: String(digitsOnly))
+    }
+
+    private static func extractAmountFromBarcode(_ value: String) -> Decimal? {
+        if let components = URLComponents(string: value) {
+            let amountKeys = ["sum", "s", "amount", "total", "price"]
+            if let queryItems = components.queryItems {
+                for key in amountKeys {
+                    if let raw = queryItems.first(where: { $0.name.lowercased() == key })?.value,
+                       let parsed = parseAmountToken(raw) {
+                        return parsed
+                    }
+                }
+            }
+        }
+
+        let patterns = [
+            "(?:^|[?&;])(?:sum|s|amount|total|price)=([0-9]+(?:[\\.,][0-9]{1,2})?)",
+            "(?:^|\\s)(?:sum|amount|total)[:=]\\s*([0-9]+(?:[\\.,][0-9]{1,2})?)"
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+                continue
+            }
+            let range = NSRange(value.startIndex..<value.endIndex, in: value)
+            if let match = regex.firstMatch(in: value, options: [], range: range),
+               match.numberOfRanges >= 2,
+               let tokenRange = Range(match.range(at: 1), in: value),
+               let parsed = parseAmountToken(String(value[tokenRange])) {
+                return parsed
+            }
+        }
+
+        return extractAmount(from: value)
+    }
+
+    private static func extractMerchantFromBarcode(_ value: String) -> String? {
+        if let components = URLComponents(string: value) {
+            let merchantKeys = ["merchant", "shop", "store", "name", "seller"]
+            if let queryItems = components.queryItems {
+                for key in merchantKeys {
+                    if let raw = queryItems.first(where: { $0.name.lowercased() == key })?.value {
+                        let cleaned = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !cleaned.isEmpty {
+                            return String(cleaned.prefix(80))
+                        }
+                    }
+                }
+            }
+
+            if let host = components.host {
+                let cleanedHost = host.replacingOccurrences(of: "www.", with: "")
+                if !cleanedHost.isEmpty {
+                    return String(cleanedHost.prefix(80))
+                }
+            }
+        }
+
+        if value.count <= 80 {
+            return value
+        }
+        return nil
     }
 }
