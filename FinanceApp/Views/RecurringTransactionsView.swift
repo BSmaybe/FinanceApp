@@ -32,7 +32,8 @@ struct RecurringTransactionsView: View {
                 .onDelete(perform: delete)
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
+        .financeNavigationSurface()
         .navigationTitle(String(localized: "Recurring Transactions"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -266,6 +267,7 @@ struct AddEditRecurringTransactionView: View {
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(existingRecurring == nil ? String(localized: "Add Recurring") : String(localized: "Edit Recurring"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

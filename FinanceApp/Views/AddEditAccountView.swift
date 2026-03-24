@@ -73,6 +73,7 @@ struct AddEditAccountView: View {
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(existingAccount == nil ? String(localized: "Add Account") : String(localized: "Edit Account"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

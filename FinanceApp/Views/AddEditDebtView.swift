@@ -175,6 +175,7 @@ struct AddEditDebtView: View {
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(isEditing ? String(localized: "Edit Debt") : String(localized: "New Debt"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -56,6 +56,8 @@ struct CategoriesView: View {
                     }
                 }
             }
+            .listStyle(.plain)
+            .financeNavigationSurface()
             .overlay {
                 if categories.isEmpty {
                     EmptyStateView(
@@ -216,6 +218,7 @@ struct AddEditCategoryView: View {
                     ColorPicker(String(localized: "Color"), selection: $selectedColor, supportsOpacity: false)
                 }
             }
+            .financeNavigationSurface()
             .navigationTitle(existingCategory == nil ? String(localized: "New Category") : String(localized: "Edit Category"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

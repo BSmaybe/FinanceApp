@@ -26,6 +26,8 @@ struct CashFlowForecastView: View {
                 chartSection
                 eventsSection
             }
+            .listStyle(.plain)
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Cash Flow Forecast"))
         }
     }

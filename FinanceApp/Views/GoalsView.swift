@@ -36,7 +36,8 @@ struct GoalsView: View {
                     }
                 }
             }
-            .listStyle(.insetGrouped)
+            .listStyle(.plain)
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Goals"))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -130,6 +131,7 @@ private struct GoalFormView: View {
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(goal == nil ? String(localized: "New Goal") : String(localized: "Edit Goal"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

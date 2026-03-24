@@ -27,6 +27,8 @@ struct DebtsView: View {
                     paidSection
                 }
             }
+            .listStyle(.plain)
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Debts"))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {

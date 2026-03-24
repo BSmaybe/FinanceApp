@@ -115,9 +115,24 @@ private struct CockpitSurfaceModifier: ViewModifier {
     }
 }
 
+private struct FinanceNavigationSurfaceModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden)
+            .background(AppTheme.canvas.ignoresSafeArea())
+            .tint(AppTheme.primaryAccent)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(AppTheme.surface, for: .navigationBar)
+    }
+}
+
 extension View {
     func cockpitSurface(cornerRadius: CGFloat = 22, elevated: Bool = false, compact: Bool = false) -> some View {
         modifier(CockpitSurfaceModifier(cornerRadius: cornerRadius, elevated: elevated, compact: compact))
+    }
+
+    func financeNavigationSurface() -> some View {
+        modifier(FinanceNavigationSurfaceModifier())
     }
 
     /// Uses a full symbols keyboard so digits are available in a more standard top-row layout.

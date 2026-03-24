@@ -27,135 +27,136 @@ struct SubscriptionsView: View {
 
     var body: some View {
         NavigationStack {
-        List {
-            if subscriptions.isEmpty {
-                ContentUnavailableView(
-                    String(localized: "No Subscriptions"),
-                    systemImage: "repeat.circle",
-                    description: Text(String(localized: "Tap + to add your first subscription."))
-                )
-            } else {
-                // Summary header
-                Section {
-                    HStack {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(String(localized: "Monthly"))
-                                .font(.caption)
-                                .foregroundStyle(AppTheme.primaryAccent)
-                            Text(CurrencyFormatter.string(from: totalMonthlyCost))
-                                .font(.title3.bold().monospacedDigit())
-                                .foregroundStyle(.primary)
-                        }
-                        Spacer()
-                        VStack(alignment: .trailing, spacing: 4) {
-                            Text(String(localized: "Yearly"))
-                                .font(.caption)
-                                .foregroundStyle(AppTheme.primaryAccent)
-                            Text(CurrencyFormatter.string(from: totalYearlyCost))
-                                .font(.title3.bold().monospacedDigit())
-                                .foregroundStyle(.primary)
-                        }
-                    }
-                    .padding(.vertical, 4)
-                    .listRowBackground(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(AppTheme.subscriptionGradient)
-                            .padding(.horizontal, 4)
-                            .padding(.vertical, 2)
+            List {
+                if subscriptions.isEmpty {
+                    ContentUnavailableView(
+                        String(localized: "No Subscriptions"),
+                        systemImage: "repeat.circle",
+                        description: Text(String(localized: "Tap + to add your first subscription."))
                     )
-                }
-
-                // Active subscriptions
-                if !activeSubscriptions.isEmpty {
-                    Section(String(localized: "Active")) {
-                        ForEach(activeSubscriptions) { subscription in
-                            SubscriptionRow(
-                                subscription: subscription,
-                                category: categories.first { $0.id == subscription.categoryId }
-                            )
-                            .swipeActions(edge: .trailing) {
-                                Button {
-                                    subscription.isActive = false
-                                    try? modelContext.save()
-                                } label: {
-                                    Label(String(localized: "Cancel"), systemImage: "xmark.circle")
-                                }
-                                .tint(.orange)
+                } else {
+                    // Summary header
+                    Section {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 4) {
+                                Text(String(localized: "Monthly"))
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.primaryAccent)
+                                Text(CurrencyFormatter.string(from: totalMonthlyCost))
+                                    .font(.title3.bold().monospacedDigit())
+                                    .foregroundStyle(.primary)
                             }
-                            .contextMenu {
-                                Button(String(localized: "Edit")) { editingSubscription = subscription }
-                                Button(String(localized: "Cancel Subscription"), role: .destructive) {
-                                    subscription.isActive = false
-                                    try? modelContext.save()
-                                }
+                            Spacer()
+                            VStack(alignment: .trailing, spacing: 4) {
+                                Text(String(localized: "Yearly"))
+                                    .font(.caption)
+                                    .foregroundStyle(AppTheme.primaryAccent)
+                                Text(CurrencyFormatter.string(from: totalYearlyCost))
+                                    .font(.title3.bold().monospacedDigit())
+                                    .foregroundStyle(.primary)
                             }
                         }
-                        .onDelete(perform: deleteActive)
+                        .padding(.vertical, 4)
+                        .listRowBackground(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(AppTheme.subscriptionGradient)
+                                .padding(.horizontal, 4)
+                                .padding(.vertical, 2)
+                        )
                     }
-                }
 
-                // Cancelled subscriptions
-                if !cancelledSubscriptions.isEmpty {
-                    Section(String(localized: "Cancelled")) {
-                        ForEach(cancelledSubscriptions) { subscription in
-                            SubscriptionRow(
-                                subscription: subscription,
-                                category: categories.first { $0.id == subscription.categoryId }
-                            )
-                            .swipeActions(edge: .trailing) {
-                                Button(role: .destructive) {
-                                    modelContext.delete(subscription)
-                                    try? modelContext.save()
-                                } label: {
-                                    Label(String(localized: "Delete"), systemImage: "trash")
+                    // Active subscriptions
+                    if !activeSubscriptions.isEmpty {
+                        Section(String(localized: "Active")) {
+                            ForEach(activeSubscriptions) { subscription in
+                                SubscriptionRow(
+                                    subscription: subscription,
+                                    category: categories.first { $0.id == subscription.categoryId }
+                                )
+                                .swipeActions(edge: .trailing) {
+                                    Button {
+                                        subscription.isActive = false
+                                        try? modelContext.save()
+                                    } label: {
+                                        Label(String(localized: "Cancel"), systemImage: "xmark.circle")
+                                    }
+                                    .tint(.orange)
+                                }
+                                .contextMenu {
+                                    Button(String(localized: "Edit")) { editingSubscription = subscription }
+                                    Button(String(localized: "Cancel Subscription"), role: .destructive) {
+                                        subscription.isActive = false
+                                        try? modelContext.save()
+                                    }
                                 }
                             }
-                            .swipeActions(edge: .leading) {
-                                Button {
-                                    subscription.isActive = true
-                                    try? modelContext.save()
-                                } label: {
-                                    Label(String(localized: "Reactivate"), systemImage: "arrow.uturn.left")
-                                }
-                                .tint(.green)
-                            }
-                            .contextMenu {
-                                Button(String(localized: "Reactivate")) {
-                                    subscription.isActive = true
-                                    try? modelContext.save()
-                                }
-                                Button(String(localized: "Delete"), role: .destructive) {
-                                    modelContext.delete(subscription)
-                                    try? modelContext.save()
-                                }
-                            }
+                            .onDelete(perform: deleteActive)
                         }
-                        .onDelete(perform: deleteCancelled)
+                    }
+
+                    // Cancelled subscriptions
+                    if !cancelledSubscriptions.isEmpty {
+                        Section(String(localized: "Cancelled")) {
+                            ForEach(cancelledSubscriptions) { subscription in
+                                SubscriptionRow(
+                                    subscription: subscription,
+                                    category: categories.first { $0.id == subscription.categoryId }
+                                )
+                                .swipeActions(edge: .trailing) {
+                                    Button(role: .destructive) {
+                                        modelContext.delete(subscription)
+                                        try? modelContext.save()
+                                    } label: {
+                                        Label(String(localized: "Delete"), systemImage: "trash")
+                                    }
+                                }
+                                .swipeActions(edge: .leading) {
+                                    Button {
+                                        subscription.isActive = true
+                                        try? modelContext.save()
+                                    } label: {
+                                        Label(String(localized: "Reactivate"), systemImage: "arrow.uturn.left")
+                                    }
+                                    .tint(.green)
+                                }
+                                .contextMenu {
+                                    Button(String(localized: "Reactivate")) {
+                                        subscription.isActive = true
+                                        try? modelContext.save()
+                                    }
+                                    Button(String(localized: "Delete"), role: .destructive) {
+                                        modelContext.delete(subscription)
+                                        try? modelContext.save()
+                                    }
+                                }
+                            }
+                            .onDelete(perform: deleteCancelled)
+                        }
                     }
                 }
             }
-        }
-        .listStyle(.insetGrouped)
-        .navigationTitle(String(localized: "Subscriptions"))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingAdd = true
-                } label: {
-                    Image(systemName: "plus")
+            .listStyle(.plain)
+            .financeNavigationSurface()
+            .navigationTitle(String(localized: "Subscriptions"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingAdd = true
+                    } label: {
+                        Image(systemName: "plus")
+                    }
                 }
             }
-        }
-        .sheet(isPresented: $showingAdd) {
-            AddEditSubscriptionView()
-        }
-        .sheet(item: $editingSubscription) { item in
-            AddEditSubscriptionView(subscription: item)
-        }
-        .onAppear {
-            SubscriptionNotificationHelper.scheduleReminders(subscriptions: activeSubscriptions)
-        }
+            .sheet(isPresented: $showingAdd) {
+                AddEditSubscriptionView()
+            }
+            .sheet(item: $editingSubscription) { item in
+                AddEditSubscriptionView(subscription: item)
+            }
+            .onAppear {
+                SubscriptionNotificationHelper.scheduleReminders(subscriptions: activeSubscriptions)
+            }
         } // NavigationStack
     }
 

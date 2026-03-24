@@ -124,6 +124,8 @@ struct DebtPayoffView: View {
                     }
                 }
             }
+            .listStyle(.plain)
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Payoff Calculator"))
             .navigationBarTitleDisplayMode(.inline)
         }

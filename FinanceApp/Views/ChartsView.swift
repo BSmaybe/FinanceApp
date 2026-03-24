@@ -328,9 +328,8 @@ struct ChartsView: View {
                     .padding(16)
                 }
             }
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Analytics"))
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(AppTheme.surface, for: .navigationBar)
         }
     }
 
@@ -589,7 +588,7 @@ struct ChartsView: View {
             HStack {
                 Text(String(localized: "Cash Flows"))
                     .font(.system(.title2, design: .rounded).weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.9))
+                    .foregroundStyle(.primary)
                 Spacer()
                 HStack(spacing: 4) {
                     cashFlowModeChip(title: String(localized: "Month"), selected: selectedPeriod != .year) {
@@ -600,34 +599,34 @@ struct ChartsView: View {
                     }
                 }
                 .padding(4)
-                .background(.white.opacity(0.08))
+                .background(AppTheme.surfaceMuted.opacity(0.65))
                 .clipShape(Capsule())
             }
 
             HStack {
                 Image(systemName: "chevron.left")
                     .font(.caption.bold())
-                    .foregroundStyle(.white.opacity(0.38))
+                    .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
-                    .background(.white.opacity(0.06))
+                    .background(AppTheme.surfaceMuted.opacity(0.7))
                     .clipShape(Circle())
                 Spacer()
                 Text(currentRange.label)
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.88))
+                    .foregroundStyle(.primary)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.caption.bold())
-                    .foregroundStyle(.white.opacity(0.38))
+                    .foregroundStyle(.secondary)
                     .frame(width: 24, height: 24)
-                    .background(.white.opacity(0.06))
+                    .background(AppTheme.surfaceMuted.opacity(0.7))
                     .clipShape(Circle())
             }
 
             if slices.isEmpty {
                 Text(String(localized: "No cash flow data for selected period"))
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.62))
+                    .foregroundStyle(.secondary)
                     .frame(maxWidth: .infinity, minHeight: 150)
             } else {
                 Chart(slices) { slice in
@@ -650,12 +649,12 @@ struct ChartsView: View {
                                 .frame(width: 8, height: 8)
                             Text(slice.label)
                                 .font(.subheadline.weight(.medium))
-                                .foregroundStyle(.white.opacity(0.84))
+                                .foregroundStyle(.primary)
                                 .lineLimit(1)
                             Spacer(minLength: 4)
                             Text(NumberAbbreviator.string(from: Decimal(slice.amount)))
                                 .font(.subheadline.monospacedDigit().weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.84))
+                                .foregroundStyle(.primary)
                         }
                     }
                 }
@@ -683,7 +682,7 @@ struct ChartsView: View {
                 .chartXAxis {
                     AxisMarks(position: .bottom) { _ in
                         AxisValueLabel()
-                            .foregroundStyle(.white.opacity(0.45))
+                            .foregroundStyle(.secondary)
                     }
                 }
                 .chartPlotStyle { plot in
@@ -698,10 +697,10 @@ struct ChartsView: View {
                     selectedTab = .transactions
                 }
                 .font(.headline.weight(.medium))
-                .foregroundStyle(.white.opacity(0.82))
+                .foregroundStyle(.primary)
                 .padding(.horizontal, 26)
                 .padding(.vertical, 8)
-                .background(.white.opacity(0.08))
+                .background(AppTheme.surfaceMuted.opacity(0.7))
                 .clipShape(Capsule())
                 Spacer()
             }
@@ -710,11 +709,12 @@ struct ChartsView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 26, style: .continuous)
-                .fill(Color(hex: "#161920"))
+                .fill(AppTheme.elevatedSurface)
                 .overlay(
                     RoundedRectangle(cornerRadius: 26, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                        .stroke(AppTheme.outline.opacity(0.55), lineWidth: 1)
                 )
+                .shadow(color: AppTheme.shadowSoft, radius: 14, x: 0, y: 8)
         )
     }
 
@@ -722,10 +722,10 @@ struct ChartsView: View {
         Button(action: action) {
             Text(title)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(selected ? Color.black.opacity(0.82) : .white.opacity(0.56))
+                .foregroundStyle(selected ? .white : .secondary)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 6)
-                .background(selected ? Color.white.opacity(0.88) : Color.clear)
+                .background(selected ? AppTheme.primaryAccent : Color.clear)
                 .clipShape(Capsule())
         }
         .buttonStyle(.plain)
