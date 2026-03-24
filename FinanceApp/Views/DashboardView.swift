@@ -246,6 +246,14 @@ struct DashboardView: View {
                         )
                         .accessibilityIdentifier("dashboard.hero.section")
 
+                        if accounts.isEmpty {
+                            emptyAccountsCard
+                                .accessibilityIdentifier("dashboard.accounts.empty")
+                        } else {
+                            accountsScrollSection(balances: dashboardStats.netWorthByAccount)
+                                .accessibilityIdentifier("dashboard.accounts.section")
+                        }
+
                         if showQuickActions {
                             actionRailSection
                                 .accessibilityIdentifier("dashboard.primaryActions.section")
@@ -439,8 +447,10 @@ struct DashboardView: View {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text(String(localized: "👋 Hi"))
-                        .font(.system(size: 33, weight: .bold, design: .rounded))
+                        .font(.system(size: 27, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
                     Text(Date().formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
                         .font(.caption.weight(.medium))
                         .foregroundStyle(.white.opacity(0.6))
@@ -463,15 +473,16 @@ struct DashboardView: View {
 
             HStack(alignment: .bottom, spacing: 10) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(String(localized: "Net worth"))
+                    Text(String(localized: "Funds"))
                         .font(.subheadline.weight(.medium))
                         .foregroundStyle(.white.opacity(0.7))
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(CurrencyFormatter.string(from: netWorth))
-                            .font(.system(size: 46, weight: .bold, design: .rounded))
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
                             .foregroundStyle(.white)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.55)
+                            .minimumScaleFactor(0.44)
+                            .allowsTightening(true)
                         if !percentText.isEmpty {
                             Text(percentText)
                                 .font(.headline.weight(.bold))
@@ -712,7 +723,7 @@ struct DashboardView: View {
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(String(localized: "Insights"))
-                    .font(.title3.weight(.semibold))
+                    .font(.headline.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.95))
                 Spacer()
                 Button(String(localized: "See all")) {
@@ -803,31 +814,31 @@ struct DashboardView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text(badge)
                 .font(.caption.weight(.bold))
-                .tracking(1.6)
+                .tracking(1.3)
                 .foregroundStyle(foreground.opacity(0.55))
 
             Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
+                .font(.system(size: 15, weight: .semibold))
                 .foregroundStyle(foreground)
-                .frame(width: 42, height: 42)
+                .frame(width: 36, height: 36)
                 .background(.white.opacity(0.72))
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 6) {
                 Text(headline)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
                     .foregroundStyle(foreground)
                     .lineLimit(1)
                     .minimumScaleFactor(0.65)
                 Text(message)
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(foreground.opacity(0.95))
-                    .lineLimit(3)
+                    .lineLimit(2)
                     .multilineTextAlignment(.leading)
             }
         }
-        .frame(width: 215, height: 220, alignment: .topLeading)
-        .padding(16)
+        .frame(width: 182, height: 178, alignment: .topLeading)
+        .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(background)
@@ -1202,9 +1213,18 @@ struct DashboardView: View {
 
     private func accountsScrollSection(balances: [UUID: Decimal]) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(String(localized: "Accounts"))
-                .font(.headline.weight(.semibold))
-                .foregroundStyle(.primary)
+            HStack {
+                Text(String(localized: "Accounts"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.95))
+                Spacer()
+                Button(String(localized: "See all")) {
+                    selectedTab = .accounts
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(hex: "#B98CFF"))
+                .buttonStyle(.plain)
+            }
 
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 12) {
