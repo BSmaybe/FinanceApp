@@ -233,7 +233,8 @@ struct DashboardView: View {
                             netWorth: netWorthValue,
                             freeToSpend: freeToSpendValue,
                             monthlyIncome: dashboardStats.monthlyIncome,
-                            monthlyExpense: dashboardStats.monthlyExpense
+                            monthlyExpense: dashboardStats.monthlyExpense,
+                            netWorthByAccount: dashboardStats.netWorthByAccount
                         )
                         .accessibilityIdentifier("dashboard.hero.section")
 
@@ -388,10 +389,11 @@ struct DashboardView: View {
         netWorth: Decimal,
         freeToSpend: Decimal,
         monthlyIncome: Decimal,
-        monthlyExpense: Decimal
+        monthlyExpense: Decimal,
+        netWorthByAccount: [UUID: Decimal]
     ) -> some View {
         let monthNet = monthlyIncome - monthlyExpense
-        let trendTint: Color = monthNet >= 0 ? Color(hex: "#9BFF3A") : AppTheme.danger
+        let trendTint: Color = monthNet >= 0 ? AppTheme.success : AppTheme.danger
         let trendValues = heroTrendValues(
             income: monthlyIncome,
             expense: monthlyExpense
@@ -402,47 +404,55 @@ struct DashboardView: View {
             let sign = pct >= 0 ? "+" : ""
             return "\(sign)\(String(format: "%.1f", pct))%"
         }()
+        let topAccounts = accounts
+            .map { account in
+                (account: account, balance: netWorthByAccount[account.id, default: account.openingBalance])
+            }
+            .sorted {
+                abs(NSDecimalNumber(decimal: $0.balance).doubleValue) >
+                abs(NSDecimalNumber(decimal: $1.balance).doubleValue)
+            }
 
-        return VStack(alignment: .leading, spacing: 14) {
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(String(localized: "👋 Hi"))
-                        .font(.system(size: 33, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                    Text(String(localized: "Welcome"))
+                        .font(.title3.weight(.medium))
+                        .foregroundStyle(.secondary)
                     Text(Date().formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
-                        .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
                 Spacer()
                 Button {
                     HapticManager.impact(.light)
                     showingDashboardSettings = true
                 } label: {
-                    Image(systemName: "slider.horizontal.3")
+                    Image(systemName: "bell.badge")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.92))
+                        .foregroundStyle(.primary.opacity(0.9))
                         .frame(width: 34, height: 34)
-                        .background(.white.opacity(0.14))
+                        .background(AppTheme.surfaceMuted.opacity(0.65))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("dashboard.openLayoutSettings")
             }
 
-            HStack(alignment: .bottom, spacing: 10) {
+            HStack(alignment: .bottom, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(String(localized: "Net worth"))
+                    Text(String(localized: "Balance"))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.secondary)
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(CurrencyFormatter.string(from: netWorth))
-                            .font(.system(size: 46, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .foregroundStyle(.primary)
                             .lineLimit(1)
-                            .minimumScaleFactor(0.55)
+                            .minimumScaleFactor(0.62)
                         if !percentText.isEmpty {
                             Text(percentText)
-                                .font(.headline.weight(.bold))
+                                .font(.subheadline.weight(.bold))
                                 .foregroundStyle(trendTint)
                         }
                     }
@@ -452,103 +462,170 @@ struct DashboardView: View {
                             CurrencyFormatter.string(from: freeToSpend)
                         )
                     )
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .font(.subheadline.weight(.regular))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
                 }
 
-                Spacer(minLength: 8)
-
                 SparklineView(values: trendValues, tint: trendTint, showArea: true)
-                    .frame(width: 132, height: 72)
-                    .padding(.horizontal, 8)
+                    .frame(width: 118, height: 64)
+                    .padding(.horizontal, 6)
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(.black.opacity(0.2))
+                            .fill(AppTheme.surfaceMuted)
                     )
+            }
+
+            HStack(spacing: 10) {
+                if topAccounts.isEmpty {
+                    Button {
+                        selectedTab = .accounts
+                    } label: {
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text(String(localized: "No accounts yet"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            Text(String(localized: "Open Accounts"))
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppTheme.primaryAccent)
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(AppTheme.surfaceMuted.opacity(0.75))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                } else {
+                    ForEach(Array(topAccounts.prefix(2).enumerated()), id: \.element.account.id) { _, item in
+                        accountOverviewTile(account: item.account, balance: item.balance)
+                    }
+                    if topAccounts.count == 1 {
+                        Button {
+                            selectedTab = .accounts
+                        } label: {
+                            VStack(spacing: 8) {
+                                Image(systemName: "plus")
+                                    .font(.body.weight(.bold))
+                                Text(String(localized: "Account"))
+                                    .font(.caption.weight(.semibold))
+                            }
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(AppTheme.surfaceMuted.opacity(0.6))
+                            )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
             }
         }
         .padding(.horizontal, 18)
-        .padding(.vertical, 18)
+        .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
-                    LinearGradient(
-                        colors: [Color(hex: "#203A57"), Color(hex: "#162B43")],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+                    AppTheme.elevatedSurface
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                        .stroke(AppTheme.outline.opacity(0.55), lineWidth: 1)
                 )
-                .shadow(color: .black.opacity(0.28), radius: 18, x: 0, y: 8)
+                .shadow(color: AppTheme.shadowSoft, radius: 12, x: 0, y: 6)
         )
     }
 
+    private func accountOverviewTile(account: Account, balance: Decimal) -> some View {
+        Button {
+            selectedTab = .accounts
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(account.name)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                Text(CurrencyFormatter.string(from: balance, currencyCode: account.currencyCode))
+                    .font(.title3.weight(.bold).monospacedDigit())
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+                Text(account.type.localizedName)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(AppTheme.surfaceMuted.opacity(0.78))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
     private var actionRailSection: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 10) {
             actionRailItem(
-                icon: "plus.circle",
-                label: String(localized: "Quick Add")
+                icon: "plus.circle.fill",
+                label: String(localized: "Quick Add"),
+                tint: AppTheme.primaryAccent
             ) {
                 showingQuickAdd = true
             }
 
             actionRailItem(
-                icon: "clock.arrow.circlepath",
-                label: String(localized: "History")
-            ) {
-                selectedTab = .transactions
-            }
-
-            actionRailItem(
-                icon: "chart.pie",
-                label: String(localized: "Budgets")
+                icon: "chart.pie.fill",
+                label: String(localized: "Budgets"),
+                tint: AppTheme.warning
             ) {
                 showingBudgetManager = true
             }
 
             actionRailItem(
-                icon: "building.columns",
-                label: String(localized: "Accounts")
+                icon: "chart.line.uptrend.xyaxis",
+                label: String(localized: "Forecast"),
+                tint: AppTheme.info
             ) {
-                selectedTab = .accounts
+                showingForecast = true
             }
         }
-        .padding(.vertical, 10)
-        .padding(.horizontal, 6)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(hex: "#B98CFF"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(.white.opacity(0.22), lineWidth: 1)
-                )
-                .shadow(color: Color(hex: "#B98CFF").opacity(0.34), radius: 14, x: 0, y: 6)
-        )
     }
 
     private func actionRailItem(
         icon: String,
         label: String,
+        tint: Color,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            VStack(spacing: 10) {
                 Image(systemName: icon)
-                    .font(.system(size: 20, weight: .semibold))
-                    .frame(height: 24)
+                    .font(.system(size: 17, weight: .semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 34, height: 34)
+                    .background(tint.opacity(0.13))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
                 Text(label)
-                    .font(.footnote.weight(.semibold))
+                    .font(.caption.weight(.semibold))
                     .lineLimit(1)
-                    .minimumScaleFactor(0.75)
+                    .minimumScaleFactor(0.8)
             }
-            .foregroundStyle(Color(hex: "#1F1633"))
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 8)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(AppTheme.surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
+                    )
+            )
         }
         .buttonStyle(.plain)
     }
@@ -561,13 +638,13 @@ struct DashboardView: View {
             HStack {
                 Text(String(localized: "Latest transaction"))
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button(String(localized: "See all")) {
                     selectedTab = .transactions
                 }
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color(hex: "#B98CFF"))
+                .foregroundStyle(AppTheme.primaryAccent)
                 .buttonStyle(.plain)
                 .accessibilityIdentifier("dashboard.recentActivity.openTransactions")
             }
@@ -581,24 +658,24 @@ struct DashboardView: View {
                     HStack(spacing: 12) {
                         Image(systemName: "plus.circle.fill")
                             .font(.title3.weight(.semibold))
-                            .foregroundStyle(Color(hex: "#7EE787"))
+                            .foregroundStyle(AppTheme.success)
                         VStack(alignment: .leading, spacing: 3) {
                             Text(String(localized: "No transactions yet"))
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.9))
+                                .foregroundStyle(.primary)
                             Text(String(localized: "Tap to add your first transaction"))
                                 .font(.caption)
-                                .foregroundStyle(.white.opacity(0.62))
+                                .foregroundStyle(.secondary)
                         }
                         Spacer()
                     }
                     .padding(14)
                     .background(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .fill(Color(hex: "#233A56"))
+                            .fill(AppTheme.surface)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                    .stroke(.white.opacity(0.08), lineWidth: 1)
+                                    .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
                             )
                     )
                 }
@@ -615,9 +692,9 @@ struct DashboardView: View {
         let category = txn.categoryId.flatMap { categoryById[$0] }
         let tint: Color = {
             switch txn.type {
-            case .income: return Color(hex: "#7EE787")
-            case .expense: return Color(hex: "#FF8A80")
-            case .transfer: return Color(hex: "#8EDBFF")
+            case .income: return AppTheme.success
+            case .expense: return AppTheme.danger
+            case .transfer: return AppTheme.info
             }
         }()
         let sign = txn.type == .income ? "+" : (txn.type == .expense ? "-" : "")
@@ -644,11 +721,11 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(title)
                     .font(.headline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.94))
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundStyle(.white.opacity(0.58))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
 
@@ -662,57 +739,54 @@ struct DashboardView: View {
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(hex: "#233A56"))
+                .fill(AppTheme.surface)
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                        .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
                 )
         )
     }
 
     private func insightsReferenceSection(budgetPressures: [BudgetRisk]) -> some View {
         let topRisk = budgetPressures.first
-        let topRiskPercent = Int((topRisk?.ratio ?? 0) * 100)
+        let topRiskPercent = Int(min(max((topRisk?.ratio ?? 0), 0), 1) * 100)
         let monthlyBills = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount } +
             activeDebts.reduce(Decimal.zero) { $0 + $1.minimumPayment }
+        let progressColor: Color = {
+            guard let topRisk else { return AppTheme.info }
+            if topRisk.isOverBudget { return AppTheme.danger }
+            if topRisk.ratio >= 0.8 { return AppTheme.warning }
+            return AppTheme.success
+        }()
 
         return VStack(alignment: .leading, spacing: 10) {
             HStack {
                 Text(String(localized: "Insights"))
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.95))
+                    .foregroundStyle(.primary)
                 Spacer()
                 Button(String(localized: "Open Analytics")) {
                     selectedTab = .analytics
                 }
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(Color(hex: "#B98CFF"))
+                .foregroundStyle(AppTheme.primaryAccent)
                 .buttonStyle(.plain)
             }
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    Button {
-                        showingBudgetManager = true
-                    } label: {
-                        insightReferenceCard(
-                            badge: String(localized: "SPENDING"),
-                            icon: topRisk?.category.iconName ?? "chart.pie.fill",
-                            headline: topRisk == nil ? String(localized: "No budgets yet") : "\(topRiskPercent)%",
-                            message: topRisk == nil
-                                ? String(localized: "Create budgets to track monthly pressure")
-                                : String(
-                                    format: String(localized: "You reached %lld%% of %@ budget"),
-                                    Int64(max(0, topRiskPercent)),
-                                    topRisk?.category.name ?? ""
-                                ),
-                            background: Color(hex: "#F6D94C"),
-                            foreground: Color(hex: "#2F2A12")
-                        )
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityIdentifier("dashboard.thisMonth.openBudgets")
+            HStack(spacing: 12) {
+                Button {
+                    showingBudgetManager = true
+                } label: {
+                    budgetProgressInsightCard(
+                        percent: topRiskPercent,
+                        categoryName: topRisk?.category.name,
+                        accent: progressColor
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("dashboard.thisMonth.openBudgets")
 
+                VStack(spacing: 12) {
                     Button {
                         if featureSubscriptions {
                             showingSubscriptions = true
@@ -720,16 +794,14 @@ struct DashboardView: View {
                             showingDebts = true
                         }
                     } label: {
-                        insightReferenceCard(
-                            badge: String(localized: "BILLS"),
-                            icon: "waveform.path.ecg",
-                            headline: CurrencyFormatter.string(from: monthlyBills),
+                        insightMiniCard(
+                            title: String(localized: "Bills"),
+                            value: CurrencyFormatter.string(from: monthlyBills),
                             message: String(
-                                format: String(localized: "%lld active bills this month"),
+                                format: String(localized: "%lld active this month"),
                                 Int64(activeSubscriptions.count + activeDebts.count)
                             ),
-                            background: Color(hex: "#C699FF"),
-                            foreground: Color(hex: "#26183A")
+                            tint: AppTheme.warning
                         )
                     }
                     .buttonStyle(.plain)
@@ -737,70 +809,113 @@ struct DashboardView: View {
                     Button {
                         selectedTab = .analytics
                     } label: {
-                        insightReferenceCard(
-                            badge: String(localized: "PLANNING"),
-                            icon: "target",
-                            headline: "\(activeGoals.count)",
+                        insightMiniCard(
+                            title: String(localized: "Planning"),
+                            value: "\(activeGoals.count)",
                             message: activeGoals.isEmpty
                                 ? String(localized: "Create your first goal")
                                 : String(
                                     format: String(localized: "%lld goals in progress"),
                                     Int64(activeGoals.count)
                                 ),
-                            background: Color(hex: "#79E6B2"),
-                            foreground: Color(hex: "#103126")
+                            tint: AppTheme.success
                         )
                     }
                     .buttonStyle(.plain)
                 }
-                .padding(.horizontal, 1)
             }
         }
         .padding(.top, 2)
     }
 
-    private func insightReferenceCard(
-        badge: String,
-        icon: String,
-        headline: String,
-        message: String,
-        background: Color,
-        foreground: Color
+    private func budgetProgressInsightCard(
+        percent: Int,
+        categoryName: String?,
+        accent: Color
     ) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text(badge)
+        let clamped = min(max(percent, 0), 100)
+
+        return VStack(alignment: .leading, spacing: 12) {
+            Text(String(localized: "SPENDING"))
                 .font(.caption.weight(.bold))
                 .tracking(1.6)
-                .foregroundStyle(foreground.opacity(0.55))
+                .foregroundStyle(.white.opacity(0.62))
 
-            Image(systemName: icon)
-                .font(.system(size: 18, weight: .semibold))
-                .foregroundStyle(foreground)
-                .frame(width: 42, height: 42)
-                .background(.white.opacity(0.72))
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(headline)
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
-                    .foregroundStyle(foreground)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.65)
-                Text(message)
-                    .font(.system(size: 18, weight: .medium, design: .rounded))
-                    .foregroundStyle(foreground.opacity(0.95))
-                    .lineLimit(3)
-                    .multilineTextAlignment(.leading)
+            ZStack {
+                Circle()
+                    .stroke(.white.opacity(0.15), lineWidth: 10)
+                    .frame(width: 106, height: 106)
+                Circle()
+                    .trim(from: 0, to: Double(clamped) / 100)
+                    .stroke(accent, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .frame(width: 106, height: 106)
+                    .rotationEffect(.degrees(-90))
+                Text("\(clamped)%")
+                    .font(.title2.weight(.bold).monospacedDigit())
+                    .foregroundStyle(.white)
             }
+            .padding(.top, 4)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(categoryName ?? String(localized: "No budgets yet"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.88))
+                    .lineLimit(1)
+                Text(String(localized: "Tap to manage budgets"))
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.65))
+            }
+            Spacer(minLength: 0)
         }
-        .frame(width: 215, height: 220, alignment: .topLeading)
-        .padding(16)
+        .frame(maxWidth: .infinity, minHeight: 220, maxHeight: 220, alignment: .topLeading)
+        .padding(14)
         .background(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(background)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .fill(Color(hex: "#111318"))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(.white.opacity(0.35), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+
+    private func insightMiniCard(
+        title: String,
+        value: String,
+        message: String,
+        tint: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(tint)
+                    .frame(width: 7, height: 7)
+                Text(title)
+                    .font(.caption.weight(.bold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(.secondary)
+                Spacer(minLength: 0)
+            }
+            Text(value)
+                .font(.title3.weight(.bold).monospacedDigit())
+                .foregroundStyle(.primary)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+            Text(message)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .lineLimit(2)
+                .fixedSize(horizontal: false, vertical: true)
+            Spacer(minLength: 0)
+        }
+        .frame(maxWidth: .infinity, minHeight: 104, maxHeight: 104, alignment: .topLeading)
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(AppTheme.surface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
                 )
         )
     }
@@ -812,7 +927,7 @@ struct DashboardView: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text(String(localized: "Commitments"))
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.95))
+                .foregroundStyle(.primary)
 
             HStack(spacing: 10) {
                 if featureSubscriptions {
@@ -821,7 +936,7 @@ struct DashboardView: View {
                         value: CurrencyFormatter.string(from: subscriptionTotal),
                         subtitle: "\(activeSubscriptions.count)",
                         icon: "repeat",
-                        tint: Color(hex: "#B98CFF")
+                        tint: AppTheme.primaryAccent
                     ) {
                         showingSubscriptions = true
                     }
@@ -833,7 +948,7 @@ struct DashboardView: View {
                         value: CurrencyFormatter.string(from: debtTotal),
                         subtitle: "\(activeDebts.count)",
                         icon: "creditcard",
-                        tint: Color(hex: "#FF9D66")
+                        tint: AppTheme.warning
                     ) {
                         showingDebts = true
                     }
@@ -845,7 +960,7 @@ struct DashboardView: View {
                         value: "\(activeGoals.count)",
                         subtitle: String(localized: "in progress"),
                         icon: "flag.checkered",
-                        tint: Color(hex: "#7EE787")
+                        tint: AppTheme.success
                     ) {
                         showingGoals = true
                     }
@@ -874,26 +989,26 @@ struct DashboardView: View {
 
                 Text(value)
                     .font(.subheadline.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.white.opacity(0.93))
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.68)
                 Text(title)
                     .font(.caption.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(.primary.opacity(0.82))
                     .lineLimit(1)
                 Text(subtitle)
                     .font(.caption2)
-                    .foregroundStyle(.white.opacity(0.58))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(Color(hex: "#223650"))
+                    .fill(AppTheme.surface)
                     .overlay(
                         RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .stroke(.white.opacity(0.08), lineWidth: 1)
+                            .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
                     )
             )
         }
