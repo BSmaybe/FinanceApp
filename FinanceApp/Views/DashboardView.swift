@@ -416,12 +416,12 @@ struct DashboardView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(String(localized: "Welcome"))
+                    Text(String(localized: "Hello"))
                         .font(.title3.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.88))
                     Text(Date().formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.55))
                 }
                 Spacer()
                 Button {
@@ -430,9 +430,9 @@ struct DashboardView: View {
                 } label: {
                     Image(systemName: "bell.badge")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.primary.opacity(0.9))
+                        .foregroundStyle(.white.opacity(0.9))
                         .frame(width: 34, height: 34)
-                        .background(AppTheme.surfaceMuted.opacity(0.65))
+                        .background(.white.opacity(0.08))
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
@@ -441,13 +441,13 @@ struct DashboardView: View {
 
             HStack(alignment: .bottom, spacing: 12) {
                 VStack(alignment: .leading, spacing: 6) {
-                    Text(String(localized: "Balance"))
+                    Text(String(format: String(localized: "Total money (%lld cards)"), Int64(accounts.count)))
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(.white.opacity(0.55))
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text(CurrencyFormatter.string(from: netWorth))
                             .font(.system(size: 40, weight: .bold, design: .rounded))
-                            .foregroundStyle(.primary)
+                            .foregroundStyle(.white)
                             .lineLimit(1)
                             .minimumScaleFactor(0.62)
                         if !percentText.isEmpty {
@@ -463,7 +463,7 @@ struct DashboardView: View {
                         )
                     )
                     .font(.subheadline.weight(.regular))
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.72))
                     .lineLimit(1)
                 }
 
@@ -473,7 +473,7 @@ struct DashboardView: View {
                     .padding(.vertical, 6)
                     .background(
                         RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(AppTheme.surfaceMuted)
+                            .fill(.white.opacity(0.06))
                     )
             }
 
@@ -485,16 +485,16 @@ struct DashboardView: View {
                         VStack(alignment: .leading, spacing: 6) {
                             Text(String(localized: "No accounts yet"))
                                 .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.primary)
+                                .foregroundStyle(.white.opacity(0.9))
                             Text(String(localized: "Open Accounts"))
                                 .font(.caption.weight(.semibold))
-                                .foregroundStyle(AppTheme.primaryAccent)
+                                .foregroundStyle(AppTheme.info)
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(12)
                         .background(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(AppTheme.surfaceMuted.opacity(0.75))
+                                .fill(.white.opacity(0.06))
                         )
                     }
                     .buttonStyle(.plain)
@@ -512,12 +512,12 @@ struct DashboardView: View {
                                 Text(String(localized: "Account"))
                                     .font(.caption.weight(.semibold))
                             }
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(.white.opacity(0.68))
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(
                                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(AppTheme.surfaceMuted.opacity(0.6))
+                                    .fill(.white.opacity(0.04))
                             )
                         }
                         .buttonStyle(.plain)
@@ -530,13 +530,17 @@ struct DashboardView: View {
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
                 .fill(
-                    AppTheme.elevatedSurface
+                    LinearGradient(
+                        colors: [Color(hex: "#22252D"), Color(hex: "#15181F")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(AppTheme.outline.opacity(0.55), lineWidth: 1)
+                        .stroke(.white.opacity(0.08), lineWidth: 1)
                 )
-                .shadow(color: AppTheme.shadowSoft, radius: 12, x: 0, y: 6)
+                .shadow(color: .black.opacity(0.28), radius: 16, x: 0, y: 7)
         )
     }
 
@@ -547,33 +551,33 @@ struct DashboardView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(account.name)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white.opacity(0.92))
                     .lineLimit(1)
                 Text(CurrencyFormatter.string(from: balance, currencyCode: account.currencyCode))
                     .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(.primary)
+                    .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
                 Text(account.type.localizedName)
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(.white.opacity(0.55))
                     .lineLimit(1)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(12)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(AppTheme.surfaceMuted.opacity(0.78))
+                    .fill(.white.opacity(0.07))
             )
         }
         .buttonStyle(.plain)
     }
 
     private var actionRailSection: some View {
-        HStack(spacing: 10) {
+        HStack(spacing: 8) {
             actionRailItem(
                 icon: "plus.circle.fill",
-                label: String(localized: "Quick Add"),
+                label: String(localized: "Add"),
                 tint: AppTheme.primaryAccent
             ) {
                 showingQuickAdd = true
@@ -589,10 +593,10 @@ struct DashboardView: View {
 
             actionRailItem(
                 icon: "chart.line.uptrend.xyaxis",
-                label: String(localized: "Forecast"),
+                label: String(localized: "Stats"),
                 tint: AppTheme.info
             ) {
-                showingForecast = true
+                selectedTab = .analytics
             }
         }
     }
@@ -604,25 +608,25 @@ struct DashboardView: View {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            VStack(spacing: 10) {
+            HStack(spacing: 8) {
                 Image(systemName: icon)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(.system(size: 15, weight: .semibold))
                     .foregroundStyle(tint)
-                    .frame(width: 34, height: 34)
+                    .frame(width: 28, height: 28)
                     .background(tint.opacity(0.13))
-                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                    .clipShape(Circle())
                 Text(label)
-                    .font(.caption.weight(.semibold))
+                    .font(.subheadline.weight(.semibold))
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
             }
             .frame(maxWidth: .infinity)
-            .padding(.vertical, 12)
+            .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .fill(AppTheme.surface)
+                Capsule(style: .continuous)
+                    .fill(AppTheme.surfaceMuted.opacity(0.72))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        Capsule(style: .continuous)
                             .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
                     )
             )
