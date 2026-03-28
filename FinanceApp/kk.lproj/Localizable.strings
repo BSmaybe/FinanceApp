@@ -152,6 +152,10 @@
 "Remaining" = "Қалдық";
 "No budget set" = "Бюджет белгіленбеген";
 "Over budget" = "Бюджет асырылды";
+"On track" = "Жоспарға сай";
+"Watch budget" = "Бюджетке назар аударыңыз";
+"Goal reached" = "Мақсат орындалды";
+"Debt paid off" = "Қарыз өтелді";
 "Daily Allowance" = "Күнделікті лимит";
 "%lld days left" = "%lld күн қалды";
 "Spent: %@" = "Жұмсалды: %@";

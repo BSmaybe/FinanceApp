@@ -60,6 +60,7 @@ struct DebtsView: View {
                 successDebtName = paidDebts.last?.name ?? ""
                 HapticManager.success()
                 showSuccess = true
+                triggerLiveActivityCelebration()
             }
             .overlay {
                 if showSuccess {
@@ -70,6 +71,14 @@ struct DebtsView: View {
                 }
             }
         }
+    }
+
+    private func triggerLiveActivityCelebration() {
+#if canImport(ActivityKit)
+        if #available(iOS 16.2, *) {
+            LiveActivityManager.triggerCelebration(.debtPaidOff)
+        }
+#endif
     }
 
     // MARK: - Sections

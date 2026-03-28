@@ -8,9 +8,25 @@ import ActivityKit
 @available(iOS 16.2, *)
 struct DailyBudgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
+        enum Signal: String, Codable, Hashable {
+            case noBudget
+            case onTrack
+            case warning
+            case overBudget
+        }
+
+        enum Celebration: String, Codable, Hashable {
+            case none
+            case goalReached
+            case debtPaidOff
+        }
+
         var spentToday: Double
         var dailyBudget: Double
         var currencySymbol: String
+        var signal: Signal
+        var pulseToken: Int
+        var celebration: Celebration
 
         var progress: Double {
             guard dailyBudget > 0 else { return 0 }

@@ -57,6 +57,7 @@ struct GoalsView: View {
                 }
                 HapticManager.success()
                 showSuccess = true
+                triggerLiveActivityCelebration()
             }
             .overlay {
                 if showSuccess {
@@ -67,6 +68,14 @@ struct GoalsView: View {
                 }
             }
         }
+    }
+
+    private func triggerLiveActivityCelebration() {
+#if canImport(ActivityKit)
+        if #available(iOS 16.2, *) {
+            LiveActivityManager.triggerCelebration(.goalReached)
+        }
+#endif
     }
 }
 

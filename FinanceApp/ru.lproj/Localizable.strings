@@ -102,6 +102,10 @@
 "Remaining" = "Остаток";
 "No budget set" = "Бюджет не задан";
 "Over budget" = "Превышен бюджет";
+"On track" = "В норме";
+"Watch budget" = "Следите за бюджетом";
+"Goal reached" = "Цель достигнута";
+"Debt paid off" = "Долг погашен";
 
 /* Quick Add */
 "Quick Add" = "Быстрое добавление";
