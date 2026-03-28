@@ -695,3 +695,8 @@
 "Your net worth and balances will appear here" = "Ваш капитал и балансы появятся здесь";
 // Dashboard B4 swipe hint
 "swipe" = "свайп";
+// Dashboard Focus Strip section summaries
+"All on track" = "Всё в норме";
+"No budgets" = "Нет бюджетов";
+"%lld over budget" = "%lld превышен";
+"%lld near limit" = "%lld у предела";

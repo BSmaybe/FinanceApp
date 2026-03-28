@@ -685,3 +685,8 @@
 "Your net worth and balances will appear here" = "Активтеріңіз бен балансыңыз осында";
 // Dashboard B4 swipe hint
 "swipe" = "сырғытыңыз";
+// Dashboard Focus Strip section summaries
+"All on track" = "Бәрі жақсы";
+"No budgets" = "Бюджет жоқ";
+"%lld over budget" = "%lld асып кетті";
+"%lld near limit" = "%lld шекке жақын";
