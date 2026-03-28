@@ -108,6 +108,22 @@ private struct PeriodTotals {
     var net:     Decimal { income - expense }
 }
 
+private struct CashFlowSlice: Identifiable {
+    let id: String
+    let label: String
+    let amount: Double
+    let color: Color
+}
+
+private struct CashFlowTrendPoint: Identifiable {
+    let id: String
+    let month: String
+    let income: Double
+    let expenses: Double
+    let savings: Double
+    let transfer: Double
+}
+
 private func totals(for range: PeriodRange, in transactions: [Transaction]) -> PeriodTotals {
     var income:  Decimal = .zero
     var expense: Decimal = .zero
@@ -306,14 +322,14 @@ struct ChartsView: View {
                     VStack(spacing: 18) {
                         analyticsHeroCard
                         periodPicker
+                        cashFlowsStudioCard
                         periodContentView
                     }
                     .padding(16)
                 }
             }
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Analytics"))
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(AppTheme.surface, for: .navigationBar)
         }
     }
 
@@ -505,6 +521,214 @@ struct ChartsView: View {
             note: selectedPeriod.title,
             badgeText: compareBadgeText
         )
+    }
+
+    private var currentPeriodTransferAmount: Decimal {
+        periodTransactions
+            .filter { $0.type == .transfer }
+            .reduce(Decimal.zero) { $0 + $1.amount }
+    }
+
+    private var cashFlowSlices: [CashFlowSlice] {
+        let income = max(0, NSDecimalNumber(decimal: currentTotals.income).doubleValue)
+        let expense = max(0, NSDecimalNumber(decimal: currentTotals.expense).doubleValue)
+        let savings = max(0, NSDecimalNumber(decimal: currentTotals.net).doubleValue)
+        let transfer = max(0, NSDecimalNumber(decimal: currentPeriodTransferAmount).doubleValue)
+
+        let values: [CashFlowSlice] = [
+            CashFlowSlice(id: "income", label: String(localized: "Income"), amount: income, color: Color(hex: "#C8F35C")),
+            CashFlowSlice(id: "expense", label: String(localized: "Expenses"), amount: expense, color: Color(hex: "#FF737A")),
+            CashFlowSlice(id: "savings", label: String(localized: "Savings"), amount: savings, color: Color(hex: "#F6B254")),
+            CashFlowSlice(id: "transfer", label: String(localized: "Transfer"), amount: transfer, color: Color(hex: "#58AEEB"))
+        ]
+        return values.filter { $0.amount > 0 }
+    }
+
+    private var cashFlowTrendData: [CashFlowTrendPoint] {
+        let now = Date()
+        return (0..<7).reversed().compactMap { offset in
+            guard let monthDate = calendar.date(byAdding: .month, value: -offset, to: now) else { return nil }
+            let comps = calendar.dateComponents([.year, .month], from: monthDate)
+
+            var income: Decimal = .zero
+            var expense: Decimal = .zero
+            var transfer: Decimal = .zero
+
+            for txn in postedTransactions {
+                let tc = calendar.dateComponents([.year, .month], from: txn.date)
+                guard tc.year == comps.year, tc.month == comps.month else { continue }
+                switch txn.type {
+                case .income:
+                    income += txn.amount
+                case .expense:
+                    expense += txn.amount
+                case .transfer:
+                    transfer += txn.amount
+                }
+            }
+
+            let savings = max(.zero, income - expense)
+            let label = shortMonthFormatter.string(from: monthDate)
+            return CashFlowTrendPoint(
+                id: "\(comps.year ?? 0)-\(comps.month ?? 0)",
+                month: label,
+                income: NSDecimalNumber(decimal: income).doubleValue,
+                expenses: NSDecimalNumber(decimal: expense).doubleValue,
+                savings: NSDecimalNumber(decimal: savings).doubleValue,
+                transfer: NSDecimalNumber(decimal: transfer).doubleValue
+            )
+        }
+    }
+
+    private var cashFlowsStudioCard: some View {
+        let slices = cashFlowSlices
+        let trend = cashFlowTrendData
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text(String(localized: "Cash Flows"))
+                    .font(.system(.title2, design: .rounded).weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                HStack(spacing: 4) {
+                    cashFlowModeChip(title: String(localized: "Month"), selected: selectedPeriod != .year) {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedPeriod = .month }
+                    }
+                    cashFlowModeChip(title: String(localized: "Year"), selected: selectedPeriod == .year) {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedPeriod = .year }
+                    }
+                }
+                .padding(4)
+                .background(AppTheme.surfaceMuted.opacity(0.65))
+                .clipShape(Capsule())
+            }
+
+            HStack {
+                Image(systemName: "chevron.left")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(AppTheme.surfaceMuted.opacity(0.7))
+                    .clipShape(Circle())
+                Spacer()
+                Text(currentRange.label)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(AppTheme.surfaceMuted.opacity(0.7))
+                    .clipShape(Circle())
+            }
+
+            if slices.isEmpty {
+                Text(String(localized: "No cash flow data for selected period"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 150)
+            } else {
+                Chart(slices) { slice in
+                    SectorMark(
+                        angle: .value("Amount", slice.amount),
+                        innerRadius: .ratio(0.54),
+                        angularInset: 4
+                    )
+                    .foregroundStyle(slice.color)
+                    .cornerRadius(6)
+                }
+                .frame(height: 230)
+                .chartLegend(.hidden)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    ForEach(slices) { slice in
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(slice.color)
+                                .frame(width: 8, height: 8)
+                            Text(slice.label)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: 4)
+                            Text(NumberAbbreviator.string(from: Decimal(slice.amount)))
+                                .font(.subheadline.monospacedDigit().weight(.semibold))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+            }
+
+            if !trend.isEmpty {
+                Chart {
+                    ForEach(trend) { item in
+                        LineMark(x: .value("Month", item.month), y: .value("Income", item.income))
+                            .foregroundStyle(Color(hex: "#C8F35C"))
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                        LineMark(x: .value("Month", item.month), y: .value("Expenses", item.expenses))
+                            .foregroundStyle(Color(hex: "#FF737A"))
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                        LineMark(x: .value("Month", item.month), y: .value("Savings", item.savings))
+                            .foregroundStyle(Color(hex: "#F6B254"))
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                        LineMark(x: .value("Month", item.month), y: .value("Transfer", item.transfer))
+                            .foregroundStyle(Color(hex: "#58AEEB"))
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                    }
+                }
+                .frame(height: 122)
+                .chartYAxis(.hidden)
+                .chartXAxis {
+                    AxisMarks(position: .bottom) { _ in
+                        AxisValueLabel()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .chartPlotStyle { plot in
+                    plot
+                        .background(.clear)
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button(String(localized: "History")) {
+                    selectedTab = .transactions
+                }
+                .font(.headline.weight(.medium))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 26)
+                .padding(.vertical, 8)
+                .background(AppTheme.surfaceMuted.opacity(0.7))
+                .clipShape(Capsule())
+                Spacer()
+            }
+            .padding(.top, 2)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(AppTheme.elevatedSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.55), lineWidth: 1)
+                )
+                .shadow(color: AppTheme.shadowSoft, radius: 14, x: 0, y: 8)
+        )
+    }
+
+    private func cashFlowModeChip(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(selected ? .white : .secondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(selected ? AppTheme.primaryAccent : Color.clear)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func groupHeader(title: String, subtitle: String) -> some View {

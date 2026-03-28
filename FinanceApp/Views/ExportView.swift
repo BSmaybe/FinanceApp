@@ -79,6 +79,7 @@ struct ExportView: View {
                     .disabled(filteredTransactions.isEmpty)
                 }
             }
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Export Data"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

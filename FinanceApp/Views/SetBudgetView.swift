@@ -44,6 +44,7 @@ struct SetBudgetView: View {
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .accessibilityIdentifier("setBudget.screen")
             .navigationTitle(String(localized: "Set Budget"))
             .navigationBarTitleDisplayMode(.inline)

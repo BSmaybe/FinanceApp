@@ -96,6 +96,7 @@ struct AddEditSubscriptionView: View {
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(existingSubscription == nil ? String(localized: "Add Subscription") : String(localized: "Edit Subscription"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

@@ -102,6 +102,10 @@
 "Remaining" = "Остаток";
 "No budget set" = "Бюджет не задан";
 "Over budget" = "Превышен бюджет";
+"On track" = "В норме";
+"Watch budget" = "Следите за бюджетом";
+"Goal reached" = "Цель достигнута";
+"Debt paid off" = "Долг погашен";
 
 /* Quick Add */
 "Quick Add" = "Быстрое добавление";
@@ -259,6 +263,51 @@
 "Upcoming Events" = "Ближайшие события";
 "No scheduled events in the next 30 days" = "Нет запланированных событий в ближайшие 30 дней";
 
+/* Dashboard reference redesign */
+"Dashboard" = "Обзор";
+"👋 Hi" = "👋 Привет";
+"Net worth" = "Капитал";
+"Funds" = "Бюджет";
+"History" = "История";
+"Latest transaction" = "Последняя транзакция";
+"See all" = "См. все";
+"Scan QR" = "Скан QR";
+"SPENDING" = "РАСХОДЫ";
+"BILLS" = "ПЛАТЕЖИ";
+"PLANNING" = "ПЛАНИРОВАНИЕ";
+"No budgets yet" = "Пока нет бюджетов";
+"Create budgets to track monthly pressure" = "Создайте бюджеты для контроля месячной нагрузки";
+"You reached %lld%% of %@ budget" = "Вы достигли %lld%% бюджета «%@»";
+"%lld active bills this month" = "%lld активных платежей в этом месяце";
+"Create your first goal" = "Создайте первую цель";
+"%lld goals in progress" = "%lld целей в процессе";
+"Tap to add your first transaction" = "Нажмите, чтобы добавить первую транзакцию";
+"in progress" = "в процессе";
+"Free to spend: %@" = "Свободно к тратам: %@";
+"Over" = "Перебор";
+
+/* Capture scanner */
+"Receipt" = "Чек";
+"Barcode" = "Штрихкод";
+"Scan mode" = "Режим сканирования";
+"Scan Receipt or Barcode" = "Сканировать чек или штрихкод";
+"Align QR/barcode inside the frame to continue." = "Наведите QR/штрихкод в рамку, чтобы продолжить.";
+"Point camera at receipt line with total amount." = "Наведите камеру на строку чека с итоговой суммой.";
+"Scanning is unavailable on this device." = "Сканирование недоступно на этом устройстве.";
+"Try using this feature on a device with camera scanning support." = "Попробуйте эту функцию на устройстве с поддержкой сканирования камерой.";
+"Requesting camera access..." = "Запрашиваем доступ к камере...";
+"Please allow camera usage to scan receipts and barcodes." = "Разрешите доступ к камере для сканирования чеков и штрихкодов.";
+"Scanner is currently unavailable." = "Сканер сейчас недоступен.";
+"Close other apps using camera and try again." = "Закройте другие приложения, использующие камеру, и попробуйте снова.";
+"Camera access is required to scan receipts and barcodes." = "Для сканирования чеков и штрихкодов нужен доступ к камере.";
+"Enable camera access in Settings and try again." = "Включите доступ к камере в Настройках и повторите.";
+"Open Settings" = "Открыть настройки";
+"Unable to start scanner." = "Не удалось запустить сканер.";
+"Scanner unavailable" = "Сканер недоступен";
+"OK" = "ОК";
+"Receipt Scan" = "Скан чека";
+"Barcode Scan" = "Скан штрихкода";
+
 /* Export */
 "Export Data" = "Экспорт данных";
 "Import CSV" = "Импорт CSV";
@@ -268,8 +317,8 @@
 
 /* Appearance */
 "Appearance" = "Внешний вид";
-"Finance Blue" = "Finance Blue";
-"Midnight Green" = "Midnight Green";
+"Finance Blue" = "Финансовый синий";
+"Midnight Green" = "Полуночный зелёный";
 "Sunset" = "Закат";
 "Lavender" = "Лаванда";
 "Midnight" = "Полночь";
@@ -353,7 +402,7 @@
 "Icon" = "Иконка";
 
 /* Live Activity */
-"Live Activity" = "Live Activity";
+"Live Activity" = "Live-активность";
 "Daily Budget in Dynamic Island" = "Бюджет дня в Dynamic Island";
 "Shows today's spending progress in Dynamic Island and Lock Screen." = "Показывает расходы дня в Dynamic Island и на экране блокировки.";
 "Daily Budget" = "Дневной бюджет";
@@ -483,7 +532,7 @@
 "Over by %@" = "Перерасход %@";
 "%@ left · %lld days" = "осталось %@ · %lld дн.";
 "of %@" = "из %@";
-"Dashboard" = "Дашборд";
+"Dashboard" = "Обзор";
 "Dashboard Settings" = "Настройки дашборда";
 "Dashboard Sections" = "Разделы дашборда";
 "Quick Actions" = "Быстрые действия";

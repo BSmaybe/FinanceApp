@@ -130,6 +130,8 @@ struct AccountsView: View {
                     }
                 }
             }
+            .listStyle(.plain)
+            .financeNavigationSurface()
             .accessibilityIdentifier("accounts.screen")
             .navigationTitle(String(localized: "Accounts"))
             .environment(\.editMode, $editMode)

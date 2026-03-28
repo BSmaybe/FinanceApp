@@ -36,7 +36,8 @@ struct GoalsView: View {
                     }
                 }
             }
-            .listStyle(.insetGrouped)
+            .listStyle(.plain)
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Goals"))
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
@@ -56,6 +57,7 @@ struct GoalsView: View {
                 }
                 HapticManager.success()
                 showSuccess = true
+                triggerLiveActivityCelebration()
             }
             .overlay {
                 if showSuccess {
@@ -66,6 +68,14 @@ struct GoalsView: View {
                 }
             }
         }
+    }
+
+    private func triggerLiveActivityCelebration() {
+#if canImport(ActivityKit)
+        if #available(iOS 16.2, *) {
+            LiveActivityManager.triggerCelebration(.goalReached)
+        }
+#endif
     }
 }
 
@@ -130,6 +140,7 @@ private struct GoalFormView: View {
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(goal == nil ? String(localized: "New Goal") : String(localized: "Edit Goal"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

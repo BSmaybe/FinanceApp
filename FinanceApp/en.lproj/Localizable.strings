@@ -103,6 +103,10 @@
 "Remaining" = "Remaining";
 "No budget set" = "No budget set";
 "Over budget" = "Over budget";
+"On track" = "On track";
+"Watch budget" = "Watch budget";
+"Goal reached" = "Goal reached";
+"Debt paid off" = "Debt paid off";
 
 /* Quick Add */
 "Quick Add" = "Quick Add";
@@ -259,6 +263,50 @@
 "30-Day Projection" = "30-Day Projection";
 "Upcoming Events" = "Upcoming Events";
 "No scheduled events in the next 30 days" = "No scheduled events in the next 30 days";
+
+/* Dashboard reference redesign */
+"👋 Hi" = "👋 Hi";
+"Net worth" = "Net worth";
+"Funds" = "Budget";
+"History" = "History";
+"Latest transaction" = "Latest transaction";
+"See all" = "See all";
+"Scan QR" = "Scan QR";
+"SPENDING" = "SPENDING";
+"BILLS" = "BILLS";
+"PLANNING" = "PLANNING";
+"No budgets yet" = "No budgets yet";
+"Create budgets to track monthly pressure" = "Create budgets to track monthly pressure";
+"You reached %lld%% of %@ budget" = "You reached %lld%% of %@ budget";
+"%lld active bills this month" = "%lld active bills this month";
+"Create your first goal" = "Create your first goal";
+"%lld goals in progress" = "%lld goals in progress";
+"Tap to add your first transaction" = "Tap to add your first transaction";
+"in progress" = "in progress";
+"Free to spend: %@" = "Free to spend: %@";
+"Over" = "Over";
+
+/* Capture scanner */
+"Receipt" = "Receipt";
+"Barcode" = "Barcode";
+"Scan mode" = "Scan mode";
+"Scan Receipt or Barcode" = "Scan Receipt or Barcode";
+"Align QR/barcode inside the frame to continue." = "Align QR/barcode inside the frame to continue.";
+"Point camera at receipt line with total amount." = "Point camera at receipt line with total amount.";
+"Scanning is unavailable on this device." = "Scanning is unavailable on this device.";
+"Try using this feature on a device with camera scanning support." = "Try using this feature on a device with camera scanning support.";
+"Requesting camera access..." = "Requesting camera access...";
+"Please allow camera usage to scan receipts and barcodes." = "Please allow camera usage to scan receipts and barcodes.";
+"Scanner is currently unavailable." = "Scanner is currently unavailable.";
+"Close other apps using camera and try again." = "Close other apps using camera and try again.";
+"Camera access is required to scan receipts and barcodes." = "Camera access is required to scan receipts and barcodes.";
+"Enable camera access in Settings and try again." = "Enable camera access in Settings and try again.";
+"Open Settings" = "Open Settings";
+"Unable to start scanner." = "Unable to start scanner.";
+"Scanner unavailable" = "Scanner unavailable";
+"OK" = "OK";
+"Receipt Scan" = "Receipt Scan";
+"Barcode Scan" = "Barcode Scan";
 
 /* Export */
 "Export Data" = "Export Data";

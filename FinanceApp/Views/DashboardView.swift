@@ -1,6 +1,8 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import VisionKit
+import AVFoundation
 
 struct DashboardView: View {
     @Binding var selectedTab: AppRootTab
@@ -43,6 +45,9 @@ struct DashboardView: View {
     @State private var showingForecast = false
     @State private var showingBudgetManager = false
     @State private var showingDashboardSettings = false
+    @State private var showingCaptureScanner = false
+    @State private var scannerErrorMessage: String?
+    @State private var quickAddCapturePayload: PendingCapturePayload?
 
     // B4: Swipe hint (shown once)
     @AppStorage("dash.swipeHintShown") private var swipeHintShown = false
@@ -221,111 +226,55 @@ struct DashboardView: View {
         )
 
         return NavigationStack {
-            ScrollView {
-                VStack(spacing: 0) {
-                    // Hero: gradient background auto-sized to content
-                    heroFloatingSection(
-                        netWorth: netWorthValue,
-                        income: dashboardStats.monthlyIncome,
-                        expense: dashboardStats.monthlyExpense,
-                        savingsRate: dashboardStats.monthlyIncome > 0
-                            ? max(.zero, (dashboardStats.monthlyIncome - dashboardStats.monthlyExpense) / dashboardStats.monthlyIncome)
-                            : .zero
-                    )
-                    .background(
-                        AppTheme.heroGradient
-                            .ignoresSafeArea(edges: .top)
-                    )
-                    .accessibilityIdentifier("dashboard.hero.section")
+            ZStack {
+                LinearGradient(
+                    colors: [Color(hex: "#284867"), Color(hex: "#1B3552"), Color(hex: "#162C46")],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+                    .ignoresSafeArea()
 
-                    // Content area: rounded top, canvas colour
-                    LazyVStack(spacing: 10) {
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 14) {
+                        heroReferenceSection(
+                            netWorth: netWorthValue,
+                            freeToSpend: freeToSpendValue,
+                            monthlyIncome: dashboardStats.monthlyIncome,
+                            monthlyExpense: dashboardStats.monthlyExpense
+                        )
+                        .accessibilityIdentifier("dashboard.hero.section")
+
                         if accounts.isEmpty {
                             emptyAccountsCard
+                                .accessibilityIdentifier("dashboard.accounts.empty")
                         } else {
-                            collapsibleSection(
-                                title: String(localized: "Accounts"),
-                                summary: accountsSummary(balances: dashboardStats.netWorthByAccount),
-                                expanded: $expandedAccounts,
-                                accessibilityId: "dashboard.accounts.section"
-                            ) {
-                                accountsScrollContent(balances: dashboardStats.netWorthByAccount)
-                            }
+                            accountsScrollSection(balances: dashboardStats.netWorthByAccount)
+                                .accessibilityIdentifier("dashboard.accounts.section")
                         }
 
                         if showQuickActions {
-                            fabAddTransactionButton
+                            actionRailSection
                                 .accessibilityIdentifier("dashboard.primaryActions.section")
-                            featureShortcutsRow
-                        }
-
-                        if featureBudgets && showThisMonth {
-                            collapsibleSection(
-                                title: String(localized: "Budget Rings"),
-                                summary: budgetsSummary(budgetPressures: budgetPressures),
-                                expanded: $expandedBudgets,
-                                accessibilityId: "dashboard.thisMonth.section"
-                            ) {
-                                budgetRingsContent(budgetPressures: budgetPressures)
-                            }
-                        }
-
-                        if featureDebts && showDebts && !activeDebts.isEmpty {
-                            collapsibleSection(
-                                title: String(localized: "Debts"),
-                                summary: debtsSummaryText,
-                                expanded: $expandedDebts,
-                                accessibilityId: "dashboard.debts.section"
-                            ) {
-                                debtsSummaryContent
-                            }
-                        }
-
-                        if featureSubscriptions && showCommitments {
-                            collapsibleSection(
-                                title: String(localized: "Upcoming Payments"),
-                                summary: upcomingSummary,
-                                expanded: $expandedUpcoming,
-                                accessibilityId: "dashboard.commitments.section"
-                            ) {
-                                upcomingPaymentsContent
-                            }
                         }
 
                         if showRecentActivity {
-                            collapsibleSection(
-                                title: String(localized: "Recent Activity"),
-                                summary: activitySummary(
-                                    recentTransactions: recentTransactionsList,
-                                    categoryById: categoryById
-                                ),
-                                expanded: $expandedActivity,
-                                accessibilityId: "dashboard.recentActivity.section"
-                            ) {
-                                recentActivityContent(
-                                    recentTransactions: recentTransactionsList,
-                                    categoryById: categoryById
-                                )
-                            }
+                            latestTransactionReferenceSection(
+                                recentTransactions: recentTransactionsList,
+                                categoryById: categoryById
+                            )
+                            .accessibilityIdentifier("dashboard.recentActivity.section")
+                        }
+
+                        if showThisMonth {
+                            insightsReferenceSection(budgetPressures: budgetPressures)
+                                .accessibilityIdentifier("dashboard.thisMonth.section")
                         }
                     }
-                    .padding(.horizontal, 14)
-                    .padding(.top, 16)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 14)
                     .padding(.bottom, 24)
-                    .frame(maxWidth: .infinity, minHeight: UIScreen.main.bounds.height * 0.7)
-                    .background(
-                        UnevenRoundedRectangle(
-                            topLeadingRadius: 24,
-                            bottomLeadingRadius: 0,
-                            bottomTrailingRadius: 0,
-                            topTrailingRadius: 24
-                        )
-                        .fill(AppTheme.canvas)
-                        .ignoresSafeArea(edges: .bottom)
-                    )
                 }
             }
-            .background(AppTheme.canvas.ignoresSafeArea())
             .accessibilityIdentifier("dashboard.screen")
             .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $showingDashboardSettings) {
@@ -351,9 +300,27 @@ struct DashboardView: View {
                     .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingQuickAdd) {
-                QuickAddView()
+                QuickAddView(capturePayload: quickAddCapturePayload)
                     .presentationCornerRadius(24)
                     .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingCaptureScanner) {
+                DashboardCaptureScannerView(
+                    onCapture: { payload in
+                        showingCaptureScanner = false
+                        quickAddCapturePayload = payload
+                        showingQuickAdd = true
+                    },
+                    onCancel: {
+                        showingCaptureScanner = false
+                    },
+                    onError: { message in
+                        showingCaptureScanner = false
+                        scannerErrorMessage = message
+                    }
+                )
+                .presentationCornerRadius(24)
+                .presentationDragIndicator(.visible)
             }
             .sheet(isPresented: $showingBudgetManager) {
                 BudgetManagerView(month: current.month, year: current.year)
@@ -379,6 +346,16 @@ struct DashboardView: View {
                 CashFlowForecastView()
                     .presentationCornerRadius(24)
                     .presentationDragIndicator(.visible)
+            }
+            .alert(String(localized: "Scanner unavailable"), isPresented: Binding(
+                get: { scannerErrorMessage != nil },
+                set: { newValue in
+                    if !newValue { scannerErrorMessage = nil }
+                }
+            )) {
+                Button(String(localized: "OK"), role: .cancel) { scannerErrorMessage = nil }
+            } message: {
+                Text(scannerErrorMessage ?? "")
             }
             .onAppear {
                 // B4: show swipe hint once
@@ -441,6 +418,566 @@ struct DashboardView: View {
                 }
             }
         }
+    }
+
+    // MARK: - Reference Redesign Sections
+
+    private func heroReferenceSection(
+        netWorth: Decimal,
+        freeToSpend: Decimal,
+        monthlyIncome: Decimal,
+        monthlyExpense: Decimal
+    ) -> some View {
+        let monthNet = monthlyIncome - monthlyExpense
+        let trendTint: Color = monthNet >= 0 ? Color(hex: "#9BFF3A") : AppTheme.danger
+        let trendValues = heroTrendValues(
+            income: monthlyIncome,
+            expense: monthlyExpense
+        )
+        let percentText: String = {
+            guard monthlyIncome > 0 else { return "" }
+            let pct = NSDecimalNumber(decimal: (monthNet / monthlyIncome) * 100).doubleValue
+            let sign = pct >= 0 ? "+" : ""
+            return "\(sign)\(String(format: "%.1f", pct))%"
+        }()
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(String(localized: "👋 Hi"))
+                        .font(.system(size: 27, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                        .lineLimit(1)
+                        .minimumScaleFactor(0.8)
+                    Text(Date().formatted(.dateTime.weekday(.wide).day().month(.abbreviated)))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
+                Spacer()
+                Button {
+                    HapticManager.impact(.light)
+                    showingDashboardSettings = true
+                } label: {
+                    Image(systemName: "slider.horizontal.3")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.92))
+                        .frame(width: 34, height: 34)
+                        .background(.white.opacity(0.14))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("dashboard.openLayoutSettings")
+            }
+
+            HStack(alignment: .bottom, spacing: 10) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "Funds"))
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(CurrencyFormatter.string(from: netWorth))
+                            .font(.system(size: 40, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.44)
+                            .allowsTightening(true)
+                        if !percentText.isEmpty {
+                            Text(percentText)
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(trendTint)
+                        }
+                    }
+                    Text(
+                        String(
+                            format: String(localized: "Free to spend: %@"),
+                            CurrencyFormatter.string(from: freeToSpend)
+                        )
+                    )
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .lineLimit(1)
+                }
+
+                Spacer(minLength: 8)
+
+                SparklineView(values: trendValues, tint: trendTint, showArea: true)
+                    .frame(width: 132, height: 72)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(.black.opacity(0.2))
+                    )
+            }
+        }
+        .padding(.horizontal, 18)
+        .padding(.vertical, 18)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [Color(hex: "#203A57"), Color(hex: "#162B43")],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.28), radius: 18, x: 0, y: 8)
+        )
+    }
+
+    private var actionRailSection: some View {
+        HStack(spacing: 0) {
+            actionRailItem(
+                icon: "creditcard",
+                label: String(localized: "Payment")
+            ) {
+                quickAddCapturePayload = nil
+                showingQuickAdd = true
+            }
+
+            actionRailItem(
+                icon: "clock.arrow.circlepath",
+                label: String(localized: "History")
+            ) {
+                selectedTab = .transactions
+            }
+
+            actionRailItem(
+                icon: "building.columns",
+                label: String(localized: "Account")
+            ) {
+                selectedTab = .accounts
+            }
+
+            actionRailItem(
+                icon: "qrcode.viewfinder",
+                label: String(localized: "Scan QR")
+            ) {
+                showingCaptureScanner = true
+            }
+        }
+        .padding(.vertical, 10)
+        .padding(.horizontal, 6)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color(hex: "#B98CFF"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(.white.opacity(0.22), lineWidth: 1)
+                )
+                .shadow(color: Color(hex: "#B98CFF").opacity(0.34), radius: 14, x: 0, y: 6)
+        )
+    }
+
+    private func actionRailItem(
+        icon: String,
+        label: String,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(spacing: 8) {
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .semibold))
+                    .frame(height: 24)
+                Text(label)
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
+            }
+            .foregroundStyle(Color(hex: "#1F1633"))
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func latestTransactionReferenceSection(
+        recentTransactions: [Transaction],
+        categoryById: [UUID: Category]
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(String(localized: "Latest transaction"))
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.95))
+                Spacer()
+                Button(String(localized: "See all")) {
+                    selectedTab = .transactions
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(hex: "#B98CFF"))
+                .buttonStyle(.plain)
+                .accessibilityIdentifier("dashboard.recentActivity.openTransactions")
+            }
+
+            if let txn = recentTransactions.first {
+                latestTransactionReferenceRow(txn, categoryById: categoryById)
+            } else {
+                Button {
+                    showingQuickAdd = true
+                } label: {
+                    HStack(spacing: 12) {
+                        Image(systemName: "plus.circle.fill")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(Color(hex: "#7EE787"))
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text(String(localized: "No transactions yet"))
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white.opacity(0.9))
+                            Text(String(localized: "Tap to add your first transaction"))
+                                .font(.caption)
+                                .foregroundStyle(.white.opacity(0.62))
+                        }
+                        Spacer()
+                    }
+                    .padding(14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                            .fill(Color(hex: "#233A56"))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                                    .stroke(.white.opacity(0.08), lineWidth: 1)
+                            )
+                    )
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func latestTransactionReferenceRow(
+        _ txn: Transaction,
+        categoryById: [UUID: Category]
+    ) -> some View {
+        let category = txn.categoryId.flatMap { categoryById[$0] }
+        let tint: Color = {
+            switch txn.type {
+            case .income: return Color(hex: "#7EE787")
+            case .expense: return Color(hex: "#FF8A80")
+            case .transfer: return Color(hex: "#8EDBFF")
+            }
+        }()
+        let sign = txn.type == .income ? "+" : (txn.type == .expense ? "-" : "")
+        let title: String = {
+            if !txn.note.isEmpty { return txn.note }
+            if let category { return category.name }
+            return txn.type.localizedName
+        }()
+        let subtitle: String = {
+            if let category {
+                return category.name
+            }
+            return txn.type.localizedName
+        }()
+
+        return HStack(spacing: 12) {
+            Image(systemName: category?.iconName ?? "dollarsign.circle.fill")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 40, height: 40)
+                .background(tint.opacity(0.18))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(title)
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.94))
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.white.opacity(0.58))
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 8)
+
+            Text("\(sign) \(CurrencyFormatter.string(from: txn.amount))")
+                .font(.title3.weight(.bold).monospacedDigit())
+                .foregroundStyle(tint)
+                .lineLimit(1)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(hex: "#233A56"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(.white.opacity(0.08), lineWidth: 1)
+                )
+        )
+    }
+
+    private func insightsReferenceSection(budgetPressures: [BudgetRisk]) -> some View {
+        let topRisk = budgetPressures.first
+        let topRiskPercent = Int((topRisk?.ratio ?? 0) * 100)
+        let monthlyBills = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount } +
+            activeDebts.reduce(Decimal.zero) { $0 + $1.minimumPayment }
+
+        return VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(String(localized: "Insights"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.95))
+                Spacer()
+                Button(String(localized: "See all")) {
+                    selectedTab = .analytics
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(hex: "#B98CFF"))
+                .buttonStyle(.plain)
+            }
+
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 12) {
+                    Button {
+                        showingBudgetManager = true
+                    } label: {
+                        insightReferenceCard(
+                            badge: String(localized: "SPENDING"),
+                            icon: topRisk?.category.iconName ?? "chart.pie.fill",
+                            headline: topRisk == nil ? String(localized: "No budgets yet") : "\(topRiskPercent)%",
+                            message: topRisk == nil
+                                ? String(localized: "Create budgets to track monthly pressure")
+                                : String(
+                                    format: String(localized: "You reached %lld%% of %@ budget"),
+                                    Int64(max(0, topRiskPercent)),
+                                    topRisk?.category.name ?? ""
+                                ),
+                            background: Color(hex: "#F6D94C"),
+                            foreground: Color(hex: "#2F2A12")
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityIdentifier("dashboard.thisMonth.openBudgets")
+
+                    Button {
+                        if featureSubscriptions {
+                            showingSubscriptions = true
+                        } else if featureDebts {
+                            showingDebts = true
+                        }
+                    } label: {
+                        insightReferenceCard(
+                            badge: String(localized: "BILLS"),
+                            icon: "waveform.path.ecg",
+                            headline: CurrencyFormatter.string(from: monthlyBills),
+                            message: String(
+                                format: String(localized: "%lld active bills this month"),
+                                Int64(activeSubscriptions.count + activeDebts.count)
+                            ),
+                            background: Color(hex: "#C699FF"),
+                            foreground: Color(hex: "#26183A")
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        selectedTab = .analytics
+                    } label: {
+                        insightReferenceCard(
+                            badge: String(localized: "PLANNING"),
+                            icon: "target",
+                            headline: "\(activeGoals.count)",
+                            message: activeGoals.isEmpty
+                                ? String(localized: "Create your first goal")
+                                : String(
+                                    format: String(localized: "%lld goals in progress"),
+                                    Int64(activeGoals.count)
+                                ),
+                            background: Color(hex: "#79E6B2"),
+                            foreground: Color(hex: "#103126")
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 1)
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func insightReferenceCard(
+        badge: String,
+        icon: String,
+        headline: String,
+        message: String,
+        background: Color,
+        foreground: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text(badge)
+                .font(.caption.weight(.bold))
+                .tracking(1.3)
+                .foregroundStyle(foreground.opacity(0.55))
+
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(foreground)
+                .frame(width: 36, height: 36)
+                .background(.white.opacity(0.72))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(headline)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(foreground)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
+                Text(message)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(foreground.opacity(0.95))
+                    .lineLimit(2)
+                    .multilineTextAlignment(.leading)
+            }
+        }
+        .frame(width: 182, height: 178, alignment: .topLeading)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(background)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(.white.opacity(0.35), lineWidth: 1)
+                )
+        )
+    }
+
+    private var commitmentsCompactSection: some View {
+        let subscriptionTotal = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount }
+        let debtTotal = activeDebts.reduce(Decimal.zero) { $0 + $1.remainingAmount }
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Text(String(localized: "Commitments"))
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.95))
+
+            HStack(spacing: 10) {
+                if featureSubscriptions {
+                    commitmentMiniCard(
+                        title: String(localized: "Subscriptions"),
+                        value: CurrencyFormatter.string(from: subscriptionTotal),
+                        subtitle: "\(activeSubscriptions.count)",
+                        icon: "repeat",
+                        tint: Color(hex: "#B98CFF")
+                    ) {
+                        showingSubscriptions = true
+                    }
+                }
+
+                if featureDebts && showDebts {
+                    commitmentMiniCard(
+                        title: String(localized: "Debts"),
+                        value: CurrencyFormatter.string(from: debtTotal),
+                        subtitle: "\(activeDebts.count)",
+                        icon: "creditcard",
+                        tint: Color(hex: "#FF9D66")
+                    ) {
+                        showingDebts = true
+                    }
+                }
+
+                if featureGoals {
+                    commitmentMiniCard(
+                        title: String(localized: "Goals"),
+                        value: "\(activeGoals.count)",
+                        subtitle: String(localized: "in progress"),
+                        icon: "flag.checkered",
+                        tint: Color(hex: "#7EE787")
+                    ) {
+                        showingGoals = true
+                    }
+                }
+            }
+        }
+        .padding(.top, 2)
+    }
+
+    private func commitmentMiniCard(
+        title: String,
+        value: String,
+        subtitle: String,
+        icon: String,
+        tint: Color,
+        action: @escaping () -> Void
+    ) -> some View {
+        Button(action: action) {
+            VStack(alignment: .leading, spacing: 8) {
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 30, height: 30)
+                    .background(tint.opacity(0.14))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                Text(value)
+                    .font(.subheadline.weight(.bold).monospacedDigit())
+                    .foregroundStyle(.white.opacity(0.93))
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.68)
+                Text(title)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .lineLimit(1)
+                Text(subtitle)
+                    .font(.caption2)
+                    .foregroundStyle(.white.opacity(0.58))
+                    .lineLimit(1)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(12)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(Color(hex: "#223650"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(.white.opacity(0.08), lineWidth: 1)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func heroTrendValues(income: Decimal, expense: Decimal) -> [Double] {
+        let window = 14
+        let calendar = Calendar.current
+        let todayStart = calendar.startOfDay(for: Date())
+        guard let start = calendar.date(byAdding: .day, value: -(window - 1), to: todayStart) else {
+            return [0, 0.1, 0.2, 0.15, 0.3, 0.4, 0.9]
+        }
+
+        var deltaByDay: [Date: Decimal] = [:]
+        for txn in transactions {
+            guard BalanceCalculator.isPosted(txn) else { continue }
+            let day = calendar.startOfDay(for: txn.date)
+            guard day >= start && day <= todayStart else { continue }
+            switch txn.type {
+            case .income:
+                deltaByDay[day, default: .zero] += txn.amount
+            case .expense:
+                deltaByDay[day, default: .zero] -= txn.amount
+            case .transfer:
+                break
+            }
+        }
+
+        var points: [Double] = []
+        var running = 0.0
+        for offset in 0..<window {
+            guard let day = calendar.date(byAdding: .day, value: offset, to: start) else { continue }
+            running += NSDecimalNumber(decimal: deltaByDay[day, default: .zero]).doubleValue
+            points.append(running)
+        }
+
+        if points.allSatisfy({ abs($0) < .ulpOfOne }) {
+            let fallback = NSDecimalNumber(decimal: income - expense).doubleValue
+            return [0.2, 0.24, 0.22, 0.27, 0.29, 0.45, 0.63, 0.78, 0.84, 0.8, 0.93, 1.05, 1.12, 1.18 + fallback / 1_000]
+        }
+        return points
     }
 
     // MARK: - Hero (floating, no card — gradient is the background)
@@ -609,7 +1146,22 @@ struct DashboardView: View {
         )
     }
 
-    // MARK: - Collapsible Section Shell
+    // MARK: - Accounts Scroll
+
+    private func accountsScrollSection(balances: [UUID: Decimal]) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(String(localized: "Accounts"))
+                    .font(.headline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.95))
+                Spacer()
+                Button(String(localized: "See all")) {
+                    selectedTab = .accounts
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(Color(hex: "#B98CFF"))
+                .buttonStyle(.plain)
+            }
 
     private func collapsibleSection<Content: View>(
         title: String,
@@ -1364,5 +1916,447 @@ struct DashboardView: View {
                 categoryById: categoryById
             )
         }
+    }
+}
+
+private enum DashboardScanMode: String, CaseIterable, Identifiable {
+    case receipt
+    case barcode
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .receipt:
+            return String(localized: "Receipt")
+        case .barcode:
+            return String(localized: "Barcode")
+        }
+    }
+}
+
+private struct DashboardCaptureScannerView: View {
+    let onCapture: (PendingCapturePayload) -> Void
+    let onCancel: () -> Void
+    let onError: (String) -> Void
+
+    @Environment(\.openURL) private var openURL
+    @State private var mode: DashboardScanMode = .barcode
+    @State private var cameraAuthorized = false
+    @State private var cameraPermissionResolved = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 14) {
+                Picker(String(localized: "Scan mode"), selection: $mode) {
+                    ForEach(DashboardScanMode.allCases) { m in
+                        Text(m.title).tag(m)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                Group {
+                    if !DataScannerViewController.isSupported {
+                        scannerMessageView(
+                            title: String(localized: "Scanning is unavailable on this device."),
+                            subtitle: String(localized: "Try using this feature on a device with camera scanning support.")
+                        )
+                    } else if !cameraPermissionResolved {
+                        scannerMessageView(
+                            title: String(localized: "Requesting camera access..."),
+                            subtitle: String(localized: "Please allow camera usage to scan receipts and barcodes.")
+                        )
+                    } else if !cameraAuthorized {
+                        scannerDeniedView
+                    } else if !DataScannerViewController.isAvailable {
+                        scannerMessageView(
+                            title: String(localized: "Scanner is currently unavailable."),
+                            subtitle: String(localized: "Close other apps using camera and try again.")
+                        )
+                    } else {
+                        DashboardDataScannerRepresentable(
+                            mode: mode,
+                            onCapture: onCapture,
+                            onError: onError
+                        )
+                        .id(mode.id)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)
+                        )
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                Text(mode == .barcode
+                     ? String(localized: "Align QR/barcode inside the frame to continue.")
+                     : String(localized: "Point camera at receipt line with total amount."))
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(16)
+            .background(AppTheme.canvas.ignoresSafeArea())
+            .navigationTitle(String(localized: "Scan Receipt or Barcode"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button(String(localized: "Cancel")) { onCancel() }
+                }
+            }
+            .onAppear {
+                resolveCameraPermission()
+            }
+        }
+    }
+
+    private var scannerDeniedView: some View {
+        VStack(spacing: 10) {
+            Image(systemName: "camera.fill")
+                .font(.system(size: 28))
+                .foregroundStyle(AppTheme.warning)
+            Text(String(localized: "Camera access is required to scan receipts and barcodes."))
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text(String(localized: "Enable camera access in Settings and try again."))
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+            Button(String(localized: "Open Settings")) {
+                guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
+                openURL(url)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(AppTheme.primaryAccent)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(18)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func scannerMessageView(title: String, subtitle: String) -> some View {
+        VStack(spacing: 8) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .multilineTextAlignment(.center)
+            Text(subtitle)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(18)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private func resolveCameraPermission() {
+        let status = AVCaptureDevice.authorizationStatus(for: .video)
+        switch status {
+        case .authorized:
+            cameraAuthorized = true
+            cameraPermissionResolved = true
+        case .notDetermined:
+            AVCaptureDevice.requestAccess(for: .video) { granted in
+                DispatchQueue.main.async {
+                    cameraAuthorized = granted
+                    cameraPermissionResolved = true
+                }
+            }
+        case .denied, .restricted:
+            cameraAuthorized = false
+            cameraPermissionResolved = true
+        @unknown default:
+            cameraAuthorized = false
+            cameraPermissionResolved = true
+        }
+    }
+}
+
+private struct DashboardDataScannerRepresentable: UIViewControllerRepresentable {
+    let mode: DashboardScanMode
+    let onCapture: (PendingCapturePayload) -> Void
+    let onError: (String) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(mode: mode, onCapture: onCapture, onError: onError)
+    }
+
+    func makeUIViewController(context: Context) -> DataScannerViewController {
+        let recognizedDataTypes: Set<DataScannerViewController.RecognizedDataType> = {
+            switch mode {
+            case .receipt:
+                return [.text()]
+            case .barcode:
+                return [
+                    .barcode(symbologies: [.qr, .ean8, .ean13, .upce, .code39, .code128, .itf14, .pdf417, .aztec, .dataMatrix])
+                ]
+            }
+        }()
+
+        let scanner = DataScannerViewController(
+            recognizedDataTypes: recognizedDataTypes,
+            qualityLevel: .balanced,
+            recognizesMultipleItems: true,
+            isHighFrameRateTrackingEnabled: false,
+            isPinchToZoomEnabled: true,
+            isGuidanceEnabled: true,
+            isHighlightingEnabled: true
+        )
+        scanner.delegate = context.coordinator
+
+        do {
+            try scanner.startScanning()
+        } catch {
+            context.coordinator.emitErrorIfNeeded(String(localized: "Unable to start scanner."))
+        }
+        return scanner
+    }
+
+    func updateUIViewController(_ uiViewController: DataScannerViewController, context: Context) {}
+
+    static func dismantleUIViewController(_ uiViewController: DataScannerViewController, coordinator: Coordinator) {
+        uiViewController.stopScanning()
+    }
+
+    final class Coordinator: NSObject, DataScannerViewControllerDelegate {
+        private let mode: DashboardScanMode
+        private let onCapture: (PendingCapturePayload) -> Void
+        private let onError: (String) -> Void
+        private var didEmitResult = false
+        private var receiptFragments: [String] = []
+
+        init(
+            mode: DashboardScanMode,
+            onCapture: @escaping (PendingCapturePayload) -> Void,
+            onError: @escaping (String) -> Void
+        ) {
+            self.mode = mode
+            self.onCapture = onCapture
+            self.onError = onError
+        }
+
+        func dataScanner(_ dataScanner: DataScannerViewController, didTapOn item: RecognizedItem) {
+            process(item)
+        }
+
+        func dataScanner(
+            _ dataScanner: DataScannerViewController,
+            didAdd addedItems: [RecognizedItem],
+            allItems: [RecognizedItem]
+        ) {
+            for item in addedItems {
+                if process(item) {
+                    return
+                }
+            }
+        }
+
+        func emitErrorIfNeeded(_ message: String) {
+            guard !didEmitResult else { return }
+            didEmitResult = true
+            DispatchQueue.main.async {
+                self.onError(message)
+            }
+        }
+
+        @discardableResult
+        private func process(_ item: RecognizedItem) -> Bool {
+            guard !didEmitResult else { return true }
+
+            let payload: PendingCapturePayload?
+            switch item {
+            case .barcode(let barcode):
+                guard mode == .barcode else { return false }
+                payload = DashboardScanPayloadBuilder.payload(fromBarcode: barcode.payloadStringValue)
+            case .text(let text):
+                guard mode == .receipt else { return false }
+                let fragment = text.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !fragment.isEmpty else { return false }
+                if !receiptFragments.contains(fragment) {
+                    receiptFragments.append(fragment)
+                    if receiptFragments.count > 40 {
+                        receiptFragments.removeFirst(receiptFragments.count - 40)
+                    }
+                }
+                payload = DashboardScanPayloadBuilder.payload(fromReceiptText: receiptFragments.joined(separator: "\n"))
+            @unknown default:
+                payload = nil
+            }
+
+            guard let payload else { return false }
+            if mode == .receipt, payload.amount == nil {
+                // Keep scanning until we detect a line with an amount.
+                return false
+            }
+            didEmitResult = true
+            DispatchQueue.main.async {
+                self.onCapture(payload)
+            }
+            return true
+        }
+    }
+}
+
+private enum DashboardScanPayloadBuilder {
+    static func payload(fromBarcode rawValue: String?) -> PendingCapturePayload? {
+        guard let rawValue else { return nil }
+        let value = rawValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !value.isEmpty else { return nil }
+
+        let amount = extractAmountFromBarcode(value)
+        let merchant = extractMerchantFromBarcode(value)
+        let currency = detectCurrencyCode(in: value)
+
+        return PendingCapturePayload(
+            amount: amount,
+            merchant: merchant,
+            currency: currency,
+            source: "barcode_scan"
+        )
+    }
+
+    static func payload(fromReceiptText rawText: String) -> PendingCapturePayload? {
+        let text = rawText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { return nil }
+
+        let amount = extractAmount(from: text)
+        let merchant = extractMerchant(from: text)
+        let currency = detectCurrencyCode(in: text)
+
+        return PendingCapturePayload(
+            amount: amount,
+            merchant: merchant,
+            currency: currency,
+            source: "receipt_scan"
+        )
+    }
+
+    private static func detectCurrencyCode(in text: String) -> String? {
+        let uppercase = text.uppercased()
+        if uppercase.contains("KZT") || text.contains("₸") || uppercase.contains("ТГ") { return "KZT" }
+        if uppercase.contains("USD") || text.contains("$") { return "USD" }
+        if uppercase.contains("RUB") || text.contains("₽") { return "RUB" }
+        if uppercase.contains("EUR") || text.contains("€") { return "EUR" }
+        return nil
+    }
+
+    private static func extractMerchant(from text: String) -> String {
+        let lines = text
+            .split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+
+        if let firstTextLine = lines.first(where: {
+            let letters = $0.unicodeScalars.filter(CharacterSet.letters.contains).count
+            return letters >= 2
+        }) {
+            return String(firstTextLine.prefix(80))
+        }
+        return String(text.prefix(80))
+    }
+
+    private static func extractAmount(from text: String) -> Decimal? {
+        let pattern = "(?:\\d{1,3}(?:[\\s.,]\\d{3})+|\\d+)(?:[.,]\\d{1,2})?"
+        guard let regex = try? NSRegularExpression(pattern: pattern, options: []) else { return nil }
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let matches = regex.matches(in: text, options: [], range: range)
+
+        var bestCandidate: Decimal?
+        for match in matches {
+            guard let tokenRange = Range(match.range, in: text) else { continue }
+            let token = String(text[tokenRange])
+            guard let parsed = parseAmountToken(token) else { continue }
+            let value = NSDecimalNumber(decimal: parsed).doubleValue
+            guard value >= 1, value <= 100_000_000 else { continue }
+            if let existing = bestCandidate {
+                if parsed > existing { bestCandidate = parsed }
+            } else {
+                bestCandidate = parsed
+            }
+        }
+        return bestCandidate
+    }
+
+    private static func parseAmountToken(_ token: String) -> Decimal? {
+        let compact = token.replacingOccurrences(of: " ", with: "")
+        let digitsOnly = compact.filter(\.isNumber)
+        guard !digitsOnly.isEmpty else { return nil }
+
+        if let lastSeparator = compact.lastIndex(where: { $0 == "," || $0 == "." }) {
+            let fractionalDigits = compact.distance(from: compact.index(after: lastSeparator), to: compact.endIndex)
+            if fractionalDigits > 0, fractionalDigits <= 2, digitsOnly.count > fractionalDigits {
+                let splitIndex = digitsOnly.count - fractionalDigits
+                let intPart = digitsOnly.prefix(splitIndex)
+                let fractionPart = digitsOnly.suffix(fractionalDigits)
+                return Decimal(string: "\(String(intPart)).\(String(fractionPart))")
+            }
+        }
+
+        return Decimal(string: String(digitsOnly))
+    }
+
+    private static func extractAmountFromBarcode(_ value: String) -> Decimal? {
+        if let components = URLComponents(string: value) {
+            let amountKeys = ["sum", "s", "amount", "total", "price"]
+            if let queryItems = components.queryItems {
+                for key in amountKeys {
+                    if let raw = queryItems.first(where: { $0.name.lowercased() == key })?.value,
+                       let parsed = parseAmountToken(raw) {
+                        return parsed
+                    }
+                }
+            }
+        }
+
+        let patterns = [
+            "(?:^|[?&;])(?:sum|s|amount|total|price)=([0-9]+(?:[\\.,][0-9]{1,2})?)",
+            "(?:^|\\s)(?:sum|amount|total)[:=]\\s*([0-9]+(?:[\\.,][0-9]{1,2})?)"
+        ]
+
+        for pattern in patterns {
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else {
+                continue
+            }
+            let range = NSRange(value.startIndex..<value.endIndex, in: value)
+            if let match = regex.firstMatch(in: value, options: [], range: range),
+               match.numberOfRanges >= 2,
+               let tokenRange = Range(match.range(at: 1), in: value),
+               let parsed = parseAmountToken(String(value[tokenRange])) {
+                return parsed
+            }
+        }
+
+        return extractAmount(from: value)
+    }
+
+    private static func extractMerchantFromBarcode(_ value: String) -> String? {
+        if let components = URLComponents(string: value) {
+            let merchantKeys = ["merchant", "shop", "store", "name", "seller"]
+            if let queryItems = components.queryItems {
+                for key in merchantKeys {
+                    if let raw = queryItems.first(where: { $0.name.lowercased() == key })?.value {
+                        let cleaned = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !cleaned.isEmpty {
+                            return String(cleaned.prefix(80))
+                        }
+                    }
+                }
+            }
+
+            if let host = components.host {
+                let cleanedHost = host.replacingOccurrences(of: "www.", with: "")
+                if !cleanedHost.isEmpty {
+                    return String(cleanedHost.prefix(80))
+                }
+            }
+        }
+
+        if value.count <= 80 {
+            return value
+        }
+        return nil
     }
 }
