@@ -655,3 +655,12 @@
 "Cash Flows" = "Денежные потоки";
 "History" = "История";
 "Transfers" = "Переводы";
+
+/* Dashboard redesign */
+"Hi %@" = "Привет, %@";
+"there" = "друг";
+"Latest Transactions" = "Последние транзакции";
+"See all" = "Все";
+"Over budget!" = "Превышен бюджет!";
+"Over income this month" = "Расходы превышают доходы";
+"Saved %lld%% of income" = "Сохранено %lld%% дохода";
