@@ -77,15 +77,15 @@ struct OnboardingView: View {
 
     private var bg: some View {
         let colors: [Color] = [
-            Color(red: 0.24, green: 0.48, blue: 0.98),
-            Color(red: 0.18, green: 0.72, blue: 0.56),
-            Color(red: 0.62, green: 0.35, blue: 0.95),
-            Color(red: 0.18, green: 0.72, blue: 0.56)
+            Color(red: 0.23, green: 0.43, blue: 0.82),
+            Color(red: 0.15, green: 0.55, blue: 0.44),
+            Color(red: 0.47, green: 0.38, blue: 0.78),
+            Color(red: 0.15, green: 0.55, blue: 0.44)
         ]
         let accent = colors[min(page, colors.count - 1)]
         return ZStack {
-            Color(red: 0.04, green: 0.05, blue: 0.10).ignoresSafeArea()
-            RadialGradient(colors: [accent.opacity(0.28), .clear],
+            Color(red: 0.05, green: 0.07, blue: 0.11).ignoresSafeArea()
+            RadialGradient(colors: [accent.opacity(0.22), .clear],
                            center: .init(x: 0.5, y: 0.28), startRadius: 0, endRadius: 420)
                 .ignoresSafeArea()
                 .animation(.easeInOut(duration: 0.5), value: page)
@@ -107,28 +107,37 @@ struct OnboardingView: View {
 
     private var welcomeSlide: some View {
         let bullets: [(icon: String, text: String)] = [
-            ("banknote.fill",               String(localized: "Know your net worth instantly")),
-            ("chart.bar.fill",              String(localized: "Set budgets that actually work")),
-            ("magnifyingglass.circle.fill", String(localized: "See where every tenge goes"))
+            ("gauge.with.needle.fill",      String(localized: "See your money state at a glance")),
+            ("plus.circle.fill",            String(localized: "Capture transactions in seconds")),
+            ("calendar.badge.clock",        String(localized: "Plan ahead without spreadsheet stress"))
         ]
 
         return VStack(spacing: 0) {
-            ZStack {
-                Circle().fill(.white.opacity(0.06)).frame(width: 150, height: 150).blur(radius: 30)
-                Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
-                    .font(.system(size: 64, weight: .bold))
-                    .foregroundStyle(.linearGradient(
-                        colors: [Color(red: 0.24, green: 0.48, blue: 0.98), Color(red: 0.44, green: 0.68, blue: 1.0)],
-                        startPoint: .top, endPoint: .bottom))
-            }
-            .scaleEffect(logoScale)
+            Text(String(localized: "Daily money clarity"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(accentForPage)
+                .padding(.horizontal, 12)
+                .padding(.vertical, 7)
+                .background(.white.opacity(0.08))
+                .clipShape(Capsule())
+                .scaleEffect(logoScale)
 
-            Spacer().frame(height: 32)
+            Spacer().frame(height: 28)
 
             VStack(spacing: 16) {
-                Text("FinanceApp")
+                Text(String(localized: "See what your next move should be"))
                     .font(.system(size: 34, weight: .heavy, design: .rounded))
                     .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
+
+                Text(String(localized: "Understand pressure early, keep reserve visible, and act before bills become stress."))
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.62))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+
+                moneyStatePreviewCard
+                    .padding(.top, 2)
 
                 VStack(alignment: .leading, spacing: 10) {
                     ForEach(bullets.indices, id: \.self) { i in
@@ -154,15 +163,74 @@ struct OnboardingView: View {
         }
     }
 
+    private var moneyStatePreviewCard: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(localized: "Money State"))
+                        .font(.system(size: 11, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.52))
+                    Text("76")
+                        .font(.system(size: 34, weight: .bold, design: .rounded))
+                        .foregroundStyle(.white)
+                }
+                Spacer()
+                Text(String(localized: "Stable"))
+                    .font(.system(size: 12, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.18, green: 0.72, blue: 0.56))
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color(red: 0.18, green: 0.72, blue: 0.56).opacity(0.14))
+                    .clipShape(Capsule())
+            }
+
+            HStack(spacing: 10) {
+                onboardingSignalPill(title: String(localized: "Pressure"), value: "38")
+                onboardingSignalPill(title: String(localized: "Reserve"), value: "71")
+                onboardingSignalPill(title: String(localized: "Runway"), value: "18d")
+            }
+
+            Text(String(localized: "Higher readiness and reserve are better. Lower pressure is better."))
+                .font(.system(size: 12))
+                .foregroundStyle(.white.opacity(0.58))
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(.white.opacity(0.08))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(.white.opacity(0.10), lineWidth: 1)
+                )
+        )
+        .padding(.horizontal, 26)
+    }
+
+    private func onboardingSignalPill(title: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.44))
+            Text(value)
+                .font(.system(size: 13, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(.white.opacity(0.05))
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
     // MARK: Currency
 
     private var currencySlide: some View {
-        VStack(spacing: 28) {
+        VStack(spacing: 24) {
             VStack(spacing: 8) {
-                Text(String(localized: "Choose your currency"))
+                Text(String(localized: "Pick your default currency"))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                Text(String(localized: "Default currency for new accounts"))
+                Text(String(localized: "This becomes the default for new accounts. You can still change currency per account later."))
                     .font(.system(size: 14))
                     .foregroundStyle(.white.opacity(0.50))
             }
@@ -209,6 +277,41 @@ struct OnboardingView: View {
                 }
             }
             .padding(.horizontal, 28)
+
+            VStack(alignment: .leading, spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(String(localized: "Preview"))
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.white.opacity(0.42))
+                        Text("24 500 \(currencyOptions.first(where: { $0.code == selectedCurrency })?.symbol ?? "₸")")
+                            .font(.system(size: 24, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                    Spacer()
+                    Text(selectedCurrency)
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(accentForPage)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(accentForPage.opacity(0.14))
+                        .clipShape(Capsule())
+                }
+
+                Text(String(localized: "Use the default for fast capture, then override it only when an account needs another currency."))
+                    .font(.system(size: 12))
+                    .foregroundStyle(.white.opacity(0.56))
+            }
+            .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(.white.opacity(0.07))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(.white.opacity(0.10), lineWidth: 1)
+                    )
+            )
+            .padding(.horizontal, 28)
         }
         .transition(.asymmetric(
             insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -221,17 +324,35 @@ struct OnboardingView: View {
         selected.contains(true)
     }
 
+    private var selectedFeatureCount: Int {
+        selected.filter { $0 }.count
+    }
+
     private var questionnaireSlide: some View {
-        VStack(spacing: 18) {
+        VStack(spacing: 20) {
             VStack(spacing: 8) {
-                Text(String(localized: "What do you need?"))
+                Text(String(localized: "Build your first cockpit"))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                Text(String(localized: "Select all that apply — change anytime in Settings"))
+                Text(String(localized: "Start with the flows you care about most. Everything can change later in Settings."))
                     .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.50))
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 32)
+            }
+
+            HStack(spacing: 10) {
+                Text(String(format: String(localized: "%lld selected"), Int64(selectedFeatureCount)))
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(accentForPage)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(accentForPage.opacity(0.12))
+                    .clipShape(Capsule())
+
+                Text(String(localized: "Recommended: transactions, budgets, analytics"))
+                    .font(.caption)
+                    .foregroundStyle(.white.opacity(0.52))
             }
 
             VStack(spacing: 8) {
@@ -265,8 +386,11 @@ struct OnboardingView: View {
                 Image(systemName: f.icon)
                     .font(.system(size: 17, weight: .semibold))
                     .foregroundStyle(isOn ? f.color : f.color.opacity(0.30))
-                    .frame(width: 36, height: 36)
-                    .background(Circle().fill(f.color.opacity(isOn ? 0.18 : 0.06)))
+                    .frame(width: 40, height: 40)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(f.color.opacity(isOn ? 0.18 : 0.06))
+                    )
                 VStack(alignment: .leading, spacing: 1) {
                     Text(f.title)
                         .font(.system(size: 14, weight: .semibold))
@@ -283,9 +407,9 @@ struct OnboardingView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 10)
             .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.white.opacity(isOn ? 0.08 : 0.03))
-                    .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(.white.opacity(isOn ? 0.09 : 0.03))
+                    .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(isOn ? f.color.opacity(0.30) : .clear, lineWidth: 1))
             )
         }
@@ -298,8 +422,7 @@ struct OnboardingView: View {
         let green = Color(red: 0.18, green: 0.72, blue: 0.56)
 
         return VStack(spacing: 24) {
-            // Seal icon
-            Image(systemName: "checkmark.seal.fill")
+            Image(systemName: "chart.line.uptrend.xyaxis.circle.fill")
                 .font(.system(size: 56, weight: .bold))
                 .foregroundStyle(green)
                 .scaleEffect(revealedCount > 0 ? 1.0 : 0.3)
@@ -307,10 +430,10 @@ struct OnboardingView: View {
                 .animation(.spring(response: 0.5, dampingFraction: 0.6), value: revealedCount)
 
             VStack(spacing: 6) {
-                Text(String(localized: "Your app is ready"))
+                Text(String(localized: "Preview your setup"))
                     .font(.system(size: 26, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                Text(String(localized: "Here's what we've set up for you"))
+                Text(String(localized: "Start with a calm daily view of balances, pressure and next actions."))
                     .font(.system(size: 14))
                     .foregroundStyle(.white.opacity(0.50))
             }
@@ -332,20 +455,19 @@ struct OnboardingView: View {
         let curSymbol = currencyOptions.first(where: { $0.code == selectedCurrency })?.symbol ?? "₸"
 
         return VStack(spacing: 0) {
-            // Header: Net Worth strip
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(String(localized: "NET WORTH"))
+                    Text(String(localized: "DEFAULT CURRENCY"))
                         .font(.system(size: 8, weight: .semibold))
                         .foregroundStyle(.white.opacity(0.45))
                         .tracking(0.5)
-                    Text("2.4M \(curSymbol)")
+                    Text("\(selectedCurrency) \(curSymbol)")
                         .font(.system(size: 20, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                 }
                 Spacer()
-                miniHeroChip(icon: "arrow.down", color: Color(red: 0.18, green: 0.72, blue: 0.56), label: "180K")
-                miniHeroChip(icon: "arrow.up",   color: Color(red: 0.90, green: 0.28, blue: 0.30), label: "120K")
+                miniHeroChip(icon: "gauge.with.needle.fill", color: Color(red: 0.18, green: 0.72, blue: 0.56), label: "76")
+                miniHeroChip(icon: "calendar.badge.clock", color: Color(red: 0.92, green: 0.75, blue: 0.20), label: "2 due")
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 10)

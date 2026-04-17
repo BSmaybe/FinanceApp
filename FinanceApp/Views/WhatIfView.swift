@@ -7,11 +7,24 @@ struct WhatIfView: View {
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
     @Query(sort: \Debt.name) private var debts: [Debt]
 
+    private var planningBase: Decimal {
+        averageMonthlyExpense(from: transactions)
+    }
+
     var body: some View {
         ZStack {
             AppTheme.canvas.ignoresSafeArea()
             ScrollView {
                 VStack(spacing: 18) {
+                    HeroMetricCard(
+                        title: String(localized: "Scenario planning"),
+                        value: formatMoney(planningBase),
+                        supportingTitle: String(localized: "Scenarios"),
+                        supportingValue: String(localized: "3 planning levers"),
+                        note: String(localized: "Test tradeoffs before you commit real money to a new plan."),
+                        badgeText: String(localized: "What If")
+                    )
+
                     ReduceSpendingCard(transactions: transactions)
                     SaveMonthlyCard()
                     PayOffDebtCard(debts: debts)
@@ -100,6 +113,9 @@ private struct ScenarioCard<Content: View>: View {
                     .font(.system(.headline, design: .rounded).weight(.semibold))
                 Spacer(minLength: 0)
             }
+
+            Divider()
+
             content
         }
         .cockpitSurface(cornerRadius: 22, elevated: true)

@@ -36,6 +36,7 @@ struct QuickAddView: View {
     @State private var swipeOffset: CGFloat = 0
     @State private var swipeCompleted = false
     @State private var detailedDraft: QuickAddDetailedDraft?
+    @State private var pressedKey: String?
 
     var capturePayload: PendingCapturePayload?
     var onOpenDetailed: ((QuickAddDetailedDraft) -> Void)?
@@ -103,6 +104,22 @@ struct QuickAddView: View {
         )
     }
 
+    private var heroNote: String {
+        var parts: [String] = []
+        if let accountName = accounts.first(where: { $0.id == selectedAccountId })?.name {
+            parts.append(accountName)
+        }
+        if let categoryName = categories.first(where: { $0.id == selectedCategoryId })?.name, type != .income {
+            parts.append(categoryName)
+        }
+        if let captureSourceLabel {
+            parts.append(captureSourceLabel)
+        }
+        return parts.isEmpty
+            ? String(localized: "Capture the amount first, then confirm account and category.")
+            : parts.joined(separator: " • ")
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -125,15 +142,14 @@ struct QuickAddView: View {
                     }
 
                     ScrollView(showsIndicators: false) {
-                        VStack(spacing: 10) {
+                        VStack(spacing: 18) {
                             amountDisplaySection
-                            chipsRow
-                            categoryRow
-                            noteRow
-                            quickAmountsRow
+                            selectionSection
+                            contextSection
+                            quickAmountsSection
                         }
                         .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
+                        .padding(.vertical, 12)
                     }
                     .keyboardDismissable()
 
@@ -227,51 +243,85 @@ struct QuickAddView: View {
     // MARK: - Amount display
 
     private var amountDisplaySection: some View {
-        HStack(alignment: .lastTextBaseline) {
-            if showSavedCheck {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 48))
-                    .foregroundStyle(AppTheme.success)
-                    .transition(.scale.combined(with: .opacity))
-                    .accessibilityIdentifier("quickAdd.savedIndicator")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Text(displayAmount)
-                    .font(.system(size: 48, weight: .thin, design: .rounded))
-                    .monospacedDigit()
-                    .contentTransition(.numericText())
-                    .minimumScaleFactor(0.4)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier("quickAdd.amountDisplay")
-            }
-            VStack(alignment: .trailing, spacing: 3) {
+        HeroMetricCard(
+            title: String(localized: "Quick Add"),
+            value: displayAmount,
+            supportingTitle: String(localized: "Date"),
+            supportingValue: transactionDateForSave.formatted(date: .abbreviated, time: .shortened),
+            note: heroNote,
+            badgeText: type.localizedName
+        )
+        .overlay(alignment: .topTrailing) {
+            VStack(alignment: .trailing, spacing: 6) {
                 if let captureSourceLabel {
-                    Label(captureSourceLabel, systemImage: captureSourceSystemImage)
-                        .font(.caption2.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
-                        .background(AppTheme.primaryAccent)
-                        .clipShape(Capsule())
+                    QuickAddStatusPill(
+                        title: captureSourceLabel,
+                        systemImage: captureSourceSystemImage,
+                        tint: AppTheme.primaryAccent
+                    )
                 }
-                Text(captureCurrencyCode ?? Locale.current.currency?.identifier ?? "")
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+                if let code = captureCurrencyCode ?? Locale.current.currency?.identifier, !code.isEmpty {
+                    Text(code)
+                        .font(.caption2.weight(.medium))
+                        .foregroundStyle(.secondary)
+                }
                 if duplicateCandidate != nil {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .font(.caption)
+                    Label(String(localized: "Possible duplicate"), systemImage: "exclamationmark.triangle.fill")
+                        .font(.caption2.weight(.semibold))
                         .foregroundStyle(AppTheme.warning)
                         .accessibilityIdentifier("quickAdd.duplicateWarning")
                 }
             }
+            .padding(18)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .background(AppTheme.surface)
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(alignment: .leading) {
+            if showSavedCheck {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 46))
+                    .foregroundStyle(AppTheme.success)
+                    .transition(.scale.combined(with: .opacity))
+                    .accessibilityIdentifier("quickAdd.savedIndicator")
+                    .padding(.leading, 18)
+            }
+        }
+        .overlay(alignment: .bottomLeading) {
+            Color.clear
+                .accessibilityIdentifier("quickAdd.amountDisplay")
+        }
         .animation(.easeInOut(duration: 0.2), value: displayAmount)
         .animation(.spring(duration: 0.4), value: showSavedCheck)
+    }
+
+    private var selectionSection: some View {
+        SectionShell(
+            title: String(localized: "Assign"),
+            subtitle: String(localized: "Choose the account and category so budgets and analytics stay clean.")
+        ) {
+            VStack(spacing: 16) {
+                chipsRow
+                if type != .income {
+                    categoryRow
+                }
+            }
+        }
+    }
+
+    private var contextSection: some View {
+        SectionShell(
+            title: String(localized: "Context"),
+            subtitle: String(localized: "Keep the note short so duplicate detection and suggestions stay reliable.")
+        ) {
+            noteRow
+        }
+    }
+
+    private var quickAmountsSection: some View {
+        SectionShell(
+            title: String(localized: "Quick Amounts"),
+            subtitle: String(localized: "Use one tap presets before swiping to save.")
+        ) {
+            quickAmountsRow
+        }
     }
 
     // MARK: - Account chips
@@ -281,7 +331,6 @@ struct QuickAddView: View {
             Text(String(localized: "Account"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 7) {
                     ForEach(accounts) { account in
@@ -289,12 +338,12 @@ struct QuickAddView: View {
                             label: account.name,
                             systemImage: "creditcard",
                             selected: selectedAccountId == account.id,
-                            tint: AppTheme.info
+                                tint: AppTheme.info
                         ) { selectedAccountId = account.id }
+                    }
                 }
             }
         }
-    }
     }
 
     // MARK: - Category chips
@@ -304,12 +353,10 @@ struct QuickAddView: View {
             Text(String(localized: "Category"))
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 4)
             if filteredCategories.isEmpty {
                 Text(String(localized: "No categories yet"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                    .padding(.horizontal, 4)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 7) {
@@ -336,9 +383,9 @@ struct QuickAddView: View {
         TextField(String(localized: "Note (merchant, memo...)"), text: $note)
             .font(.subheadline)
             .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(AppTheme.surface)
-            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .padding(.vertical, 12)
+            .background(AppTheme.elevatedSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
             .accessibilityIdentifier("quickAdd.noteField")
             .onChange(of: note) { _, newValue in
                 autoSelectCategory(for: newValue)
@@ -383,15 +430,25 @@ struct QuickAddView: View {
                 HStack(spacing: 5) {
                     ForEach(row, id: \.self) { key in
                         Button {
+                            pressedKey = key
                             lightImpact.impactOccurred()
                             withAnimation(.easeInOut(duration: 0.1)) { handleKey(key) }
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.14) {
+                                pressedKey = nil
+                            }
                         } label: {
                             Text(key)
                                 .font(.title3.weight(.medium))
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 46)
-                                .background(AppTheme.surface)
+                                .background(
+                                    pressedKey == key
+                                        ? AppTheme.primaryAccent.opacity(0.18)
+                                        : AppTheme.elevatedSurface
+                                )
                                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .scaleEffect(pressedKey == key ? 0.91 : 1.0)
+                                .animation(.spring(response: 0.2, dampingFraction: 0.5), value: pressedKey)
                         }
                         .buttonStyle(.plain)
                     }
@@ -522,14 +579,59 @@ struct QuickAddView: View {
         modelContext.insert(txn)
         do {
             try modelContext.save()
+#if canImport(ActivityKit)
+            if #available(iOS 16.2, *) {
+                let detail = note.trimmingCharacters(in: .whitespacesAndNewlines)
+                let amountValue = NSDecimalNumber(decimal: parsedAmount).doubleValue
+                switch type {
+                case .income:
+                    LiveActivityManager.triggerCelebration(
+                        .incomeAdded,
+                        amount: amountValue,
+                        detail: detail.isEmpty ? nil : detail
+                    )
+                case .expense:
+                    LiveActivityManager.triggerCelebration(
+                        .expenseLogged,
+                        amount: amountValue,
+                        detail: detail.isEmpty ? nil : detail
+                    )
+                case .transfer:
+                    break
+                }
+            }
+#endif
+            if type == .expense {
+                BudgetNotificationHelper.checkLimits(categoryId: selectedCategoryId, context: modelContext)
+            }
         } catch {
             print("QuickAdd save error: \(error)")
         }
-        if type == .expense {
-            BudgetNotificationHelper.checkLimits(categoryId: selectedCategoryId, context: modelContext)
-        }
         withAnimation(.spring(duration: 0.4)) { showSavedCheck = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { dismiss() }
+    }
+}
+
+private struct QuickAddStatusPill: View {
+    let title: String
+    var systemImage: String? = nil
+    var tint: Color = AppTheme.primaryAccent
+
+    var body: some View {
+        HStack(spacing: 6) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(.caption2.weight(.semibold))
+            }
+            Text(title)
+                .lineLimit(1)
+        }
+        .font(.caption2.weight(.semibold))
+        .foregroundStyle(tint)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(tint.opacity(0.12))
+        .clipShape(Capsule())
     }
 }
 
@@ -552,7 +654,7 @@ private struct SwipeToSaveButton: View {
 
             ZStack(alignment: .leading) {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(enabled ? AppTheme.surface : AppTheme.surfaceMuted)
+                    .fill(enabled ? AppTheme.elevatedSurface : AppTheme.surfaceMuted)
                     .overlay(
                         RoundedRectangle(cornerRadius: 16, style: .continuous)
                             .stroke(AppTheme.outline.opacity(0.45), lineWidth: 1)

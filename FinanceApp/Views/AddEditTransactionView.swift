@@ -32,7 +32,7 @@ final class AddEditTransactionViewModel {
         prefillNote: String? = nil,
         prefillTagsText: String? = nil
     ) {
-        guard let t = transaction else {
+        guard let transaction else {
             type = prefillType ?? type
             if let prefillAmount, prefillAmount > 0 {
                 amountText = NSDecimalNumber(decimal: prefillAmount).stringValue
@@ -46,14 +46,14 @@ final class AddEditTransactionViewModel {
             return
         }
 
-        type = t.type
-        amountText = t.amountValue
-        date = t.date
-        selectedAccountId = t.accountId
-        selectedToAccountId = t.toAccountId
-        selectedCategoryId = t.categoryId
-        note = t.note
-        tagsText = t.tags.joined(separator: ", ")
+        type = transaction.type
+        amountText = transaction.amountValue
+        date = transaction.date
+        selectedAccountId = transaction.accountId
+        selectedToAccountId = transaction.toAccountId
+        selectedCategoryId = transaction.categoryId
+        note = transaction.note
+        tagsText = transaction.tags.joined(separator: ", ")
     }
 
     var parsedTags: [String] {
@@ -64,6 +64,7 @@ final class AddEditTransactionViewModel {
 
     func save(context: ModelContext, existing: Transaction?) {
         guard isValid, let accountId = selectedAccountId else { return }
+        let isNewTransaction = existing == nil
 
         if let existing {
             existing.type = type
@@ -75,7 +76,7 @@ final class AddEditTransactionViewModel {
             existing.note = note
             existing.tags = parsedTags
         } else {
-            let txn = Transaction(
+            let transaction = Transaction(
                 date: date,
                 amount: amount,
                 type: type,
@@ -85,15 +86,40 @@ final class AddEditTransactionViewModel {
                 note: note,
                 tags: parsedTags
             )
-            context.insert(txn)
+            context.insert(transaction)
         }
+
         do {
             try context.save()
+#if canImport(ActivityKit)
+            if isNewTransaction, type != .transfer {
+                let detail = note.trimmingCharacters(in: .whitespacesAndNewlines)
+                let amountValue = NSDecimalNumber(decimal: amount).doubleValue
+                if #available(iOS 16.2, *) {
+                    switch type {
+                    case .income:
+                        LiveActivityManager.triggerCelebration(
+                            .incomeAdded,
+                            amount: amountValue,
+                            detail: detail.isEmpty ? nil : detail
+                        )
+                    case .expense:
+                        LiveActivityManager.triggerCelebration(
+                            .expenseLogged,
+                            amount: amountValue,
+                            detail: detail.isEmpty ? nil : detail
+                        )
+                    case .transfer:
+                        break
+                    }
+                }
+            }
+#endif
+            if type == .expense {
+                BudgetNotificationHelper.checkLimits(categoryId: selectedCategoryId, context: context)
+            }
         } catch {
             print("Save error: \(error)")
-        }
-        if type == .expense {
-            BudgetNotificationHelper.checkLimits(categoryId: selectedCategoryId, context: context)
         }
     }
 }
@@ -138,134 +164,77 @@ struct AddEditTransactionView: View {
         ))
     }
 
-    // Template init — pre-fills from an existing transaction but saves as new
     init(template: Transaction) {
         self.existingTransaction = nil
-        let vm = AddEditTransactionViewModel(transaction: template)
-        vm.date = Date()
-        self._vm = State(initialValue: vm)
+        let viewModel = AddEditTransactionViewModel(transaction: template)
+        viewModel.date = Date()
+        self._vm = State(initialValue: viewModel)
     }
 
     private var filteredCategories: [Category] {
         categories.filter { $0.type == (vm.type == .income ? .income : .expense) }
     }
 
+    private var localDecimalSeparator: String {
+        Locale.current.decimalSeparator ?? "."
+    }
+
+    private var displayAmount: String {
+        guard !vm.amountText.isEmpty else { return "0" }
+        let normalized = vm.amountText.replacingOccurrences(of: localDecimalSeparator, with: ".")
+        guard let decimal = Decimal(string: normalized) else { return vm.amountText }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .decimal
+        formatter.minimumFractionDigits = 0
+        formatter.maximumFractionDigits = 2
+        formatter.locale = Locale.current
+        return formatter.string(from: decimal as NSDecimalNumber) ?? vm.amountText
+    }
+
+    private var heroNote: String {
+        var parts: [String] = []
+        if let accountName = accountName(vm.selectedAccountId) {
+            parts.append(accountName)
+        }
+        if vm.type == .transfer, let toAccountName = accountName(vm.selectedToAccountId) {
+            parts.append(String(format: String(localized: "to %@"), toAccountName))
+        } else if let categoryName = categoryName(vm.selectedCategoryId) {
+            parts.append(categoryName)
+        }
+        return parts.isEmpty ? String(localized: "Set amount, account, and context before saving.") : parts.joined(separator: " • ")
+    }
+
     var body: some View {
         NavigationStack {
-            VStack(spacing: 0) {
-            Form {
-                Section(String(localized: "Type")) {
-                    Picker(String(localized: "Type"), selection: $vm.type) {
-                        ForEach(TransactionType.allCases, id: \.self) { t in
-                            Text(t.localizedName).tag(t)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+            ZStack {
+                AppTheme.canvas.ignoresSafeArea()
 
-                Section(String(localized: "Amount")) {
-                    Text(vm.amountText.isEmpty ? "0" : vm.amountText)
-                        .font(.title2.monospacedDigit().weight(.semibold))
-                        .foregroundStyle(vm.amountText.isEmpty ? .secondary : .primary)
-                        .frame(maxWidth: .infinity, alignment: .trailing)
-                        .accessibilityIdentifier("addEditTransaction.amountField")
-                }
-
-                Section(String(localized: "Date")) {
-                    DatePicker(String(localized: "Date"), selection: $vm.date, displayedComponents: .date)
-                }
-
-                Section(String(localized: "Account")) {
-                    if accounts.isEmpty {
-                        Text(String(localized: "No accounts. Add one in Accounts tab."))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Picker(String(localized: "From Account"), selection: $vm.selectedAccountId) {
-                            Text(String(localized: "Select account")).tag(Optional<UUID>.none)
-                            ForEach(accounts) { account in
-                                Text(account.name).tag(Optional(account.id))
+                VStack(spacing: 0) {
+                    ScrollView {
+                        VStack(spacing: 18) {
+                            heroSection
+                            detailsSection
+                            accountSection
+                            if vm.type != .transfer {
+                                categorySection
                             }
+                            contextSection
                         }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 12)
                     }
-                }
+                    .keyboardDismissable()
+                    .accessibilityIdentifier("addEditTransaction.screen")
 
-                if vm.type == .transfer {
-                    Section(String(localized: "To Account")) {
-                        Picker(String(localized: "To Account"), selection: $vm.selectedToAccountId) {
-                            Text(String(localized: "Select account")).tag(Optional<UUID>.none)
-                            ForEach(accounts.filter { $0.id != vm.selectedAccountId }) { account in
-                                Text(account.name).tag(Optional(account.id))
-                            }
-                        }
+                    VStack(spacing: 0) {
+                        Divider()
+                        AmountNumpad(text: $vm.amountText)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            .background(AppTheme.canvas)
                     }
-                }
-
-                if vm.type != .transfer {
-                    if let suggestion = categorySuggestion, !suggestionDismissed, vm.selectedCategoryId == nil {
-                        Button {
-                            vm.selectedCategoryId = suggestion.id
-                            suggestionDismissed = true
-                        } label: {
-                            HStack(spacing: 6) {
-                                Text(String(format: String(localized: "Suggested: %@"), suggestion.name))
-                                    .font(.caption)
-                                Spacer()
-                                Text(String(localized: "Tap to apply"))
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .background(AppTheme.primaryAccent.opacity(0.12))
-                            .foregroundStyle(AppTheme.primaryAccent)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                        }
-                        .buttonStyle(.plain)
-                        .listRowBackground(Color.clear)
-                        .listRowSeparator(.hidden)
-                    }
-
-                    Section(String(localized: "Category")) {
-                        if filteredCategories.isEmpty {
-                            Text(String(localized: "No categories available."))
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Picker(String(localized: "Category"), selection: $vm.selectedCategoryId) {
-                                Text(String(localized: "None")).tag(Optional<UUID>.none)
-                                ForEach(filteredCategories) { cat in
-                                    HStack {
-                                        Circle()
-                                            .fill(Color(hex: cat.colorHex))
-                                            .frame(width: 10, height: 10)
-                                        Text(cat.name)
-                                    }
-                                    .tag(Optional(cat.id))
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Section(String(localized: "Note")) {
-                    TextField(String(localized: "Optional note"), text: $vm.note)
-                }
-
-                Section(String(localized: "Tags")) {
-                    TextField(String(localized: "Add tags..."), text: $vm.tagsText)
-                        .autocorrectionDisabled()
                 }
             }
-            .keyboardDismissable()
-            .accessibilityIdentifier("addEditTransaction.screen")
-
-            VStack(spacing: 0) {
-                Divider()
-                AmountNumpad(text: $vm.amountText)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(AppTheme.canvas)
-            }
-            } // end outer VStack
             .navigationTitle(existingTransaction == nil ? String(localized: "Add Transaction") : String(localized: "Edit Transaction"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -281,13 +250,16 @@ struct AddEditTransactionView: View {
                         dismiss()
                     }
                     .disabled(!vm.isValid)
+                    .fontWeight(.semibold)
                     .accessibilityIdentifier("addEditTransaction.saveButton")
                 }
             }
             .onAppear {
-                // Pre-select first account if none selected
                 if vm.selectedAccountId == nil {
                     vm.selectedAccountId = accounts.first?.id
+                }
+                if vm.type != .transfer, vm.selectedCategoryId == nil {
+                    vm.selectedCategoryId = filteredCategories.first?.id
                 }
             }
             .onChange(of: vm.note) { _, newValue in
@@ -303,10 +275,248 @@ struct AddEditTransactionView: View {
                     suggestionDismissed = true
                 }
             }
+            .onChange(of: vm.type) { _, newType in
+                if newType == .transfer {
+                    vm.selectedCategoryId = nil
+                } else if vm.selectedCategoryId == nil {
+                    vm.selectedCategoryId = filteredCategories.first?.id
+                }
+            }
         }
-        .accessibilityIdentifier("addEditTransaction.screen")
+        .financeNavigationSurface()
         .overlay(alignment: .center) { SuccessBurst(isShowing: $showSuccessBurst) }
         .modalEntrance()
     }
 
+    private var heroSection: some View {
+        HeroMetricCard(
+            title: existingTransaction == nil ? String(localized: "Add Transaction") : String(localized: "Edit Transaction"),
+            value: displayAmount,
+            supportingTitle: String(localized: "Date"),
+            supportingValue: vm.date.formatted(date: .abbreviated, time: .omitted),
+            note: heroNote,
+            badgeText: vm.type.localizedName
+        )
+    }
+
+    private var detailsSection: some View {
+        SectionShell(
+            title: String(localized: "Details"),
+            subtitle: String(localized: "Set the type and date before assigning the transaction.")
+        ) {
+            VStack(spacing: 14) {
+                Picker(String(localized: "Type"), selection: $vm.type) {
+                    ForEach(TransactionType.allCases, id: \.self) { value in
+                        Text(value.localizedName).tag(value)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                DatePicker(
+                    String(localized: "Date"),
+                    selection: $vm.date,
+                    displayedComponents: .date
+                )
+                .datePickerStyle(.compact)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .background(AppTheme.elevatedSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+            }
+        }
+    }
+
+    private var accountSection: some View {
+        SectionShell(
+            title: String(localized: vm.type == .transfer ? "Accounts" : "Account"),
+            subtitle: String(localized: vm.type == .transfer
+                ? "Choose the source and destination accounts for the transfer."
+                : "Choose where the transaction should be booked.")
+        ) {
+            VStack(spacing: 12) {
+                if accounts.isEmpty {
+                    Text(String(localized: "No accounts. Add one in Accounts tab."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    selectionMenu(
+                        title: String(localized: "From Account"),
+                        value: accountName(vm.selectedAccountId) ?? String(localized: "Select account"),
+                        systemImage: "creditcard",
+                        tint: AppTheme.info
+                    ) {
+                        Button(String(localized: "Select account")) { vm.selectedAccountId = nil }
+                        ForEach(accounts) { account in
+                            Button(account.name) { vm.selectedAccountId = account.id }
+                        }
+                    }
+
+                    if vm.type == .transfer {
+                        selectionMenu(
+                            title: String(localized: "To Account"),
+                            value: accountName(vm.selectedToAccountId) ?? String(localized: "Select account"),
+                            systemImage: "arrow.left.arrow.right",
+                            tint: AppTheme.primaryAccent
+                        ) {
+                            Button(String(localized: "Select account")) { vm.selectedToAccountId = nil }
+                            ForEach(accounts.filter { $0.id != vm.selectedAccountId }) { account in
+                                Button(account.name) { vm.selectedToAccountId = account.id }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var categorySection: some View {
+        SectionShell(
+            title: String(localized: "Category"),
+            subtitle: String(localized: "Assign the transaction so budgets and analytics stay accurate.")
+        ) {
+            VStack(spacing: 12) {
+                if let suggestion = categorySuggestion, !suggestionDismissed, vm.selectedCategoryId == nil {
+                    Button {
+                        vm.selectedCategoryId = suggestion.id
+                        suggestionDismissed = true
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: suggestion.iconName)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color(hex: suggestion.colorHex))
+                                .frame(width: 28, height: 28)
+                                .background(Color(hex: suggestion.colorHex).opacity(0.14))
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(String(format: String(localized: "Suggested: %@"), suggestion.name))
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                Text(String(localized: "Tap to apply"))
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer(minLength: 0)
+                        }
+                        .padding(12)
+                        .background(AppTheme.primaryAccent.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if filteredCategories.isEmpty {
+                    Text(String(localized: "No categories available."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                } else {
+                    selectionMenu(
+                        title: String(localized: "Category"),
+                        value: categoryName(vm.selectedCategoryId) ?? String(localized: "None"),
+                        systemImage: categorySystemImage(vm.selectedCategoryId),
+                        tint: categoryTint(vm.selectedCategoryId)
+                    ) {
+                        Button(String(localized: "None")) { vm.selectedCategoryId = nil }
+                        ForEach(filteredCategories) { category in
+                            Button(category.name) { vm.selectedCategoryId = category.id }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private var contextSection: some View {
+        SectionShell(
+            title: String(localized: "Context"),
+            subtitle: String(localized: "Keep notes and tags short so search and suggestions remain useful.")
+        ) {
+            VStack(spacing: 12) {
+                textField(
+                    title: String(localized: "Note"),
+                    text: $vm.note,
+                    prompt: String(localized: "Optional note")
+                )
+
+                textField(
+                    title: String(localized: "Tags"),
+                    text: $vm.tagsText,
+                    prompt: String(localized: "Add tags...")
+                )
+                .autocorrectionDisabled()
+            }
+        }
+    }
+
+    private func textField(title: String, text: Binding<String>, prompt: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            TextField(prompt, text: text)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .background(AppTheme.elevatedSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    private func selectionMenu<Content: View>(
+        title: String,
+        value: String,
+        systemImage: String,
+        tint: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Menu {
+            content()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 30, height: 30)
+                    .background(tint.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(value)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(AppTheme.elevatedSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func accountName(_ id: UUID?) -> String? {
+        guard let id, let account = accounts.first(where: { $0.id == id }) else { return nil }
+        return account.name
+    }
+
+    private func categoryName(_ id: UUID?) -> String? {
+        guard let id, let category = categories.first(where: { $0.id == id }) else { return nil }
+        return category.name
+    }
+
+    private func categorySystemImage(_ id: UUID?) -> String {
+        guard let id, let category = categories.first(where: { $0.id == id }) else { return "tag" }
+        return category.iconName
+    }
+
+    private func categoryTint(_ id: UUID?) -> Color {
+        guard let id, let category = categories.first(where: { $0.id == id }) else { return AppTheme.primaryAccent }
+        return Color(hex: category.colorHex)
+    }
 }

@@ -208,18 +208,28 @@ struct DebtDetailView: View {
     }()
 
     var body: some View {
-        List {
-            headerSection
-            paymentSummarySection
-            if debt.interestRate > 0 {
-                financialDetailsSection
-            }
-            if !amortizationRows.isEmpty {
-                scheduleSection
+        ZStack {
+            AppTheme.canvas
+                .ignoresSafeArea()
+
+            ScrollView {
+                VStack(spacing: 18) {
+                    headerSection
+                    paymentSummarySection
+                    if debt.interestRate > 0 {
+                        financialDetailsSection
+                    }
+                    if !amortizationRows.isEmpty {
+                        scheduleSection
+                    }
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
             }
         }
+        .financeNavigationSurface()
         .navigationTitle(debt.name)
-        .navigationBarTitleDisplayMode(.large)
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
                 Button {
@@ -237,118 +247,89 @@ struct DebtDetailView: View {
     // MARK: - Header Section
 
     private var headerSection: some View {
-        Section {
-            VStack(alignment: .leading, spacing: 12) {
-                // Name + type badge + paid-off indicator
-                HStack(alignment: .center) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(debt.name)
-                            .font(.title2.bold())
-
-                        HStack(spacing: 6) {
-                            Text(debt.type.localizedName)
-                                .font(.caption)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 3)
-                                .background(AppTheme.primaryAccent.opacity(0.12))
-                                .foregroundStyle(AppTheme.primaryAccent)
-                                .clipShape(Capsule())
-
-                            if isPaidOff {
-                                Label(String(localized: "Paid"), systemImage: "checkmark.circle.fill")
-                                    .font(.caption)
-                                    .foregroundStyle(AppTheme.success)
-                            }
-                        }
-                    }
-
-                    Spacer()
-
-                    if debt.interestRate > 0 {
-                        Text("\(NSDecimalNumber(decimal: debt.interestRate * 100).doubleValue, specifier: "%.1f")%")
-                            .font(.headline)
-                            .foregroundStyle(.orange)
-                    }
-                }
-
-                // Progress bar
-                VStack(alignment: .leading, spacing: 4) {
-                    ProgressView(value: debt.progress)
-                        .tint(isPaidOff ? AppTheme.success : AppTheme.primaryAccent)
-
-                    HStack {
-                        Text(String(format: String(localized: "%@ paid"), CurrencyFormatter.string(from: paidAmount)))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Spacer()
-                        Text("\(Int(debt.progress * 100))%")
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                    }
-                }
-
-                // Remaining amount (large)
-                HStack(alignment: .lastTextBaseline) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(String(localized: "Remaining"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(CurrencyFormatter.string(from: debt.remainingAmount))
-                            .font(.title.bold())
-                            .foregroundStyle(isPaidOff ? AppTheme.success : AppTheme.danger)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text(String(localized: "Total"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Text(CurrencyFormatter.string(from: debt.totalAmount))
-                            .font(.headline)
-                            .foregroundStyle(.primary)
-                    }
-                }
-            }
-            .padding(.vertical, 8)
-            .listRowBackground(
-                RoundedRectangle(cornerRadius: 12)
-                    .fill(AppTheme.debtGradient)
-                    .padding(.horizontal, 4)
-                    .padding(.vertical, 2)
+        VStack(spacing: 12) {
+            HeroMetricCard(
+                title: debt.name,
+                value: CurrencyFormatter.string(from: debt.remainingAmount),
+                supportingTitle: String(localized: "Monthly payment"),
+                supportingValue: debt.minimumPayment > 0 ? CurrencyFormatter.string(from: debt.minimumPayment) : "—",
+                note: String(localized: "Remaining balance and payoff pace for this debt."),
+                badgeText: isPaidOff ? String(localized: "Paid") : debt.type.localizedName
             )
+
+            LazyVGrid(
+                columns: [
+                    GridItem(.flexible(), spacing: 12),
+                    GridItem(.flexible(), spacing: 12)
+                ],
+                spacing: 12
+            ) {
+                CompactSummaryCard(
+                    title: String(localized: "Paid"),
+                    value: CurrencyFormatter.string(from: paidAmount),
+                    detail: String(format: String(localized: "%lld%% paid"), Int64((debt.progress * 100).rounded())),
+                    systemImage: "checkmark.circle.fill",
+                    tint: AppTheme.success
+                )
+
+                CompactSummaryCard(
+                    title: String(localized: "Remaining"),
+                    value: CurrencyFormatter.string(from: debt.remainingAmount),
+                    detail: String(localized: "Outstanding balance"),
+                    systemImage: "creditcard.fill",
+                    tint: isPaidOff ? AppTheme.success : AppTheme.danger
+                )
+
+                CompactSummaryCard(
+                    title: String(localized: "Next payment"),
+                    value: nextPaymentDate.map { dateFormatter.string(from: $0) } ?? "—",
+                    detail: String(localized: "Upcoming due date"),
+                    systemImage: "calendar.badge.clock",
+                    tint: AppTheme.info
+                )
+
+                CompactSummaryCard(
+                    title: String(localized: "Payoff"),
+                    value: payoffDate.map { dateFormatter.string(from: $0) } ?? "—",
+                    detail: String(localized: "Estimated finish date"),
+                    systemImage: "flag.checkered.2.crossed",
+                    tint: AppTheme.warning
+                )
+            }
         }
     }
 
     // MARK: - Payment Summary Section
 
     private var paymentSummarySection: some View {
-        Section(String(localized: "Payment")) {
-            if let nextDate = nextPaymentDate {
-                LabeledContent(String(localized: "Next Payment")) {
-                    Text(dateFormatter.string(from: nextDate))
-                        .foregroundStyle(.primary)
+        SectionShell(
+            title: String(localized: "Payment plan"),
+            subtitle: String(localized: "The next key dates and cadence for this debt.")
+        ) {
+            VStack(spacing: 12) {
+                if let nextDate = nextPaymentDate {
+                    detailMetricRow(
+                        title: String(localized: "Next Payment"),
+                        value: dateFormatter.string(from: nextDate)
+                    )
                 }
-            }
 
-            LabeledContent(String(localized: "Minimum Payment")) {
-                Text(debt.minimumPayment > 0
-                     ? CurrencyFormatter.string(from: debt.minimumPayment)
-                     : "—")
-                .foregroundStyle(.primary)
-            }
+                detailMetricRow(
+                    title: String(localized: "Minimum Payment"),
+                    value: debt.minimumPayment > 0 ? CurrencyFormatter.string(from: debt.minimumPayment) : "—"
+                )
 
-            LabeledContent(String(localized: "Remaining Payments")) {
-                if let count = remainingPaymentsCount {
-                    Text("\(count) \(String(localized: "payments left"))")
-                        .foregroundStyle(.primary)
-                } else {
-                    Text("—").foregroundStyle(.secondary)
-                }
-            }
+                detailMetricRow(
+                    title: String(localized: "Remaining Payments"),
+                    value: remainingPaymentsCount.map { "\($0) \(String(localized: "payments left"))" } ?? "—"
+                )
 
-            if let payoff = payoffDate {
-                LabeledContent(String(localized: "Payoff Date")) {
-                    Text(dateFormatter.string(from: payoff))
-                        .foregroundStyle(AppTheme.success)
+                if let payoff = payoffDate {
+                    detailMetricRow(
+                        title: String(localized: "Payoff Date"),
+                        value: dateFormatter.string(from: payoff),
+                        tint: AppTheme.success
+                    )
                 }
             }
         }
@@ -357,21 +338,27 @@ struct DebtDetailView: View {
     // MARK: - Financial Details Section
 
     private var financialDetailsSection: some View {
-        Section(String(localized: "Details")) {
-            LabeledContent(String(localized: "Interest Rate (%)")) {
-                Text("\(NSDecimalNumber(decimal: debt.interestRate * 100).doubleValue, specifier: "%.2f")%")
-                    .foregroundStyle(.orange)
-            }
+        SectionShell(
+            title: String(localized: "Cost breakdown"),
+            subtitle: String(localized: "Interest and total cost if you keep the current payment pace.")
+        ) {
+            VStack(spacing: 12) {
+                detailMetricRow(
+                    title: String(localized: "Interest Rate (%)"),
+                    value: String(format: "%.2f%%", NSDecimalNumber(decimal: debt.interestRate * 100).doubleValue),
+                    tint: AppTheme.warning
+                )
 
-            LabeledContent(String(localized: "Interest")) {
-                Text(CurrencyFormatter.string(from: totalInterestRemaining))
-                    .foregroundStyle(.orange)
-            }
+                detailMetricRow(
+                    title: String(localized: "Interest"),
+                    value: CurrencyFormatter.string(from: totalInterestRemaining),
+                    tint: AppTheme.warning
+                )
 
-            LabeledContent(String(localized: "Total Cost")) {
-                Text(CurrencyFormatter.string(from: totalRemainingCost))
-                    .font(.headline)
-                    .foregroundStyle(.primary)
+                detailMetricRow(
+                    title: String(localized: "Total Cost"),
+                    value: CurrencyFormatter.string(from: totalRemainingCost)
+                )
             }
         }
     }
@@ -379,88 +366,118 @@ struct DebtDetailView: View {
     // MARK: - Schedule Section
 
     private var scheduleSection: some View {
-        Section(String(localized: "Payment Schedule")) {
+        SectionShell(
+            title: String(localized: "Payment Schedule"),
+            subtitle: String(localized: "Projected amortization based on the current payment amount.")
+        ) {
             let isSimple = debt.interestRate == 0
 
-            if isSimple {
-                // Simple installment rows: Date | Amount | Balance
-                ForEach(scheduleRows) { row in
-                    HStack(spacing: 0) {
-                        Text("\(row.number)")
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 28, alignment: .leading)
-
-                        Text(dateFormatter.string(from: row.date))
-                            .font(.caption)
-                            .foregroundStyle(.primary)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Text(CurrencyFormatter.string(from: row.payment))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(AppTheme.primaryAccent)
-                            .frame(width: 80, alignment: .trailing)
-
-                        Text(CurrencyFormatter.string(from: row.balance))
-                            .font(.caption.monospacedDigit())
-                            .foregroundStyle(.secondary)
-                            .frame(width: 80, alignment: .trailing)
-                    }
-                }
-            } else {
-                // Full amortization table header
-                HStack(spacing: 0) {
-                    Text("#")
-                        .frame(width: 28, alignment: .leading)
-                    Text(String(localized: "Date"))
+            VStack(spacing: 0) {
+                if amortizationRows.isEmpty {
+                    Text(String(localized: "No payment data"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Text(String(localized: "Principal"))
-                        .frame(width: 70, alignment: .trailing)
-                    Text(String(localized: "Interest"))
-                        .frame(width: 70, alignment: .trailing)
-                    Text(String(localized: "Balance"))
-                        .frame(width: 72, alignment: .trailing)
-                }
-                .font(.caption2.bold())
-                .foregroundStyle(.secondary)
-                .listRowBackground(Color.clear)
+                        .padding(.vertical, 8)
+                } else if isSimple {
+                    ForEach(scheduleRows) { row in
+                        VStack(spacing: 0) {
+                            HStack(spacing: 12) {
+                                Text("\(row.number)")
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 24, alignment: .leading)
 
-                ForEach(scheduleRows) { row in
-                    VStack(spacing: 3) {
-                        HStack(spacing: 0) {
-                            Text("\(row.number)")
-                                .font(.caption2.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 28, alignment: .leading)
+                                Text(dateFormatter.string(from: row.date))
+                                    .font(.caption)
+                                    .foregroundStyle(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
 
-                            Text(dateFormatter.string(from: row.date))
-                                .font(.caption)
-                                .foregroundStyle(.primary)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                                Text(CurrencyFormatter.string(from: row.payment))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(AppTheme.primaryAccent)
+                                    .frame(width: 90, alignment: .trailing)
 
-                            Text(CurrencyFormatter.string(from: row.principal))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(AppTheme.primaryAccent)
-                                .frame(width: 70, alignment: .trailing)
+                                Text(CurrencyFormatter.string(from: row.balance))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 90, alignment: .trailing)
+                            }
+                            .padding(.vertical, 10)
 
-                            Text(CurrencyFormatter.string(from: row.interest))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.orange)
-                                .frame(width: 70, alignment: .trailing)
+                            if row.id != scheduleRows.last?.id {
+                                Divider()
+                            }
+                        }
+                    }
+                } else {
+                    HStack(spacing: 12) {
+                        Text("#")
+                            .frame(width: 24, alignment: .leading)
+                        Text(String(localized: "Date"))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        Text(String(localized: "Principal"))
+                            .frame(width: 78, alignment: .trailing)
+                        Text(String(localized: "Interest"))
+                            .frame(width: 78, alignment: .trailing)
+                        Text(String(localized: "Balance"))
+                            .frame(width: 82, alignment: .trailing)
+                    }
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                    .padding(.bottom, 10)
 
-                            Text(CurrencyFormatter.string(from: row.balance))
-                                .font(.caption.monospacedDigit())
-                                .foregroundStyle(.secondary)
-                                .frame(width: 72, alignment: .trailing)
+                    ForEach(scheduleRows) { row in
+                        VStack(spacing: 0) {
+                            HStack(spacing: 12) {
+                                Text("\(row.number)")
+                                    .font(.caption2.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 24, alignment: .leading)
+
+                                Text(dateFormatter.string(from: row.date))
+                                    .font(.caption)
+                                    .foregroundStyle(.primary)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                                Text(CurrencyFormatter.string(from: row.principal))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(AppTheme.primaryAccent)
+                                    .frame(width: 78, alignment: .trailing)
+
+                                Text(CurrencyFormatter.string(from: row.interest))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(AppTheme.warning)
+                                    .frame(width: 78, alignment: .trailing)
+
+                                Text(CurrencyFormatter.string(from: row.balance))
+                                    .font(.caption.monospacedDigit())
+                                    .foregroundStyle(.secondary)
+                                    .frame(width: 82, alignment: .trailing)
+                            }
+                            .padding(.vertical, 10)
+
+                            if row.id != scheduleRows.last?.id {
+                                Divider()
+                            }
                         }
                     }
                 }
             }
+        }
+    }
 
-            if amortizationRows.isEmpty {
-                Text(String(localized: "No payment data"))
-                    .foregroundStyle(.secondary)
-            }
+    private func detailMetricRow(title: String, value: String, tint: Color = .primary) -> some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer(minLength: 12)
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(tint)
+                .multilineTextAlignment(.trailing)
         }
     }
 }

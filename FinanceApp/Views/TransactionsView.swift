@@ -91,18 +91,20 @@ struct TransactionsView: View {
                         List {
                             ForEach(groupedTransactions, id: \.0) { date, txns in
                                 Section {
-                                    ForEach(Array(txns.enumerated()), id: \.element.id) { _, txn in
-                                        Button {
-                                            editingTransaction = txn
-                                        } label: {
-                                            TransactionJournalRow(
-                                                transaction: txn,
-                                                account: accountById[txn.accountId],
-                                                category: categoryById[txn.categoryId ?? UUID()],
-                                                toAccount: txn.toAccountId.flatMap { accountById[$0] }
-                                            )
+                                    ForEach(Array(txns.enumerated()), id: \.element.id) { idx, txn in
+                                        AnimatedTransactionRow(delay: Double(idx) * 0.04) {
+                                            Button {
+                                                editingTransaction = txn
+                                            } label: {
+                                                TransactionJournalRow(
+                                                    transaction: txn,
+                                                    account: accountById[txn.accountId],
+                                                    category: categoryById[txn.categoryId ?? UUID()],
+                                                    toAccount: txn.toAccountId.flatMap { accountById[$0] }
+                                                )
+                                            }
+                                            .buttonStyle(.plain)
                                         }
-                                        .buttonStyle(.plain)
                                         .accessibilityIdentifier("transactions.row.\(txn.id.uuidString)")
                                         .listRowBackground(Color.clear)
                                         .listRowSeparator(.hidden)
@@ -242,10 +244,38 @@ struct TransactionsView: View {
 
     private var controlsHeader: some View {
         VStack(spacing: 12) {
+            transactionsOverviewHeader
             searchBar
             filterStrip
             summaryStrip
         }
+    }
+
+    private var transactionsOverviewHeader: some View {
+        let total = filteredTransactions.count
+        let subtitle = filtersActive || !searchText.isEmpty
+            ? String(localized: "Search, filter and capture in one place.")
+            : String(localized: "Your journal for fast review and clean capture.")
+
+        return HStack(alignment: .top, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(String(localized: "Money Journal"))
+                    .font(.system(.title3, design: .rounded).weight(.bold))
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: 12)
+            VStack(alignment: .trailing, spacing: 4) {
+                Text("\(total)")
+                    .font(.headline.monospacedDigit().weight(.bold))
+                    .foregroundStyle(.primary)
+                Text(String(localized: "visible"))
+                    .font(.caption2.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .cockpitSurface(cornerRadius: 22, elevated: true, compact: true)
     }
 
     // C3: Skeleton loading rows
@@ -454,6 +484,10 @@ struct TransactionsView: View {
             Text(CurrencyFormatter.string(from: net))
                 .font(.caption.monospacedDigit().weight(.semibold))
                 .foregroundStyle(net >= 0 ? AppTheme.success : AppTheme.danger)
+                .padding(.horizontal, 9)
+                .padding(.vertical, 5)
+                .background((net >= 0 ? AppTheme.success : AppTheme.danger).opacity(0.12))
+                .clipShape(Capsule())
         }
         .textCase(nil)
     }
@@ -484,6 +518,34 @@ struct TransactionsView: View {
             tags: txn.tags
         )
         modelContext.insert(copy)
+        do {
+            try modelContext.save()
+#if canImport(ActivityKit)
+            if #available(iOS 16.2, *), txn.type != .transfer {
+                let detail = txn.note.trimmingCharacters(in: .whitespacesAndNewlines)
+                let amountValue = NSDecimalNumber(decimal: txn.amount).doubleValue
+                switch txn.type {
+                case .income:
+                    LiveActivityManager.triggerCelebration(
+                        .incomeAdded,
+                        amount: amountValue,
+                        detail: detail.isEmpty ? nil : detail
+                    )
+                case .expense:
+                    LiveActivityManager.triggerCelebration(
+                        .expenseLogged,
+                        amount: amountValue,
+                        detail: detail.isEmpty ? nil : detail
+                    )
+                    BudgetNotificationHelper.checkLimits(categoryId: txn.categoryId, context: modelContext)
+                case .transfer:
+                    break
+                }
+            }
+#endif
+        } catch {
+            print("Duplicate transaction save error: \(error)")
+        }
     }
 }
 
@@ -502,42 +564,83 @@ private struct FilterSheet: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section(String(localized: "Account")) {
-                    Picker(String(localized: "Account"), selection: $draftAccountId) {
-                        Text(String(localized: "All Accounts")).tag(UUID?.none)
-                        ForEach(accounts) { acc in
-                            Text(acc.name).tag(UUID?.some(acc.id))
-                        }
-                    }
-                }
+            ZStack {
+                AppTheme.canvas.ignoresSafeArea()
 
-                Section(String(localized: "Type")) {
-                    Picker(String(localized: "Type"), selection: $draftType) {
-                        Text(String(localized: "All Types")).tag(TransactionType?.none)
-                        ForEach(TransactionType.allCases, id: \.self) { type in
-                            Text(type.localizedName).tag(TransactionType?.some(type))
-                        }
-                    }
-                }
+                ScrollView {
+                    VStack(spacing: 18) {
+                        HeroMetricCard(
+                            title: String(localized: "Filter"),
+                            value: "\(activeFilterCount)",
+                            supportingTitle: String(localized: "Available Groups"),
+                            supportingValue: "3",
+                            note: String(localized: "Use only the filters you need, then jump back to the journal."),
+                            badgeText: String(localized: "Active")
+                        )
 
-                Section(String(localized: "Category")) {
-                    Picker(String(localized: "Category"), selection: $draftCategoryId) {
-                        Text(String(localized: "All Categories")).tag(UUID?.none)
-                        ForEach(categories) { category in
-                            Text(category.name).tag(UUID?.some(category.id))
+                        SectionShell(
+                            title: String(localized: "Account"),
+                            subtitle: String(localized: "Limit the journal to one account or keep all accounts visible.")
+                        ) {
+                            filterMenu(
+                                title: String(localized: "Account"),
+                                value: accounts.first(where: { $0.id == draftAccountId })?.name ?? String(localized: "All Accounts"),
+                                systemImage: "creditcard",
+                                tint: AppTheme.info
+                            ) {
+                                Button(String(localized: "All Accounts")) { draftAccountId = nil }
+                                ForEach(accounts) { account in
+                                    Button(account.name) { draftAccountId = account.id }
+                                }
+                            }
                         }
-                    }
-                }
 
-                Section {
-                    Button(String(localized: "Clear Filters"), role: .destructive) {
-                        draftAccountId = nil
-                        draftType = nil
-                        draftCategoryId = nil
+                        SectionShell(
+                            title: String(localized: "Type"),
+                            subtitle: String(localized: "Focus on income, expense, or transfers only when needed.")
+                        ) {
+                            filterMenu(
+                                title: String(localized: "Type"),
+                                value: draftType?.localizedName ?? String(localized: "All Types"),
+                                systemImage: "arrow.up.arrow.down",
+                                tint: AppTheme.primaryAccent
+                            ) {
+                                Button(String(localized: "All Types")) { draftType = nil }
+                                ForEach(TransactionType.allCases, id: \.self) { type in
+                                    Button(type.localizedName) { draftType = type }
+                                }
+                            }
+                        }
+
+                        SectionShell(
+                            title: String(localized: "Category"),
+                            subtitle: String(localized: "Filter the journal down to one category when reviewing spend.")
+                        ) {
+                            filterMenu(
+                                title: String(localized: "Category"),
+                                value: categories.first(where: { $0.id == draftCategoryId })?.name ?? String(localized: "All Categories"),
+                                systemImage: "tag",
+                                tint: AppTheme.success
+                            ) {
+                                Button(String(localized: "All Categories")) { draftCategoryId = nil }
+                                ForEach(categories) { category in
+                                    Button(category.name) { draftCategoryId = category.id }
+                                }
+                            }
+                        }
+
+                        Button(String(localized: "Clear Filters"), role: .destructive) {
+                            draftAccountId = nil
+                            draftType = nil
+                            draftCategoryId = nil
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
             }
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Filter"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -560,6 +663,51 @@ private struct FilterSheet: View {
             }
         }
     }
+
+    private var activeFilterCount: Int {
+        [draftAccountId != nil, draftType != nil, draftCategoryId != nil]
+            .filter { $0 }
+            .count
+    }
+
+    private func filterMenu<Content: View>(
+        title: String,
+        value: String,
+        systemImage: String,
+        tint: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Menu {
+            content()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 30, height: 30)
+                    .background(tint.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(value)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(AppTheme.elevatedSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
 }
 
 private struct TagChipsView: View {
@@ -571,8 +719,8 @@ private struct TagChipsView: View {
                 ForEach(tags, id: \.self) { tag in
                     Text(tag)
                         .font(.caption2)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
                         .background(AppTheme.surfaceMuted)
                         .foregroundStyle(AppTheme.primaryAccent)
                         .clipShape(Capsule())
@@ -621,6 +769,20 @@ private struct TransactionJournalRow: View {
         }
     }
 
+    private var roleLabel: String {
+        if let category {
+            return category.name
+        }
+        switch transaction.type {
+        case .income:
+            return String(localized: "Income")
+        case .expense:
+            return String(localized: "Expense")
+        case .transfer:
+            return String(localized: "Transfer")
+        }
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Group {
@@ -638,24 +800,67 @@ private struct TransactionJournalRow: View {
             .frame(width: 36, height: 36)
             .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
 
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(alignment: .firstTextBaseline) {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(alignment: .top, spacing: 10) {
                     Text(title)
-                        .font(.subheadline.weight(.semibold))
+                        .font(.headline.weight(.semibold))
+                        .foregroundStyle(.primary)
                         .lineLimit(1)
                     Spacer(minLength: 12)
-                    Text("\(amountPrefix)\(CurrencyFormatter.string(from: transaction.amount))")
-                        .font(.subheadline.monospacedDigit().weight(.semibold))
-                        .foregroundStyle(amountColor)
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("\(amountPrefix)\(CurrencyFormatter.string(from: transaction.amount))")
+                            .font(.headline.monospacedDigit().weight(.bold))
+                            .foregroundStyle(amountColor)
+                            .lineLimit(1)
+                        Text(transaction.date.formatted(date: .omitted, time: .shortened))
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
                 }
-                Text(subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Text(transaction.date.formatted(date: .omitted, time: .shortened))
-                    .font(.caption2)
-                    .foregroundStyle(.secondary)
+
+                HStack(spacing: 6) {
+                    Text(roleLabel)
+                        .font(.caption2.weight(.bold))
+                        .foregroundStyle(amountColor)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 4)
+                        .background(amountColor.opacity(0.12))
+                        .clipShape(Capsule())
+
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                }
+
+                if !transaction.tags.isEmpty {
+                    TagChipsView(tags: Array(transaction.tags.prefix(3)))
+                }
             }
         }
-        .cockpitSurface(cornerRadius: 20, elevated: true, compact: true)
+        .padding(14)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(AppTheme.outline.opacity(0.45), lineWidth: 0.5)
+        )
+    }
+}
+
+private struct AnimatedTransactionRow<Content: View>: View {
+    let delay: Double
+    @ViewBuilder let content: () -> Content
+    @State private var appeared = false
+
+    var body: some View {
+        content()
+            .opacity(appeared ? 1 : 0)
+            .offset(x: appeared ? 0 : -18)
+            .onAppear {
+                withAnimation(.spring(response: 0.38, dampingFraction: 0.82).delay(delay)) {
+                    appeared = true
+                }
+            }
     }
 }

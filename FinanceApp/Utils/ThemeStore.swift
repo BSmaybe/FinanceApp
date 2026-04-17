@@ -244,34 +244,79 @@ extension ThemePalette {
         timelineDot: Color(hex: "#60A5FA")
     )
 
+    // 6. Warm Minimal — cream canvas, near-black accent, green signals
+    static let warmMinimal = ThemePalette(
+        id: "warm_minimal",
+        name: String(localized: "Warm Minimal"),
+        isDark: false,
+        canvas: Color(hex: "#F5F3EF"),
+        surface: .white,
+        outline: Color(hex: "#E5E2DC"),
+        primaryAccent: Color(hex: "#1A1A1A"),
+        secondaryAccent: Color(hex: "#22C55E"),
+        danger: Color(hex: "#EF4444"),
+        success: Color(hex: "#22C55E"),
+        heroCardTitle: Color(hex: "#111111"),
+        heroCardLabel: Color(hex: "#6B7280"),
+        heroGradient: LinearGradient(
+            colors: [Color(hex: "#FFFFFF"), Color(hex: "#F0EDE8")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        incomeGradient: LinearGradient(
+            colors: [.green.opacity(0.12), .mint.opacity(0.06)],
+            startPoint: .leading, endPoint: .trailing
+        ),
+        expenseGradient: LinearGradient(
+            colors: [.red.opacity(0.12), .orange.opacity(0.06)],
+            startPoint: .leading, endPoint: .trailing
+        ),
+        debtGradient: LinearGradient(
+            colors: [Color(hex: "#FEE2E2"), Color(hex: "#FFF7ED")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        subscriptionGradient: LinearGradient(
+            colors: [Color(hex: "#F3F4F6"), Color(hex: "#F5F3EF")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        fabGradient: LinearGradient(
+            colors: [Color(hex: "#1A1A1A"), Color(hex: "#374151")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        timelineLine: Color(hex: "#E5E2DC"),
+        timelineDot: Color(hex: "#1A1A1A")
+    )
+
     static let all: [String: ThemePalette] = [
         financeBlue.id:    .financeBlue,
         midnightGreen.id:  .midnightGreen,
         sunset.id:         .sunset,
         lavender.id:       .lavender,
         midnight.id:       .midnight,
+        warmMinimal.id:    .warmMinimal,
     ]
 
-    static let allCases: [ThemePalette] = [.financeBlue, .midnightGreen, .sunset, .lavender, .midnight]
+    static let allCases: [ThemePalette] = [.warmMinimal, .financeBlue, .midnightGreen, .sunset, .lavender, .midnight]
 
     var surfaceMuted: Color {
         switch id {
-        case "finance_blue": return Color(hex: "#F8FAFD")
+        case "warm_minimal":   return Color(hex: "#F0EDE8")
+        case "finance_blue":   return Color(hex: "#F8FAFD")
         case "midnight_green": return Color(hex: "#F6FCF8")
-        case "sunset": return Color(hex: "#FFF7EF")
-        case "lavender": return Color(hex: "#FCF8FF")
-        case "midnight": return Color(hex: "#162033")
+        case "sunset":         return Color(hex: "#FFF7EF")
+        case "lavender":       return Color(hex: "#FCF8FF")
+        case "midnight":       return Color(hex: "#162033")
         default: return surface
         }
     }
 
     var surfaceElevated: Color {
         switch id {
-        case "finance_blue": return Color(hex: "#FFFFFF")
+        case "warm_minimal":   return Color(hex: "#FFFFFF")
+        case "finance_blue":   return Color(hex: "#FFFFFF")
         case "midnight_green": return Color(hex: "#FFFFFF")
-        case "sunset": return Color(hex: "#FFFFFF")
-        case "lavender": return Color(hex: "#FFFFFF")
-        case "midnight": return Color(hex: "#1B2840")
+        case "sunset":         return Color(hex: "#FFFFFF")
+        case "lavender":       return Color(hex: "#FFFFFF")
+        case "midnight":       return Color(hex: "#1B2840")
         default: return surface
         }
     }
@@ -310,7 +355,7 @@ extension ThemePalette {
 final class ThemeStore: ObservableObject {
     static let shared = ThemeStore()
 
-    @AppStorage("selectedTheme") var selectedTheme: String = "finance_blue" {
+    @AppStorage("selectedTheme") var selectedTheme: String = "warm_minimal" {
         didSet { objectWillChange.send() }
     }
 

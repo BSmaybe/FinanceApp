@@ -15,6 +15,9 @@ struct DailyBudgetAttributes: ActivityAttributes {
             case none
             case goalReached
             case debtPaidOff
+            case incomeAdded
+            case expenseLogged
+            case budgetWarning
         }
 
         var spentToday: Double
@@ -23,6 +26,8 @@ struct DailyBudgetAttributes: ActivityAttributes {
         var signal: Signal
         var pulseToken: Int
         var celebration: Celebration
+        var celebrationAmount: Double?
+        var celebrationDetail: String?
 
         var progress: Double {
             guard dailyBudget > 0 else { return 0 }
