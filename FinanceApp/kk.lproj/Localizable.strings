@@ -1176,3 +1176,10 @@
 "Good" = "Жақсы";
 "Low" = "Төмен";
 "Light" = "Төмен";
+"High" = "Жоғары";
+"Primary Actions" = "Негізгі әрекеттер";
+// Dashboard Focus Strip section summaries
+"All on track" = "Бәрі жақсы";
+"No budgets" = "Бюджет жоқ";
+"%lld over budget" = "%lld асып кетті";
+"%lld near limit" = "%lld шекке жақын";

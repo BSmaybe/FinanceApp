@@ -38,6 +38,7 @@ struct DashboardView: View {
     @AppStorage("feature.subscriptions") private var featureSubscriptions = true
     @AppStorage("unlockedAchievements")  private var unlockedAchievementsData = ""
     @AppStorage("dash.showHeroCard")     private var showHeroCard = true
+    @AppStorage("dash.expandedSection")  private var expandedSectionRaw = ""
 
     @State private var monthOffset: Int = 0
     @State private var newlyUnlockedAchievement: Achievement?
@@ -73,6 +74,94 @@ struct DashboardView: View {
         let limit: Decimal
         let ratio: Double
         let isOverBudget: Bool
+    }
+
+    private enum DashboardSection: String, CaseIterable {
+        case accounts
+        case vitals
+        case primaryActions
+        case coach
+        case thisMonth
+        case commitments
+        case recentActivity
+    }
+
+    private var expandedSection: DashboardSection? {
+        get { DashboardSection(rawValue: expandedSectionRaw) }
+        set { expandedSectionRaw = newValue?.rawValue ?? "" }
+    }
+
+    private struct FocusStripRow<Content: View>: View {
+        let section: DashboardSection
+        let title: String
+        let summary: String
+        let icon: String
+        let accessibilityId: String
+        @Binding var expandedSectionRaw: String
+        @ViewBuilder let content: () -> Content
+
+        private var isExpanded: Bool {
+            expandedSectionRaw == section.rawValue
+        }
+
+        var body: some View {
+            VStack(spacing: 0) {
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.86)) {
+                        expandedSectionRaw = isExpanded ? "" : section.rawValue
+                    }
+                    HapticManager.impact(.light)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: icon)
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(AppTheme.primaryAccent)
+                            .frame(width: 30, height: 30)
+                            .background(AppTheme.primaryAccent.opacity(0.12))
+                            .clipShape(Circle())
+
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(title)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                            if !isExpanded {
+                                Text(summary)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+
+                        Spacer(minLength: 0)
+
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(isExpanded ? 90 : 0))
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 12)
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+
+                if isExpanded {
+                    Divider()
+                        .padding(.horizontal, 14)
+                    content()
+                        .padding(12)
+                }
+            }
+            .background(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .fill(AppTheme.surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .stroke(AppTheme.outline.opacity(0.4), lineWidth: 0.5)
+                    )
+            )
+            .accessibilityIdentifier(accessibilityId)
+        }
     }
 
     private var currentComponents: (year: Int, month: Int, day: Int) {
@@ -228,6 +317,18 @@ struct DashboardView: View {
         ].contains(true)
     }
 
+    private var hasVisibleFocusStripSections: Bool {
+        [
+            showAccounts,
+            showVitals,
+            showQuickActions,
+            showHeroCard,
+            showThisMonth,
+            showCommitments,
+            showRecentActivity
+        ].contains(true)
+    }
+
     var body: some View {
         let current = currentComponents
         let previousMonth = previousMonthComponents(from: current)
@@ -271,7 +372,7 @@ struct DashboardView: View {
                 AppTheme.canvas.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 18) {
+                    VStack(spacing: 14) {
                         if !showOverview {
                             dashboardControlBar
                                 .accessibilityIdentifier("dashboard.controlBar")
@@ -289,49 +390,17 @@ struct DashboardView: View {
                                 .accessibilityIdentifier("dashboard.hero.section")
                             }
 
-                            if showVitals {
-                                financialVitalsSection(vitals: financialVitals)
-                                    .accessibilityIdentifier("dashboard.vitals.section")
-                            }
-
-                            if showAccounts {
-                                if accounts.isEmpty {
-                                    emptyAccountsCard
-                                        .accessibilityIdentifier("dashboard.accounts.empty")
-                                } else {
-                                    accountsScrollSection(balances: dashboardStats.netWorthByAccount)
-                                        .accessibilityIdentifier("dashboard.accounts.section")
-                                }
-                            }
-
-                            if showQuickActions {
-                                actionRailSection
-                                    .accessibilityIdentifier("dashboard.primaryActions.section")
-                            }
-
-                            if showHeroCard {
-                                HeroProfileCardView(stats: heroStats) { cta in
-                                    handleCoachCTA(cta)
-                                }
-                                    .accessibilityIdentifier("dashboard.hero.card")
-                            }
-
-                            if showThisMonth {
-                                insightsReferenceSection(budgetPressures: budgetPressures)
-                                    .accessibilityIdentifier("dashboard.thisMonth.section")
-                            }
-
-                            if showCommitments {
-                                commitmentsCompactSection
-                                    .accessibilityIdentifier("dashboard.commitments.section")
-                            }
-
-                            if showRecentActivity {
-                                latestTransactionReferenceSection(
+                            if hasVisibleFocusStripSections {
+                                focusStripSections(
+                                    balances: dashboardStats.netWorthByAccount,
+                                    budgetPressures: budgetPressures,
+                                    vitals: financialVitals,
                                     recentTransactions: recentTransactionsList,
                                     categoryById: categoryById
                                 )
-                                .accessibilityIdentifier("dashboard.recentActivity.section")
+                            } else {
+                                emptyDashboardState
+                                    .accessibilityIdentifier("dashboard.emptyState")
                             }
                         } else {
                             emptyDashboardState
@@ -461,6 +530,11 @@ struct DashboardView: View {
                         dashStats: dashboardStats
                     )
                 }
+                expandedSectionRaw = autoExpandedSectionRaw(
+                    budgetPressures: budgetPressures,
+                    vitals: financialVitals,
+                    recentTransactions: recentTransactionsList
+                )
                 checkAchievements()
             }
             .onChange(of: scenePhase) { _, newPhase in
@@ -495,6 +569,27 @@ struct DashboardView: View {
                 }
                 checkAchievements()
             }
+            .onChange(of: showAccounts) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
+            .onChange(of: showVitals) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
+            .onChange(of: showQuickActions) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
+            .onChange(of: showHeroCard) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
+            .onChange(of: showThisMonth) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
+            .onChange(of: showCommitments) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
+            .onChange(of: showRecentActivity) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
         }
     }
 
@@ -514,7 +609,7 @@ struct DashboardView: View {
             ? Date().formatted(.dateTime.weekday(.wide).day().month(.abbreviated))
             : monthLabel
 
-        return VStack(alignment: .leading, spacing: 16) {
+        return VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(greetingText)
@@ -573,26 +668,20 @@ struct DashboardView: View {
                 badgeText: monthLabel
             )
 
-            HStack(spacing: 10) {
-                CompactSummaryCard(
+            HStack(spacing: 8) {
+                focusMetricPill(
                     title: String(localized: "Free to spend"),
-                    value: CurrencyFormatter.string(from: freeToSpend),
-                    detail: String(localized: "Current month"),
-                    systemImage: "wallet.bifold.fill",
+                    value: NumberAbbreviator.string(from: freeToSpend),
                     tint: AppTheme.primaryAccent
                 )
-                CompactSummaryCard(
+                focusMetricPill(
                     title: String(localized: "Income"),
-                    value: CurrencyFormatter.string(from: monthlyIncome),
-                    detail: String(localized: "Current month"),
-                    systemImage: "arrow.down.circle.fill",
+                    value: NumberAbbreviator.string(from: monthlyIncome),
                     tint: AppTheme.success
                 )
-                CompactSummaryCard(
+                focusMetricPill(
                     title: String(localized: "Expense"),
-                    value: CurrencyFormatter.string(from: monthlyExpense),
-                    detail: String(localized: "Current month"),
-                    systemImage: "arrow.up.circle.fill",
+                    value: NumberAbbreviator.string(from: monthlyExpense),
                     tint: AppTheme.danger
                 )
             }
@@ -640,6 +729,198 @@ struct DashboardView: View {
         .padding(.horizontal, 4)
     }
 
+    private var visibleFocusSections: [DashboardSection] {
+        var sections: [DashboardSection] = []
+        if showAccounts { sections.append(.accounts) }
+        if showVitals { sections.append(.vitals) }
+        if showQuickActions { sections.append(.primaryActions) }
+        if showHeroCard { sections.append(.coach) }
+        if showThisMonth { sections.append(.thisMonth) }
+        if showCommitments { sections.append(.commitments) }
+        if showRecentActivity { sections.append(.recentActivity) }
+        return sections
+    }
+
+    private func focusStripSections(
+        balances: [UUID: Decimal],
+        budgetPressures: [BudgetRisk],
+        vitals: FinancialVitals,
+        recentTransactions: [Transaction],
+        categoryById: [UUID: Category]
+    ) -> some View {
+        VStack(spacing: 12) {
+            if showAccounts {
+                focusStripSection(
+                    section: .accounts,
+                    title: String(localized: "Accounts"),
+                    summary: accounts.isEmpty ? String(localized: "No Accounts") : accountsSummary(balances: balances),
+                    icon: "creditcard.and.123",
+                    accessibilityId: "dashboard.accounts.section"
+                ) {
+                    accountsFocusContent(balances: balances)
+                }
+            }
+
+            if showVitals {
+                focusStripSection(
+                    section: .vitals,
+                    title: String(localized: "Financial Vitals"),
+                    summary: vitalsSummary(vitals: vitals),
+                    icon: "waveform.path.ecg",
+                    accessibilityId: "dashboard.vitals.section"
+                ) {
+                    financialVitalsFocusContent(vitals: vitals)
+                }
+            }
+
+            if showQuickActions {
+                focusStripSection(
+                    section: .primaryActions,
+                    title: String(localized: "Primary Actions"),
+                    summary: "\(String(localized: "Quick Add")) · \(String(localized: "Budgets")) · \(String(localized: "Forecast"))",
+                    icon: "square.grid.2x2.fill",
+                    accessibilityId: "dashboard.primaryActions.section"
+                ) {
+                    actionRailContent
+                }
+            }
+
+            if showHeroCard {
+                focusStripSection(
+                    section: .coach,
+                    title: String(localized: "Coach & Progress"),
+                    summary: heroStats.title,
+                    icon: "sparkles",
+                    accessibilityId: "dashboard.hero.card"
+                ) {
+                    HeroProfileCardView(stats: heroStats) { cta in
+                        handleCoachCTA(cta)
+                    }
+                }
+            }
+
+            if showThisMonth {
+                focusStripSection(
+                    section: .thisMonth,
+                    title: String(localized: "This Month"),
+                    summary: budgetsSummary(budgetPressures: budgetPressures),
+                    icon: "calendar",
+                    accessibilityId: "dashboard.thisMonth.section"
+                ) {
+                    thisMonthFocusContent(budgetPressures: budgetPressures)
+                }
+            }
+
+            if showCommitments {
+                focusStripSection(
+                    section: .commitments,
+                    title: String(localized: "Commitments"),
+                    summary: upcomingSummary,
+                    icon: "tray.full",
+                    accessibilityId: "dashboard.commitments.section"
+                ) {
+                    commitmentsFocusContent
+                }
+            }
+
+            if showRecentActivity {
+                focusStripSection(
+                    section: .recentActivity,
+                    title: String(localized: "Recent Activity"),
+                    summary: activitySummary(recentTransactions: recentTransactions, categoryById: categoryById),
+                    icon: "clock.arrow.circlepath",
+                    accessibilityId: "dashboard.recentActivity.section"
+                ) {
+                    recentActivityContent(
+                        recentTransactions: recentTransactions,
+                        categoryById: categoryById
+                    )
+                }
+            }
+        }
+    }
+
+    private func focusStripSection<Content: View>(
+        section: DashboardSection,
+        title: String,
+        summary: String,
+        icon: String,
+        accessibilityId: String,
+        @ViewBuilder content: @escaping () -> Content
+    ) -> some View {
+        FocusStripRow(
+            section: section,
+            title: title,
+            summary: summary,
+            icon: icon,
+            accessibilityId: accessibilityId,
+            expandedSectionRaw: $expandedSectionRaw,
+            content: content
+        )
+    }
+
+    private func normalizedExpandedSectionRaw() -> String {
+        let visible = visibleFocusSections
+        guard !visible.isEmpty else {
+            return ""
+        }
+        if let expandedSection, visible.contains(expandedSection) {
+            return expandedSection.rawValue
+        }
+        return ""
+    }
+
+    private func autoExpandedSectionRaw(
+        budgetPressures: [BudgetRisk],
+        vitals: FinancialVitals,
+        recentTransactions: [Transaction]
+    ) -> String {
+        let visible = visibleFocusSections
+        guard !visible.isEmpty else {
+            return ""
+        }
+        if let expandedSection, visible.contains(expandedSection) {
+            return expandedSection.rawValue
+        }
+        return autoFocusSection(
+            budgetPressures: budgetPressures,
+            vitals: vitals,
+            recentTransactions: recentTransactions,
+            visibleSections: visible
+        ).rawValue
+    }
+
+    private func autoFocusSection(
+        budgetPressures: [BudgetRisk],
+        vitals: FinancialVitals,
+        recentTransactions: [Transaction],
+        visibleSections: [DashboardSection]
+    ) -> DashboardSection {
+        let hasBudgetRisk = budgetPressures.contains { $0.isOverBudget || $0.ratio >= 0.8 }
+        if hasBudgetRisk, showThisMonth, visibleSections.contains(.thisMonth) {
+            return .thisMonth
+        }
+        if vitals.dueSoonCount > 0, showCommitments, visibleSections.contains(.commitments) {
+            return .commitments
+        }
+        if showRecentActivity, visibleSections.contains(.recentActivity) {
+            return .recentActivity
+        }
+        if recentTransactions.isEmpty, visibleSections.contains(.primaryActions) {
+            return .primaryActions
+        }
+        return visibleSections.first ?? .accounts
+    }
+
+    private func vitalsSummary(vitals: FinancialVitals) -> String {
+        let readiness = FinancialVitalMetric.readiness.stateLabel(for: vitals.readiness)
+        let reserve = FinancialVitalMetric.reserve.stateLabel(for: vitals.reserve)
+        let pressure = FinancialVitalMetric.pressure.stateLabel(for: vitals.pressure)
+        let higher = String(localized: "Higher is better")
+        let lower = String(localized: "Lower is better")
+        return "\(String(localized: "Readiness")) \(readiness) (\(higher)) · \(String(localized: "Reserve")) \(reserve) (\(higher)) · \(String(localized: "Pressure")) \(pressure) (\(lower))"
+    }
+
     private func financialVitalsSection(vitals: FinancialVitals) -> some View {
         SectionShell(
             title: String(localized: "Financial Vitals"),
@@ -653,6 +934,12 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
             }
         ) {
+            financialVitalsFocusContent(vitals: vitals)
+        }
+    }
+
+    private func financialVitalsFocusContent(vitals: FinancialVitals) -> some View {
+        VStack(spacing: 10) {
             HStack(spacing: 10) {
                 vitalsScoreCard(
                     metric: .readiness,
@@ -836,43 +1123,47 @@ struct DashboardView: View {
             title: String(localized: "Primary Actions"),
             subtitle: String(localized: "Move quickly through daily money tasks")
         ) {
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ActionTile(
-                    title: String(localized: "Quick Add"),
-                    subtitle: String(localized: "Capture income or expense"),
-                    systemImage: "plus.circle.fill",
-                    tint: AppTheme.primaryAccent
-                ) {
-                    quickAddCapturePayload = nil
-                    showingQuickAdd = true
-                }
+            actionRailContent
+        }
+    }
 
-                ActionTile(
-                    title: String(localized: "Budgets"),
-                    subtitle: String(localized: "Review limits and pressure"),
-                    systemImage: "gauge.with.needle.fill",
-                    tint: AppTheme.warning
-                ) {
-                    showingBudgetManager = true
-                }
+    private var actionRailContent: some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+            ActionTile(
+                title: String(localized: "Quick Add"),
+                subtitle: String(localized: "Capture income or expense"),
+                systemImage: "plus.circle.fill",
+                tint: AppTheme.primaryAccent
+            ) {
+                quickAddCapturePayload = nil
+                showingQuickAdd = true
+            }
 
-                ActionTile(
-                    title: String(localized: "Forecast"),
-                    subtitle: String(localized: "Look ahead before bills land"),
-                    systemImage: "chart.line.uptrend.xyaxis",
-                    tint: AppTheme.success
-                ) {
-                    showingForecast = true
-                }
+            ActionTile(
+                title: String(localized: "Budgets"),
+                subtitle: String(localized: "Review limits and pressure"),
+                systemImage: "gauge.with.needle.fill",
+                tint: AppTheme.warning
+            ) {
+                showingBudgetManager = true
+            }
 
-                ActionTile(
-                    title: String(localized: "Scan"),
-                    subtitle: String(localized: "Receipt or code capture"),
-                    systemImage: "qrcode.viewfinder",
-                    tint: AppTheme.info
-                ) {
-                    showingCaptureScanner = true
-                }
+            ActionTile(
+                title: String(localized: "Forecast"),
+                subtitle: String(localized: "Look ahead before bills land"),
+                systemImage: "chart.line.uptrend.xyaxis",
+                tint: AppTheme.success
+            ) {
+                showingForecast = true
+            }
+
+            ActionTile(
+                title: String(localized: "Scan"),
+                subtitle: String(localized: "Receipt or code capture"),
+                systemImage: "qrcode.viewfinder",
+                tint: AppTheme.info
+            ) {
+                showingCaptureScanner = true
             }
         }
     }
@@ -984,11 +1275,6 @@ struct DashboardView: View {
     }
 
     private func insightsReferenceSection(budgetPressures: [BudgetRisk]) -> some View {
-        let topRisk = budgetPressures.first
-        let topRiskPercent = Int((topRisk?.ratio ?? 0) * 100)
-        let monthlyBills = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount } +
-            activeDebts.reduce(Decimal.zero) { $0 + $1.minimumPayment }
-
         return SectionShell(
             title: String(localized: "This Month"),
             subtitle: String(localized: "Signals worth reviewing before the month slips."),
@@ -1001,111 +1287,186 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
             }
         ) {
-            VStack(spacing: 12) {
-                Button {
-                    showingBudgetManager = true
-                } label: {
-                    InsightCard(
-                        title: String(localized: "Budget pressure"),
-                        value: topRisk == nil ? String(localized: "No budgets yet") : "\(topRiskPercent)%",
-                        message: topRisk == nil
-                            ? String(localized: "Create budgets to track monthly pressure")
-                            : String(
-                                format: String(localized: "You reached %lld%% of %@ budget"),
-                                Int64(max(0, topRiskPercent)),
-                                topRisk?.category.name ?? ""
-                            ),
-                        systemImage: topRisk?.category.iconName ?? "gauge.with.needle.fill",
-                        tint: topRisk?.isOverBudget == true ? AppTheme.danger : AppTheme.warning
-                    )
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier("dashboard.thisMonth.openBudgets")
-
-                Button {
-                    if featureSubscriptions {
-                        showingSubscriptions = true
-                    } else if featureDebts {
-                        showingDebts = true
-                    }
-                } label: {
-                    InsightCard(
-                        title: String(localized: "Upcoming bills"),
-                        value: CurrencyFormatter.string(from: monthlyBills),
-                        message: String(
-                            format: String(localized: "%lld active bills this month"),
-                            Int64(activeSubscriptions.count + activeDebts.count)
-                        ),
-                        systemImage: "calendar.badge.clock",
-                        tint: AppTheme.info
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Button {
-                    selectedTab = .analytics
-                } label: {
-                    InsightCard(
-                        title: String(localized: "Planning"),
-                        value: "\(activeGoals.count)",
-                        message: activeGoals.isEmpty
-                            ? String(localized: "Create your first goal")
-                            : String(
-                                format: String(localized: "%lld goals in progress"),
-                                Int64(activeGoals.count)
-                            ),
-                        systemImage: "target",
-                        tint: AppTheme.success
-                    )
-                }
-                .buttonStyle(.plain)
-            }
+            thisMonthFocusContent(budgetPressures: budgetPressures)
         }
     }
 
-    private var commitmentsCompactSection: some View {
-        let subscriptionTotal = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount }
-        let debtTotal = activeDebts.reduce(Decimal.zero) { $0 + $1.remainingAmount }
+    private func thisMonthFocusContent(budgetPressures: [BudgetRisk]) -> some View {
+        let current = currentComponents
+        let previousMonth = previousMonthComponents(from: current)
+        let dashboardStats = stats(current: current, previousMonth: previousMonth)
+        let expenseCategoriesList = expenseCategories
+        let freeToSpendValue = freeToSpend(
+            stats: dashboardStats,
+            expenseCategories: expenseCategoriesList,
+            currentMonth: current.month,
+            currentYear: current.year,
+            previousMonth: previousMonth
+        )
+        let allowanceValue = dailyAllowance(freeToSpend: freeToSpendValue, current: current)
+        let monthNet = dashboardStats.monthlyIncome - dashboardStats.monthlyExpense
+        let topRisk = budgetPressures.first
+        let topRiskPercent = Int((topRisk?.ratio ?? 0) * 100)
+        let monthlyBills = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount } +
+            activeDebts.reduce(Decimal.zero) { $0 + $1.minimumPayment }
 
+        return VStack(spacing: 12) {
+            HStack(spacing: 8) {
+                focusMetricPill(
+                    title: String(localized: "Income"),
+                    value: NumberAbbreviator.string(from: dashboardStats.monthlyIncome),
+                    tint: AppTheme.success
+                )
+                focusMetricPill(
+                    title: String(localized: "Expense"),
+                    value: NumberAbbreviator.string(from: dashboardStats.monthlyExpense),
+                    tint: AppTheme.danger
+                )
+                focusMetricPill(
+                    title: String(localized: "Net"),
+                    value: NumberAbbreviator.string(from: monthNet),
+                    tint: monthNet >= 0 ? AppTheme.success : AppTheme.danger
+                )
+                focusMetricPill(
+                    title: String(localized: "Daily Allowance"),
+                    value: NumberAbbreviator.string(from: allowanceValue),
+                    tint: AppTheme.info
+                )
+            }
+
+            Button {
+                showingBudgetManager = true
+            } label: {
+                InsightCard(
+                    title: String(localized: "Budget pressure"),
+                    value: topRisk == nil ? String(localized: "No budgets yet") : "\(topRiskPercent)%",
+                    message: topRisk == nil
+                        ? String(localized: "Create budgets to track monthly pressure")
+                        : String(
+                            format: String(localized: "You reached %lld%% of %@ budget"),
+                            Int64(max(0, topRiskPercent)),
+                            topRisk?.category.name ?? ""
+                        ),
+                    systemImage: topRisk?.category.iconName ?? "gauge.with.needle.fill",
+                    tint: topRisk?.isOverBudget == true ? AppTheme.danger : AppTheme.warning
+                )
+            }
+            .buttonStyle(.plain)
+            .accessibilityIdentifier("dashboard.thisMonth.openBudgets")
+
+            Button {
+                if featureSubscriptions {
+                    showingSubscriptions = true
+                } else if featureDebts {
+                    showingDebts = true
+                }
+            } label: {
+                InsightCard(
+                    title: String(localized: "Upcoming bills"),
+                    value: CurrencyFormatter.string(from: monthlyBills),
+                    message: String(
+                        format: String(localized: "%lld active bills this month"),
+                        Int64(activeSubscriptions.count + activeDebts.count)
+                    ),
+                    systemImage: "calendar.badge.clock",
+                    tint: AppTheme.info
+                )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                selectedTab = .analytics
+            } label: {
+                InsightCard(
+                    title: String(localized: "Planning"),
+                    value: "\(activeGoals.count)",
+                    message: activeGoals.isEmpty
+                        ? String(localized: "Create your first goal")
+                        : String(
+                            format: String(localized: "%lld goals in progress"),
+                            Int64(activeGoals.count)
+                        ),
+                    systemImage: "target",
+                    tint: AppTheme.success
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private func focusMetricPill(title: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+            Text(value)
+                .font(.caption.weight(.bold).monospacedDigit())
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.7)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(AppTheme.surfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+    }
+
+    private var commitmentsCompactSection: some View {
         return SectionShell(
             title: String(localized: "Commitments"),
             subtitle: String(localized: "Review upcoming obligations and progress.")
         ) {
-            HStack(spacing: 10) {
-                if featureSubscriptions {
-                    commitmentMiniCard(
-                        title: String(localized: "Subscriptions"),
-                        value: CurrencyFormatter.string(from: subscriptionTotal),
-                        subtitle: "\(activeSubscriptions.count)",
-                        icon: "repeat",
-                        tint: AppTheme.sectionAccent
-                    ) {
-                        showingSubscriptions = true
-                    }
-                }
+            commitmentsFocusContent
+        }
+    }
 
-                if featureDebts && showDebts {
-                    commitmentMiniCard(
-                        title: String(localized: "Debts"),
-                        value: CurrencyFormatter.string(from: debtTotal),
-                        subtitle: "\(activeDebts.count)",
-                        icon: "creditcard",
-                        tint: AppTheme.warning
-                    ) {
-                        showingDebts = true
-                    }
-                }
+    private var commitmentsFocusContent: some View {
+        VStack(spacing: 12) {
+            commitmentMiniRow
+            upcomingPaymentsContent
+        }
+    }
 
-                if featureGoals {
-                    commitmentMiniCard(
-                        title: String(localized: "Goals"),
-                        value: "\(activeGoals.count)",
-                        subtitle: String(localized: "in progress"),
-                        icon: "flag.checkered",
-                        tint: AppTheme.success
-                    ) {
-                        showingGoals = true
-                    }
+    private var commitmentMiniRow: some View {
+        let subscriptionTotal = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount }
+        let debtTotal = activeDebts.reduce(Decimal.zero) { $0 + $1.remainingAmount }
+
+        return HStack(spacing: 10) {
+            if featureSubscriptions {
+                commitmentMiniCard(
+                    title: String(localized: "Subscriptions"),
+                    value: CurrencyFormatter.string(from: subscriptionTotal),
+                    subtitle: "\(activeSubscriptions.count)",
+                    icon: "repeat",
+                    tint: AppTheme.sectionAccent
+                ) {
+                    showingSubscriptions = true
+                }
+            }
+
+            if featureDebts && showDebts {
+                commitmentMiniCard(
+                    title: String(localized: "Debts"),
+                    value: CurrencyFormatter.string(from: debtTotal),
+                    subtitle: "\(activeDebts.count)",
+                    icon: "creditcard",
+                    tint: AppTheme.warning
+                ) {
+                    showingDebts = true
+                }
+            }
+
+            if featureGoals {
+                commitmentMiniCard(
+                    title: String(localized: "Goals"),
+                    value: "\(activeGoals.count)",
+                    subtitle: String(localized: "in progress"),
+                    icon: "flag.checkered",
+                    tint: AppTheme.success
+                ) {
+                    showingGoals = true
                 }
             }
         }
@@ -1420,6 +1781,74 @@ struct DashboardView: View {
 
     // MARK: - Accounts Scroll
 
+    private func accountsSummary(balances: [UUID: Decimal]) -> String {
+        let total = accounts.reduce(Decimal.zero) { $0 + balances[$1.id, default: .zero] }
+        return "\(accounts.count) · \(NumberAbbreviator.string(from: total))"
+    }
+
+    private func budgetsSummary(budgetPressures: [BudgetRisk]) -> String {
+        let over = budgetPressures.filter { $0.isOverBudget }.count
+        let near = budgetPressures.filter { !$0.isOverBudget && $0.ratio >= 0.8 }.count
+        if over > 0 {
+            return String(format: String(localized: "%lld over budget"), Int64(over))
+        }
+        if near > 0 {
+            return String(format: String(localized: "%lld near limit"), Int64(near))
+        }
+        return budgetPressures.isEmpty ? String(localized: "No budgets") : String(localized: "All on track")
+    }
+
+    private var upcomingSummary: String {
+        let items = buildUpcomingItems()
+        guard let first = items.first else {
+            return String(localized: "No upcoming payments")
+        }
+        return "\(first.name) · \(first.subtitle)"
+    }
+
+    private func activitySummary(recentTransactions: [Transaction], categoryById: [UUID: Category]) -> String {
+        guard let last = recentTransactions.first else {
+            return String(localized: "No recent activity")
+        }
+        let cat = last.categoryId.flatMap { categoryById[$0] }
+        let title = !last.note.isEmpty ? last.note : (cat?.name ?? last.type.localizedName)
+        let sign = last.type == .income ? "+" : (last.type == .expense ? "−" : "")
+        return "\(sign)\(CurrencyFormatter.string(from: last.amount)) \(title)"
+    }
+
+    @ViewBuilder
+    private func accountsFocusContent(balances: [UUID: Decimal]) -> some View {
+        if accounts.isEmpty {
+            VStack(spacing: 10) {
+                Text(String(localized: "Add your first account"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(String(localized: "Add your first account to start seeing balances, runway and reserve."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                Button(String(localized: "Open Accounts")) {
+                    selectedTab = .accounts
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AppTheme.primaryAccent)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 8)
+        } else {
+            VStack(spacing: 10) {
+                accountsScrollContent(balances: balances)
+                Button(String(localized: "Open Accounts")) {
+                    selectedTab = .accounts
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.primaryAccent)
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+    }
+
     private func accountsScrollSection(balances: [UUID: Decimal]) -> some View {
         SectionShell(
             title: String(localized: "Accounts"),
@@ -1433,24 +1862,28 @@ struct DashboardView: View {
                 .buttonStyle(.plain)
             }
         ) {
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 12) {
-                    ForEach(accounts) { account in
-                        let balance = balances[account.id, default: .zero]
-                        Button {
-                            HapticManager.impact(.light)
-                            selectedTab = .accounts
-                        } label: {
-                            accountMiniCard(account: account, balance: balance)
-                        }
-                        .buttonStyle(PressableButtonStyle(scale: 0.93))
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.vertical, 2)
-            }
-            .padding(.horizontal, -16)
+            accountsFocusContent(balances: balances)
         }
+    }
+
+    private func accountsScrollContent(balances: [UUID: Decimal]) -> some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 12) {
+                ForEach(accounts) { account in
+                    let balance = balances[account.id, default: .zero]
+                    Button {
+                        HapticManager.impact(.light)
+                        selectedTab = .accounts
+                    } label: {
+                        accountMiniCard(account: account, balance: balance)
+                    }
+                    .buttonStyle(PressableButtonStyle(scale: 0.93))
+                }
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 2)
+        }
+        .padding(.horizontal, -16)
     }
 
     private func accountMiniCard(account: Account, balance: Decimal) -> some View {
@@ -1843,6 +2276,10 @@ struct DashboardView: View {
 
     // MARK: - Upcoming Payments
 
+    private var upcomingPaymentsContent: some View {
+        upcomingPaymentsSection
+    }
+
     private var upcomingPaymentsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -1988,6 +2425,16 @@ struct DashboardView: View {
     }
 
     // MARK: - Recent Activity
+
+    private func recentActivityContent(
+        recentTransactions: [Transaction],
+        categoryById: [UUID: Category]
+    ) -> some View {
+        recentActivitySection(
+            recentTransactions: recentTransactions,
+            categoryById: categoryById
+        )
+    }
 
     private func recentActivitySection(
         recentTransactions: [Transaction],

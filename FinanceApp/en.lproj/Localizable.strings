@@ -1189,3 +1189,10 @@
 "Good" = "Good";
 "Low" = "Low";
 "Light" = "Light";
+"High" = "High";
+"Primary Actions" = "Primary Actions";
+// Dashboard Focus Strip section summaries
+"All on track" = "All on track";
+"No budgets" = "No budgets";
+"%lld over budget" = "%lld over budget";
+"%lld near limit" = "%lld near limit";

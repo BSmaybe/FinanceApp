@@ -75,7 +75,7 @@ struct DashboardSettingsView: View {
                                 isOn: $showAccounts
                             )
                             toggleCard(
-                                title: String(localized: "Quick Actions"),
+                                title: String(localized: "Primary Actions"),
                                 subtitle: String(localized: "Fast entrypoints for capture, budgets, and forecast."),
                                 systemImage: "square.grid.2x2.fill",
                                 tint: AppTheme.primaryAccent,

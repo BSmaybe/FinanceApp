@@ -1186,3 +1186,10 @@
 "Good" = "Хорошо";
 "Low" = "Низко";
 "Light" = "Низкое";
+"High" = "Высокое";
+"Primary Actions" = "Основные действия";
+// Dashboard Focus Strip section summaries
+"All on track" = "Всё в норме";
+"No budgets" = "Нет бюджетов";
+"%lld over budget" = "%lld превышен";
+"%lld near limit" = "%lld у предела";
