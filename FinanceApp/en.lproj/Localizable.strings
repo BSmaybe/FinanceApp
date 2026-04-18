@@ -1196,3 +1196,16 @@
 "No budgets" = "No budgets";
 "%lld over budget" = "%lld over budget";
 "%lld near limit" = "%lld near limit";
+/* Cash Flows redesign */
+"Cash Flows" = "Cash Flows";
+"History" = "History";
+"Transfers" = "Transfers";
+
+/* Dashboard redesign */
+"Hi %@" = "Hi %@";
+"there" = "there";
+"Latest Transactions" = "Latest Transactions";
+"See all" = "See all";
+"Over budget!" = "Over budget!";
+"Over income this month" = "Over income this month";
+"Saved %lld%% of income" = "Saved %lld%% of income";

@@ -1183,3 +1183,16 @@
 "No budgets" = "Бюджет жоқ";
 "%lld over budget" = "%lld асып кетті";
 "%lld near limit" = "%lld шекке жақын";
+/* Cash Flows redesign */
+"Cash Flows" = "Ақша ағыны";
+"History" = "Тарих";
+"Transfers" = "Аударымдар";
+
+/* Dashboard redesign */
+"Hi %@" = "Сәлем, %@";
+"there" = "досым";
+"Latest Transactions" = "Соңғы транзакциялар";
+"See all" = "Барлығы";
+"Over budget!" = "Бюджет асып кетті!";
+"Over income this month" = "Шығыс кірістен асты";
+"Saved %lld%% of income" = "Кірістің %lld%% сақталды";
