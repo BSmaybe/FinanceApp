@@ -4,7 +4,7 @@ struct Achievement: Identifiable {
     let id: String
     let title: String
     let description: String
-    let icon: String
+    let symbolName: String
     let xpReward: Int
 }
 
@@ -12,86 +12,79 @@ enum AchievementStore {
     static let all: [Achievement] = [
         Achievement(
             id: "first_transaction",
-            title: String(localized: "First Step"),
+            title: String(localized: "First record"),
             description: String(localized: "Add your first transaction"),
-            icon: "🥇",
+            symbolName: "plus.circle.fill",
             xpReward: 50
         ),
         Achievement(
             id: "budget_keeper",
-            title: String(localized: "Budget Keeper"),
+            title: String(localized: "Month under plan"),
             description: String(localized: "Stay under budget for a full month"),
-            icon: "💰",
+            symbolName: "checkmark.seal.fill",
             xpReward: 100
         ),
         Achievement(
             id: "debt_slayer",
-            title: String(localized: "Debt Slayer"),
+            title: String(localized: "First debt closed"),
             description: String(localized: "Pay off your first debt"),
-            icon: "💪",
+            symbolName: "creditcard.and.123",
             xpReward: 200
         ),
         Achievement(
             id: "goal_getter",
-            title: String(localized: "Goal Getter"),
+            title: String(localized: "Goal funded"),
             description: String(localized: "Complete your first financial goal"),
-            icon: "🎯",
+            symbolName: "flag.checkered.2.crossed",
             xpReward: 100
         ),
         Achievement(
             id: "seven_day_streak",
-            title: String(localized: "7-Day Streak"),
+            title: String(localized: "Consistency week"),
             description: String(localized: "7 consecutive days with transactions"),
-            icon: "📅",
+            symbolName: "calendar.badge.clock",
             xpReward: 70
         ),
         Achievement(
             id: "thirty_day_streak",
-            title: String(localized: "30-Day Streak"),
+            title: String(localized: "Consistency month"),
             description: String(localized: "30 consecutive days with transactions"),
-            icon: "🗓️",
+            symbolName: "calendar.badge.checkmark",
             xpReward: 300
         ),
         Achievement(
             id: "saver",
-            title: String(localized: "Saver"),
+            title: String(localized: "Savings month"),
             description: String(localized: "Save rate ≥ 20% for a month"),
-            icon: "🐷",
+            symbolName: "leaf.circle.fill",
             xpReward: 150
         ),
         Achievement(
-            id: "big_spender",
-            title: String(localized: "Big Spender"),
-            description: String(localized: "Single transaction over 10,000"),
-            icon: "💸",
-            xpReward: 25
-        ),
-        Achievement(
             id: "debt_free",
-            title: String(localized: "Debt Free"),
+            title: String(localized: "Debt free"),
             description: String(localized: "All debts paid off"),
-            icon: "🏅",
+            symbolName: "checkmark.circle.fill",
             xpReward: 500
         ),
         Achievement(
             id: "portfolio",
-            title: String(localized: "Portfolio"),
+            title: String(localized: "Account structure"),
             description: String(localized: "Have 3 or more accounts"),
-            icon: "🏦",
+            symbolName: "building.columns.fill",
             xpReward: 75
         ),
         Achievement(
             id: "planner",
-            title: String(localized: "Planner"),
+            title: String(localized: "Planning habit"),
             description: String(localized: "Set budgets for 5 or more categories"),
-            icon: "📋",
+            symbolName: "list.clipboard.fill",
             xpReward: 100
         ),
         Achievement(
             id: "legend",
-            title: String(localized: "Legend"),
-            description: String(localized: "Reach Level 20"),
-            icon: "🏆",
+            title: String(localized: "Long-term discipline"),
+            description: String(localized: "Maintain healthy progress over time"),
+            symbolName: "chart.line.uptrend.xyaxis.circle.fill",
             xpReward: 0
         ),
     ]
@@ -155,10 +148,6 @@ enum AchievementStore {
 
         if heroStats.streak >= 30 {
             unlocked.insert("thirty_day_streak")
-        }
-
-        if transactions.contains(where: { $0.amount > 10_000 }) {
-            unlocked.insert("big_spender")
         }
 
         if !debts.isEmpty, debts.allSatisfy({ $0.remainingAmount <= 0 }) {

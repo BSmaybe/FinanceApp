@@ -48,262 +48,27 @@ struct SettingsView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section(String(localized: "Personalization")) {
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: 16) {
-                            ForEach(ThemePalette.allCases, id: \.id) { palette in
-                                Button {
-                                    themeStore.selectedTheme = palette.id
-                                } label: {
-                                    VStack(spacing: 6) {
-                                        ZStack {
-                                            Circle()
-                                                .fill(palette.primaryAccent)
-                                                .frame(width: 36, height: 36)
-                                            Circle()
-                                                .fill(palette.secondaryAccent)
-                                                .frame(width: 14, height: 14)
-                                                .offset(x: 10, y: 10)
-                                            if palette.isDark {
-                                                Image(systemName: "moon.fill")
-                                                    .font(.system(size: 10))
-                                                    .foregroundStyle(.white)
-                                                    .offset(x: -8, y: -8)
-                                            }
-                                            if themeStore.selectedTheme == palette.id {
-                                                Circle()
-                                                    .stroke(AppTheme.primaryAccent, lineWidth: 2.5)
-                                                    .frame(width: 44, height: 44)
-                                            }
-                                        }
-                                        .frame(width: 44, height: 44)
-                                        Text(palette.name)
-                                            .font(.caption2)
-                                            .foregroundStyle(themeStore.selectedTheme == palette.id ? AppTheme.primaryAccent : .secondary)
-                                            .lineLimit(1)
-                                    }
-                                }
-                                .buttonStyle(.plain)
-                            }
-                        }
-                        .padding(.vertical, 6)
-                    }
-
-                    NavigationLink {
-                        DashboardSettingsView()
-                    } label: {
-                        Label(String(localized: "Dashboard Sections"), systemImage: "square.grid.3x1.below.line.grid.1x2")
-                    }
-
-                    NavigationLink {
-                        FeaturesSettingsView()
-                    } label: {
-                        Label(String(localized: "Features"), systemImage: "square.stack.3d.up")
-                    }
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 18) {
+                    settingsHeroSection
+                    personalizationSection
+                    planningRulesSection
+                    notificationsSection
+                    dataBackupSection
+                    captureShortcutsSection
+                    onboardingSection
+                    diagnosticsSection
                 }
-
-                Section(String(localized: "Language")) {
-                    LabeledContent(String(localized: "Language")) {
-                        Picker("", selection: $pickerLanguage) {
-                            ForEach(Self.languages, id: \.code) { lang in
-                                Text(lang.native).tag(lang.code)
-                            }
-                        }
-                        .pickerStyle(.menu)
-                        .onChange(of: pickerLanguage) { _, newValue in
-                            guard newValue != selectedLanguage else { return }
-                            pendingLanguage = newValue
-                            pickerLanguage = selectedLanguage  // revert until confirmed
-                            HapticManager.impact(.light)
-                            showingLanguageRestart = true
-                        }
-                    }
-                    .onAppear { pickerLanguage = selectedLanguage }
-                }
-
-                Section(String(localized: "Planning Rules")) {
-                    Toggle(String(localized: "Rollover unused budget"), isOn: $rolloverEnabled)
-                }
-
-                Section(String(localized: "Financial Tools")) {
-                    Button {
-                        showingDebts = true
-                    } label: {
-                        Label(String(localized: "Debts"), systemImage: "creditcard.fill")
-                            .foregroundStyle(AppTheme.warning)
-                    }
-                    Button {
-                        showingGoals = true
-                    } label: {
-                        Label(String(localized: "Goals"), systemImage: "target")
-                            .foregroundStyle(AppTheme.success)
-                    }
-                    Button {
-                        showingSubscriptions = true
-                    } label: {
-                        Label(String(localized: "Subscriptions"), systemImage: "repeat")
-                            .foregroundStyle(AppTheme.primaryAccent)
-                    }
-                    Button {
-                        showingRecurring = true
-                    } label: {
-                        Label(String(localized: "Recurring Transactions"), systemImage: "arrow.clockwise")
-                            .foregroundStyle(AppTheme.secondaryAccent)
-                    }
-                }
-
-                Section(String(localized: "Notifications & Live Activity")) {
-                    Toggle(String(localized: "Budget alerts"), isOn: $budgetNotificationsEnabled)
-                    Toggle(String(localized: "Subscription reminders"), isOn: $subscriptionRemindersEnabled)
-                    Toggle(String(localized: "Debt reminders"), isOn: $debtRemindersEnabled)
-                    if debtRemindersEnabled {
-                        Stepper(
-                            String(format: String(localized: "%lld days before"), Int64(debtReminderDays)),
-                            value: $debtReminderDays,
-                            in: 1...14
-                        )
-                    }
-                    Toggle(String(localized: "Daily Budget in Dynamic Island"), isOn: $liveActivityEnabled)
-                    Text(String(localized: "Controls reminders, budget alerts, and Dynamic Island progress surfaces."))
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if !notificationsAuthorized {
-                        Button(notificationPermissionButtonTitle) {
-                            handleNotificationPermissionAction()
-                        }
-                        .foregroundStyle(AppTheme.primaryAccent)
-                    }
-                }
-
-                Section(String(localized: "Data & Backup")) {
-                    Button {
-                        showingExport = true
-                    } label: {
-                        Label(String(localized: "Export Data"), systemImage: "square.and.arrow.up")
-                            .foregroundStyle(AppTheme.primaryAccent)
-                    }
-                    Button {
-                        showingCSVImport = true
-                    } label: {
-                        Label(String(localized: "Import CSV"), systemImage: "arrow.down.doc.fill")
-                            .foregroundStyle(AppTheme.secondaryAccent)
-                    }
-                    Button {
-                        createBackup()
-                    } label: {
-                        Label(String(localized: "Create Backup"), systemImage: "arrow.down.doc")
-                            .foregroundStyle(AppTheme.primaryAccent)
-                    }
-                    Button {
-                        showingBackupImport = true
-                    } label: {
-                        Label(String(localized: "Restore from Backup"), systemImage: "arrow.up.doc")
-                            .foregroundStyle(AppTheme.secondaryAccent)
-                    }
-                    Picker(String(localized: "Auto-Backup"), selection: $autoBackupInterval) {
-                        ForEach(AutoBackupInterval.allCases, id: \.self) { interval in
-                            Text(interval.localizedName).tag(interval.rawValue)
-                        }
-                    }
-                    if lastAutoBackupTimestamp > 0 {
-                        LabeledContent(
-                            String(localized: "Last Auto-Backup"),
-                            value: Date(timeIntervalSince1970: lastAutoBackupTimestamp)
-                                .formatted(date: .abbreviated, time: .shortened)
-                        )
-                    }
-                }
-
-                Section(String(localized: "Capture & Shortcuts")) {
-                    if let shortcutsURL = URL(string: "shortcuts://") {
-                        Link(destination: shortcutsURL) {
-                            Label(String(localized: "Open Shortcuts"), systemImage: "square.grid.2x2")
-                                .foregroundStyle(AppTheme.primaryAccent)
-                        }
-                    }
-
-                    if let testURL = URL(string: "financeapp://capture?amount=1290.5&merchant=Coffee%20Shop&currency=USD&source=shortcut_capture") {
-                        Link(destination: testURL) {
-                            Label(String(localized: "Run Capture Test"), systemImage: "checkmark.bubble")
-                                .foregroundStyle(AppTheme.secondaryAccent)
-                        }
-                    }
-
-                    VStack(alignment: .leading, spacing: 6) {
-                        Text(String(localized: "1) In Shortcuts create Personal Automation with Transaction trigger."))
-                        Text(String(localized: "2) Select cards and map Amount/Merchant/Date/Currency to URL query fields."))
-                        Text(String(localized: "3) Use URL financeapp://capture and run a test payment flow."))
-                        Text(String(localized: "4) Add the Quick Add shortcut to Home Screen for faster capture."))
-                    }
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 2)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label(String(localized: "Quick Add on Home Screen"), systemImage: "plus.app")
-                            .font(.body)
-                        Text(String(localized: "Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                }
-
-                Section {
-                    Button {
-                        hasCompletedOnboarding = false
-                    } label: {
-                        Label(String(localized: "Replay Onboarding"), systemImage: "arrow.counterclockwise")
-                            .foregroundStyle(AppTheme.primaryAccent)
-                    }
-                }
-
-                Section(String(localized: "Advanced & Diagnostics")) {
-                    LabeledContent(String(localized: "Last Received"), value: formattedCaptureTimestamp(captureDiagnostics.lastReceivedAt))
-                    LabeledContent(String(localized: "Last Opened in Quick Add"), value: formattedCaptureTimestamp(captureDiagnostics.lastConsumedAt))
-
-                    if let payload = captureDiagnostics.lastReceivedPayload {
-                        LabeledContent(String(localized: "Source"), value: payload.sourceDisplayName)
-                        LabeledContent(String(localized: "Merchant"), value: payload.merchant ?? String(localized: "No merchant"))
-                        LabeledContent(String(localized: "Amount"), value: formattedAmount(payload.amount))
-                        LabeledContent(String(localized: "Payment Date"), value: formattedCaptureTimestamp(payload.date))
-                    } else {
-                        Text(String(localized: "No captures yet"))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-
-                    if captureDiagnostics.pendingPayload != nil {
-                        Label(String(localized: "Pending capture is waiting to be opened"), systemImage: "clock.arrow.circlepath")
-                            .font(.caption)
-                            .foregroundStyle(AppTheme.secondaryAccent)
-                    }
-
-                    Button(String(localized: "Refresh Diagnostics")) {
-                        refreshCaptureDiagnostics()
-                    }
-                }
+                .padding(.horizontal, 16)
+                .padding(.top, 14)
+                .padding(.bottom, 32)
             }
-            .scrollContentBackground(.hidden)
-            .background(AppTheme.canvas)
+            .financeNavigationSurface()
             .tint(AppTheme.primaryAccent)
             .accessibilityIdentifier("settings.screen")
             .navigationTitle(String(localized: "Settings"))
             .toolbarBackground(.visible, for: .navigationBar)
             .toolbarBackground(AppTheme.surface, for: .navigationBar)
-            .sheet(isPresented: $showingDebts) {
-                DebtsView()
-            }
-            .sheet(isPresented: $showingGoals) {
-                GoalsView()
-            }
-            .sheet(isPresented: $showingSubscriptions) {
-                SubscriptionsView()
-            }
-            .sheet(isPresented: $showingRecurring) {
-                RecurringTransactionsView()
-            }
             .sheet(isPresented: $showingExport) {
                 ExportView()
             }
@@ -366,6 +131,7 @@ struct SettingsView: View {
                 Text(String(localized: "The app will restart to apply the new language."))
             }
             .onAppear {
+                pickerLanguage = selectedLanguage
                 refreshCaptureDiagnostics()
                 Task { await checkNotificationStatus() }
             }
@@ -375,6 +141,513 @@ struct SettingsView: View {
                 Task { await checkNotificationStatus() }
             }
         }
+    }
+
+    private var currentLanguageName: String {
+        Self.languages.first(where: { $0.code == selectedLanguage })?.native ?? "Auto"
+    }
+
+    private var currentThemeName: String {
+        themeStore.palette.name
+    }
+
+    private var liveStatusLabel: String {
+        liveActivityEnabled ? String(localized: "Enabled") : String(localized: "Off")
+    }
+
+    private var settingsHeroSection: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(localized: "System control"))
+                        .font(.system(.title3, design: .rounded).weight(.bold))
+                    Text(String(localized: "Personalisation, alerts, capture and backup in one place."))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 12)
+                Image(systemName: "slider.horizontal.3")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .frame(width: 36, height: 36)
+                    .background(AppTheme.surfaceMuted)
+                    .clipShape(Circle())
+            }
+
+            HStack(spacing: 10) {
+                settingsStatusPill(title: String(localized: "Theme"), value: currentThemeName, tint: AppTheme.primaryAccent)
+                settingsStatusPill(title: String(localized: "Language"), value: currentLanguageName, tint: AppTheme.info)
+                settingsStatusPill(title: String(localized: "Live Activity"), value: liveStatusLabel, tint: liveActivityEnabled ? AppTheme.success : AppTheme.warning)
+            }
+        }
+        .cockpitSurface(cornerRadius: 28, elevated: true)
+    }
+
+    private var personalizationSection: some View {
+        SectionShell(
+            title: String(localized: "Personalization"),
+            subtitle: String(localized: "Theme, language and app surfaces")
+        ) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 16) {
+                    ForEach(ThemePalette.allCases, id: \.id) { palette in
+                        Button {
+                            themeStore.selectedTheme = palette.id
+                        } label: {
+                            VStack(spacing: 6) {
+                                ZStack {
+                                    Circle()
+                                        .fill(palette.primaryAccent)
+                                        .frame(width: 36, height: 36)
+                                    Circle()
+                                        .fill(palette.secondaryAccent)
+                                        .frame(width: 14, height: 14)
+                                        .offset(x: 10, y: 10)
+                                    if palette.isDark {
+                                        Image(systemName: "moon.fill")
+                                            .font(.system(size: 10))
+                                            .foregroundStyle(.white)
+                                            .offset(x: -8, y: -8)
+                                    }
+                                    if themeStore.selectedTheme == palette.id {
+                                        Circle()
+                                            .stroke(AppTheme.primaryAccent, lineWidth: 2.5)
+                                            .frame(width: 44, height: 44)
+                                    }
+                                }
+                                .frame(width: 44, height: 44)
+                                Text(palette.name)
+                                    .font(.caption2)
+                                    .foregroundStyle(themeStore.selectedTheme == palette.id ? AppTheme.primaryAccent : .secondary)
+                                    .lineLimit(1)
+                            }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.vertical, 6)
+            }
+
+            VStack(spacing: 10) {
+                NavigationLink {
+                    DashboardSettingsView()
+                } label: {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Dashboard Sections"),
+                        subtitle: String(localized: "Choose what appears on the home overview."),
+                        systemImage: "square.grid.3x1.below.line.grid.1x2",
+                        tint: AppTheme.primaryAccent
+                    ) {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                NavigationLink {
+                    FeaturesSettingsView()
+                } label: {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Features"),
+                        subtitle: String(localized: "Turn optional product modules on or off."),
+                        systemImage: "square.stack.3d.up",
+                        tint: AppTheme.info
+                    ) {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                SettingsAccessoryRow(
+                    title: String(localized: "Language"),
+                    subtitle: String(localized: "Change labels and restart the app to apply."),
+                    systemImage: "globe",
+                    tint: AppTheme.sectionAccent
+                ) {
+                    Picker("", selection: $pickerLanguage) {
+                        ForEach(Self.languages, id: \.code) { lang in
+                            Text(lang.native).tag(lang.code)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                    .onChange(of: pickerLanguage) { _, newValue in
+                        guard newValue != selectedLanguage else { return }
+                        pendingLanguage = newValue
+                        pickerLanguage = selectedLanguage
+                        HapticManager.impact(.light)
+                        showingLanguageRestart = true
+                    }
+                }
+            }
+        }
+    }
+
+    private var planningRulesSection: some View {
+        SectionShell(
+            title: String(localized: "Planning Rules"),
+            subtitle: String(localized: "App-wide rules that affect monthly planning.")
+        ) {
+            SettingsAccessoryRow(
+                title: String(localized: "Rollover unused budget"),
+                subtitle: String(localized: "Carry unused room into the next month."),
+                systemImage: "arrow.uturn.forward.circle",
+                tint: AppTheme.warning
+            ) {
+                Toggle("", isOn: $rolloverEnabled)
+                    .labelsHidden()
+                    .tint(AppTheme.primaryAccent)
+            }
+        }
+    }
+
+    private var notificationsSection: some View {
+        SectionShell(
+            title: String(localized: "Notifications & Live Activity"),
+            subtitle: String(localized: "Controls reminders, budget alerts, and Dynamic Island progress surfaces.")
+        ) {
+            VStack(spacing: 10) {
+                SettingsAccessoryRow(
+                    title: String(localized: "Budget alerts"),
+                    subtitle: String(localized: "Warn when flexible spending is pushing the month."),
+                    systemImage: "bell.badge.fill",
+                    tint: AppTheme.warning
+                ) {
+                    Toggle("", isOn: $budgetNotificationsEnabled)
+                        .labelsHidden()
+                        .tint(AppTheme.primaryAccent)
+                }
+
+                SettingsAccessoryRow(
+                    title: String(localized: "Subscription reminders"),
+                    subtitle: String(localized: "Nudge before recurring payments land."),
+                    systemImage: "repeat.circle.fill",
+                    tint: AppTheme.primaryAccent
+                ) {
+                    Toggle("", isOn: $subscriptionRemindersEnabled)
+                        .labelsHidden()
+                        .tint(AppTheme.primaryAccent)
+                }
+
+                SettingsAccessoryRow(
+                    title: String(localized: "Debt reminders"),
+                    subtitle: String(localized: "Keep minimum payments visible before due dates."),
+                    systemImage: "creditcard.circle.fill",
+                    tint: AppTheme.danger
+                ) {
+                    Toggle("", isOn: $debtRemindersEnabled)
+                        .labelsHidden()
+                        .tint(AppTheme.primaryAccent)
+                }
+
+                if debtRemindersEnabled {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Reminder lead time"),
+                        subtitle: String(format: String(localized: "%lld days before"), Int64(debtReminderDays)),
+                        systemImage: "calendar.badge.clock",
+                        tint: AppTheme.info
+                    ) {
+                        Stepper("", value: $debtReminderDays, in: 1...14)
+                            .labelsHidden()
+                            .fixedSize()
+                    }
+                }
+
+                SettingsAccessoryRow(
+                    title: String(localized: "Daily Budget in Dynamic Island"),
+                    subtitle: String(localized: "Show the current budget state outside the app."),
+                    systemImage: "dynamicisland",
+                    tint: liveActivityEnabled ? AppTheme.success : AppTheme.info
+                ) {
+                    Toggle("", isOn: $liveActivityEnabled)
+                        .labelsHidden()
+                        .tint(AppTheme.primaryAccent)
+                }
+
+                if !notificationsAuthorized {
+                    Button(notificationPermissionButtonTitle) {
+                        handleNotificationPermissionAction()
+                    }
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.top, 2)
+                }
+            }
+        }
+    }
+
+    private var dataBackupSection: some View {
+        SectionShell(
+            title: String(localized: "Data & Backup"),
+            subtitle: String(localized: "Exports, imports and restore controls for your data.")
+        ) {
+            VStack(spacing: 10) {
+                Button {
+                    showingExport = true
+                } label: {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Export Data"),
+                        subtitle: String(localized: "Create a shareable export of your data."),
+                        systemImage: "square.and.arrow.up",
+                        tint: AppTheme.primaryAccent
+                    ) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showingCSVImport = true
+                } label: {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Import CSV"),
+                        subtitle: String(localized: "Bring transactions in from a CSV file."),
+                        systemImage: "arrow.down.doc.fill",
+                        tint: AppTheme.info
+                    ) {
+                        Image(systemName: "arrow.down.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    createBackup()
+                } label: {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Create Backup"),
+                        subtitle: String(localized: "Save a full local snapshot before making changes."),
+                        systemImage: "arrow.down.doc",
+                        tint: AppTheme.success
+                    ) {
+                        Image(systemName: "arrow.down.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Button {
+                    showingBackupImport = true
+                } label: {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Restore from Backup"),
+                        subtitle: String(localized: "Replace current data with a backup file."),
+                        systemImage: "arrow.up.doc",
+                        tint: AppTheme.warning
+                    ) {
+                        Image(systemName: "arrow.up.right")
+                            .font(.caption.weight(.bold))
+                            .foregroundStyle(.tertiary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                SettingsAccessoryRow(
+                    title: String(localized: "Auto-Backup"),
+                    subtitle: lastAutoBackupTimestamp > 0
+                        ? Date(timeIntervalSince1970: lastAutoBackupTimestamp).formatted(date: .abbreviated, time: .shortened)
+                        : String(localized: "No auto-backup yet"),
+                    systemImage: "clock.arrow.circlepath",
+                    tint: AppTheme.sectionAccent
+                ) {
+                    Picker("", selection: $autoBackupInterval) {
+                        ForEach(AutoBackupInterval.allCases, id: \.self) { interval in
+                            Text(interval.localizedName).tag(interval.rawValue)
+                        }
+                    }
+                    .labelsHidden()
+                    .pickerStyle(.menu)
+                }
+            }
+        }
+    }
+
+    private var captureShortcutsSection: some View {
+        SectionShell(
+            title: String(localized: "Capture & Shortcuts"),
+            subtitle: String(localized: "Set up quick capture flows outside the app.")
+        ) {
+            VStack(spacing: 10) {
+                if let shortcutsURL = URL(string: "shortcuts://") {
+                    Link(destination: shortcutsURL) {
+                        SettingsAccessoryRow(
+                            title: String(localized: "Open Shortcuts"),
+                            subtitle: String(localized: "Manage your personal automations and shortcuts."),
+                            systemImage: "square.grid.2x2",
+                            tint: AppTheme.primaryAccent
+                        ) {
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                if let testURL = URL(string: "financeapp://capture?amount=1290.5&merchant=Coffee%20Shop&currency=USD&source=shortcut_capture") {
+                    Link(destination: testURL) {
+                        SettingsAccessoryRow(
+                            title: String(localized: "Run Capture Test"),
+                            subtitle: String(localized: "Verify that capture opens directly in Quick Add."),
+                            systemImage: "checkmark.bubble",
+                            tint: AppTheme.info
+                        ) {
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption.weight(.bold))
+                                .foregroundStyle(.tertiary)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "1) In Shortcuts create Personal Automation with Transaction trigger."))
+                    Text(String(localized: "2) Select cards and map Amount/Merchant/Date/Currency to URL query fields."))
+                    Text(String(localized: "3) Use URL financeapp://capture and run a test payment flow."))
+                    Text(String(localized: "4) Add the Quick Add shortcut to Home Screen for faster capture."))
+                }
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(AppTheme.surfaceMuted)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label(String(localized: "Quick Add on Home Screen"), systemImage: "plus.app")
+                        .font(.body.weight(.semibold))
+                    Text(String(localized: "Open Shortcuts app → tap + → search \"Add Transaction\" → tap Add to Home Screen"))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(14)
+                .background(AppTheme.surfaceMuted)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+        }
+    }
+
+    private var onboardingSection: some View {
+        SectionShell(
+            title: String(localized: "Onboarding"),
+            subtitle: String(localized: "Replay the setup flow when you want a fresh walkthrough.")
+        ) {
+            Button {
+                hasCompletedOnboarding = false
+            } label: {
+                SettingsAccessoryRow(
+                    title: String(localized: "Replay Onboarding"),
+                    subtitle: String(localized: "Start the guided setup again on next launch."),
+                    systemImage: "arrow.counterclockwise",
+                    tint: AppTheme.primaryAccent
+                ) {
+                    Image(systemName: "arrow.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
+    private var diagnosticsSection: some View {
+        SectionShell(
+            title: String(localized: "Advanced & Diagnostics"),
+            subtitle: String(localized: "Inspect capture status and last received payloads.")
+        ) {
+            VStack(spacing: 10) {
+                SettingsAccessoryRow(
+                    title: String(localized: "Last Received"),
+                    subtitle: formattedCaptureTimestamp(captureDiagnostics.lastReceivedAt),
+                    systemImage: "clock",
+                    tint: AppTheme.info
+                )
+
+                SettingsAccessoryRow(
+                    title: String(localized: "Last Opened in Quick Add"),
+                    subtitle: formattedCaptureTimestamp(captureDiagnostics.lastConsumedAt),
+                    systemImage: "bolt.horizontal.circle",
+                    tint: AppTheme.primaryAccent
+                )
+
+                if let payload = captureDiagnostics.lastReceivedPayload {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Source"),
+                        subtitle: payload.sourceDisplayName,
+                        systemImage: "tray.full.fill",
+                        tint: AppTheme.sectionAccent
+                    )
+                    SettingsAccessoryRow(
+                        title: String(localized: "Merchant"),
+                        subtitle: payload.merchant ?? String(localized: "No merchant"),
+                        systemImage: "building.2.crop.circle",
+                        tint: AppTheme.success
+                    )
+                    SettingsAccessoryRow(
+                        title: String(localized: "Amount"),
+                        subtitle: formattedAmount(payload.amount),
+                        systemImage: "banknote",
+                        tint: AppTheme.success
+                    )
+                    SettingsAccessoryRow(
+                        title: String(localized: "Payment Date"),
+                        subtitle: formattedCaptureTimestamp(payload.date),
+                        systemImage: "calendar",
+                        tint: AppTheme.info
+                    )
+                } else {
+                    SettingsAccessoryRow(
+                        title: String(localized: "No captures yet"),
+                        subtitle: String(localized: "Capture payloads will appear here after the first successful run."),
+                        systemImage: "tray",
+                        tint: AppTheme.warning
+                    )
+                }
+
+                if captureDiagnostics.pendingPayload != nil {
+                    SettingsAccessoryRow(
+                        title: String(localized: "Pending capture"),
+                        subtitle: String(localized: "Pending capture is waiting to be opened"),
+                        systemImage: "clock.arrow.circlepath",
+                        tint: AppTheme.warning
+                    )
+                }
+
+                Button(String(localized: "Refresh Diagnostics")) {
+                    refreshCaptureDiagnostics()
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.primaryAccent)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+        }
+    }
+
+    private func settingsStatusPill(title: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(tint)
+                .lineLimit(1)
+                .minimumScaleFactor(0.75)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(AppTheme.surfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func createBackup() {
@@ -516,5 +789,71 @@ struct SettingsView: View {
         UserDefaults.standard.synchronize()
         // Force restart to apply new language — acceptable for personal local-only app
         exit(0)
+    }
+}
+
+private struct SettingsAccessoryRow<Accessory: View>: View {
+    let title: String
+    let subtitle: String?
+    let systemImage: String
+    let tint: Color
+    let accessory: Accessory
+
+    init(
+        title: String,
+        subtitle: String? = nil,
+        systemImage: String,
+        tint: Color = AppTheme.primaryAccent,
+        @ViewBuilder accessory: () -> Accessory
+    ) {
+        self.title = title
+        self.subtitle = subtitle
+        self.systemImage = systemImage
+        self.tint = tint
+        self.accessory = accessory()
+    }
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint)
+                .frame(width: 36, height: 36)
+                .background(tint.opacity(0.12))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                if let subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+
+            Spacer(minLength: 10)
+            accessory
+        }
+        .padding(14)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(AppTheme.outline.opacity(0.45), lineWidth: 0.5)
+        )
+    }
+}
+
+extension SettingsAccessoryRow where Accessory == EmptyView {
+    init(
+        title: String,
+        subtitle: String? = nil,
+        systemImage: String,
+        tint: Color = AppTheme.primaryAccent
+    ) {
+        self.init(title: title, subtitle: subtitle, systemImage: systemImage, tint: tint, accessory: { EmptyView() })
     }
 }

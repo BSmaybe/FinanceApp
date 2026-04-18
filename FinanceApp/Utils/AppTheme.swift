@@ -79,6 +79,12 @@ enum AppTheme {
     static var debtGradient: LinearGradient         { p.debtGradient }
     static var subscriptionGradient: LinearGradient { p.subscriptionGradient }
     static var fabGradient: LinearGradient          { p.fabGradient }
+
+    // Achievement rarity tiers
+    static let rarityCommon    = Color(.systemGray3)
+    static let rarityRare      = Color(red: 0.20, green: 0.60, blue: 1.00)
+    static let rarityEpic      = Color(red: 0.60, green: 0.20, blue: 0.90)
+    static let rarityLegendary = Color(red: 1.00, green: 0.78, blue: 0.00)
 }
 
 enum AppRootTab: String, Hashable {
@@ -100,24 +106,58 @@ private struct CockpitSurfaceModifier: ViewModifier {
             .background(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(elevated ? AppTheme.elevatedSurface : AppTheme.surface)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .stroke(AppTheme.outline.opacity(0.55), lineWidth: 1)
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                            .fill(AppTheme.glassOverlay)
-                            .blur(radius: compact ? 8 : 12)
-                            .opacity(0.22)
-                    )
-                    .shadow(color: AppTheme.shadowSoft, radius: elevated ? 18 : 12, x: 0, y: elevated ? 10 : 6)
+                    .shadow(color: AppTheme.shadowSoft, radius: elevated ? 10 : 6, x: 0, y: elevated ? 4 : 2)
             )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(AppTheme.outline.opacity(0.5), lineWidth: 0.5)
+            )
+    }
+}
+
+private struct FinanceNavigationSurfaceModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden)
+            .background(
+                ZStack {
+                    AppTheme.canvas.ignoresSafeArea()
+                    LinearGradient(
+                        colors: [
+                            AppTheme.canvas,
+                            AppTheme.surfaceMuted.opacity(0.88),
+                            AppTheme.canvas
+                        ],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                    .ignoresSafeArea()
+
+                    RadialGradient(
+                        colors: [
+                            AppTheme.sectionAccent.opacity(ThemeStore.shared.palette.isDark ? 0.18 : 0.10),
+                            .clear
+                        ],
+                        center: .topTrailing,
+                        startRadius: 20,
+                        endRadius: 460
+                    )
+                    .ignoresSafeArea()
+                }
+            )
+            .tint(AppTheme.primaryAccent)
+            .toolbarBackground(.visible, for: .navigationBar)
+            .toolbarBackground(AppTheme.canvas.opacity(0.96), for: .navigationBar)
     }
 }
 
 extension View {
     func cockpitSurface(cornerRadius: CGFloat = 22, elevated: Bool = false, compact: Bool = false) -> some View {
         modifier(CockpitSurfaceModifier(cornerRadius: cornerRadius, elevated: elevated, compact: compact))
+    }
+
+    func financeNavigationSurface() -> some View {
+        modifier(FinanceNavigationSurfaceModifier())
     }
 
     /// Uses a full symbols keyboard so digits are available in a more standard top-row layout.
@@ -167,15 +207,10 @@ struct SectionShell<Content: View, Trailing: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top, spacing: 12) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 8) {
-                        Capsule()
-                            .fill(AppTheme.sectionAccent)
-                            .frame(width: 22, height: 6)
-                        Text(title)
-                            .font(.system(.title3, design: .rounded).weight(.semibold))
-                    }
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(title)
+                        .font(.system(.headline, design: .default).weight(.semibold))
                     if let subtitle, !subtitle.isEmpty {
                         Text(subtitle)
                             .font(.subheadline)
@@ -217,10 +252,11 @@ struct HeroMetricCard: View {
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(AppTheme.heroCardLabel)
                     Text(value)
-                        .font(.system(size: 34, weight: .semibold, design: .rounded))
+                        .font(.system(size: 42, weight: .bold, design: .rounded))
                         .monospacedDigit()
-                        .minimumScaleFactor(0.72)
+                        .minimumScaleFactor(0.65)
                         .foregroundStyle(AppTheme.heroCardTitle)
+                        .contentTransition(.numericText())
                 }
                 Spacer(minLength: 12)
                 if let badgeText, !badgeText.isEmpty {
@@ -367,7 +403,7 @@ struct ActionTile: View {
             .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
             .cockpitSurface(cornerRadius: 22, elevated: true)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle())
     }
 }
 
@@ -415,6 +451,25 @@ struct FilterChip: View {
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.18), value: selected)
+    }
+}
+
+// MARK: - Pressable Button Style
+
+struct PressableButtonStyle: ButtonStyle {
+    var scale: CGFloat = 0.96
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .scaleEffect(configuration.isPressed ? scale : 1.0)
+            .brightness(configuration.isPressed ? -0.05 : 0)
+            .animation(.spring(response: 0.25, dampingFraction: 0.58), value: configuration.isPressed)
+    }
+}
+
+extension View {
+    func pressable(scale: CGFloat = 0.96) -> some View {
+        buttonStyle(PressableButtonStyle(scale: scale))
     }
 }
 
@@ -478,7 +533,7 @@ struct AmountNumpad: View {
                 .foregroundStyle(isDestructive ? AppTheme.danger : .primary)
                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
         }
-        .buttonStyle(.plain)
+        .buttonStyle(PressableButtonStyle(scale: 0.88))
     }
 
     private func append(_ digit: String) {

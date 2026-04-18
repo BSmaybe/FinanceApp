@@ -26,106 +26,165 @@ struct DebtPayoffView: View {
         results.map(\.monthsToPayoff).max() ?? 0
     }
 
+    private var payoffHeadline: String {
+        if maxMonths >= 360 {
+            return String(localized: "30+ years")
+        }
+
+        let years = maxMonths / 12
+        let months = maxMonths % 12
+        if years > 0 {
+            return "\(years) \(String(localized: "yr")) \(months) \(String(localized: "mo"))"
+        }
+        return "\(months) \(String(localized: "mo"))"
+    }
+
     var body: some View {
         NavigationStack {
-            List {
-                Section(String(localized: "Strategy")) {
-                    Picker(String(localized: "Method"), selection: $strategy) {
-                        ForEach(DebtPayoffCalculator.Strategy.allCases, id: \.self) { s in
-                            Text(s.localizedName).tag(s)
-                        }
-                    }
-                    .pickerStyle(.segmented)
+            ZStack {
+                AppTheme.canvas.ignoresSafeArea()
 
-                    HStack {
-                        Text(String(localized: "Extra Monthly"))
-                        Spacer()
-                        TextField("0", text: $extraPaymentText)
-                            .financeNumericKeyboard()
-                            .multilineTextAlignment(.trailing)
-                            .frame(width: 120)
-                    }
-                }
+                ScrollView {
+                    VStack(spacing: 18) {
+                        heroSection
 
-                Section(String(localized: "Summary")) {
-                    HStack {
-                        Text(String(localized: "Debt-free in"))
-                        Spacer()
-                        if maxMonths >= 360 {
-                            Text(String(localized: "30+ years"))
-                                .foregroundStyle(.red)
-                        } else {
-                            let years = maxMonths / 12
-                            let months = maxMonths % 12
-                            if years > 0 {
-                                Text("\(years) \(String(localized: "yr")) \(months) \(String(localized: "mo"))")
-                                    .font(.headline)
-                            } else {
-                                Text("\(months) \(String(localized: "mo"))")
-                                    .font(.headline)
+                        SectionShell(
+                            title: String(localized: "Strategy"),
+                            subtitle: String(localized: "Choose the method and any extra monthly payment before comparing the order.")
+                        ) {
+                            VStack(spacing: 14) {
+                                Picker(String(localized: "Method"), selection: $strategy) {
+                                    ForEach(DebtPayoffCalculator.Strategy.allCases, id: \.self) { value in
+                                        Text(value.localizedName).tag(value)
+                                    }
+                                }
+                                .pickerStyle(.segmented)
+
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(String(localized: "Extra Monthly"))
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    TextField("0", text: $extraPaymentText)
+                                        .financeNumericKeyboard()
+                                        .font(.system(.title3, design: .rounded).weight(.semibold))
+                                        .padding(.horizontal, 14)
+                                        .padding(.vertical, 14)
+                                        .background(AppTheme.elevatedSurface)
+                                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                                }
                             }
                         }
-                    }
-                    HStack {
-                        Text(String(localized: "Total Interest"))
-                        Spacer()
-                        Text(CurrencyFormatter.string(from: totalInterest))
-                            .font(.headline)
-                            .foregroundStyle(.orange)
-                    }
-                }
 
-                Section(String(localized: "Payoff Order")) {
-                    if results.isEmpty {
-                        Text(String(localized: "Add debts first"))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        ForEach(results) { result in
-                            VStack(alignment: .leading, spacing: 4) {
-                                HStack {
-                                    Text(result.name)
-                                        .font(.headline)
-                                    Spacer()
-                                    Text("\(result.monthsToPayoff) \(String(localized: "mo"))")
+                        LazyVGrid(columns: [GridItem(.flexible(), spacing: 12), GridItem(.flexible(), spacing: 12)], spacing: 12) {
+                            CompactSummaryCard(
+                                title: String(localized: "Debt-free in"),
+                                value: payoffHeadline,
+                                detail: String(format: String(localized: "%lld debts in plan"), Int64(results.count)),
+                                systemImage: "flag.checkered",
+                                tint: AppTheme.primaryAccent
+                            )
+                            CompactSummaryCard(
+                                title: String(localized: "Total Interest"),
+                                value: CurrencyFormatter.string(from: totalInterest),
+                                detail: strategy.localizedName,
+                                systemImage: "percent",
+                                tint: AppTheme.warning
+                            )
+                        }
+
+                        SectionShell(
+                            title: String(localized: "Payoff Order"),
+                            subtitle: String(localized: "The order below reflects your current balances, rates, and extra payment." )
+                        ) {
+                            if results.isEmpty {
+                                HStack(spacing: 12) {
+                                    Image(systemName: "tray")
+                                        .font(.title3)
+                                        .foregroundStyle(AppTheme.primaryAccent)
+                                        .frame(width: 42, height: 42)
+                                        .background(AppTheme.primaryAccent.opacity(0.12))
+                                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                    Text(String(localized: "Add debts first"))
                                         .font(.subheadline)
                                         .foregroundStyle(.secondary)
+                                    Spacer(minLength: 0)
                                 }
-                                HStack {
-                                    Text(String(localized: "Payoff:"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text(result.payoffDate, style: .date)
-                                        .font(.caption)
-                                    Spacer()
-                                    Text(String(localized: "Interest:"))
-                                        .font(.caption)
-                                        .foregroundStyle(.secondary)
-                                    Text(CurrencyFormatter.string(from: result.totalInterestPaid))
-                                        .font(.caption)
-                                        .foregroundStyle(.orange)
+                            } else {
+                                VStack(spacing: 12) {
+                                    ForEach(Array(results.enumerated()), id: \.element.id) { index, result in
+                                        payoffCard(result: result, rank: index + 1)
+                                    }
                                 }
                             }
-                            .padding(.vertical, 2)
                         }
-                    }
-                }
 
-                if strategy == .snowball {
-                    Section {
-                        Text(String(localized: "Snowball: pay smallest balance first. Builds momentum."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
+                        InsightCard(
+                            title: strategy == .snowball ? String(localized: "Snowball") : String(localized: "Avalanche"),
+                            value: strategy == .snowball ? String(localized: "Momentum first") : String(localized: "Interest first"),
+                            message: strategy == .snowball
+                                ? String(localized: "Snowball: pay smallest balance first. Builds momentum.")
+                                : String(localized: "Avalanche: pay highest interest rate first. Saves money."),
+                            systemImage: strategy == .snowball ? "figure.run" : "chart.line.uptrend.xyaxis",
+                            tint: strategy == .snowball ? AppTheme.primaryAccent : AppTheme.warning
+                        )
                     }
-                } else {
-                    Section {
-                        Text(String(localized: "Avalanche: pay highest interest rate first. Saves money."))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
             }
+            .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Payoff Calculator"))
             .navigationBarTitleDisplayMode(.inline)
         }
+    }
+
+    private var heroSection: some View {
+        HeroMetricCard(
+            title: String(localized: "Debt-free in"),
+            value: payoffHeadline,
+            supportingTitle: String(localized: "Total Interest"),
+            supportingValue: CurrencyFormatter.string(from: totalInterest),
+            note: String(localized: "Model repayment order before changing your monthly plan."),
+            badgeText: strategy.localizedName
+        )
+    }
+
+    private func payoffCard(result: DebtPayoffCalculator.PayoffResult, rank: Int) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(String(format: String(localized: "Step %lld"), Int64(rank)))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(result.name)
+                        .font(.headline.weight(.semibold))
+                }
+                Spacer(minLength: 8)
+                Text("\(result.monthsToPayoff) \(String(localized: "mo"))")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(AppTheme.primaryAccent.opacity(0.12))
+                    .clipShape(Capsule())
+            }
+
+            HStack(spacing: 12) {
+                CompactSummaryCard(
+                    title: String(localized: "Payoff"),
+                    value: result.payoffDate.formatted(date: .abbreviated, time: .omitted),
+                    systemImage: "calendar",
+                    tint: AppTheme.info
+                )
+                CompactSummaryCard(
+                    title: String(localized: "Interest"),
+                    value: CurrencyFormatter.string(from: result.totalInterestPaid),
+                    systemImage: "percent",
+                    tint: AppTheme.warning
+                )
+            }
+        }
+        .cockpitSurface(cornerRadius: 22, elevated: true)
     }
 }

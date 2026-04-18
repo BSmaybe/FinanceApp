@@ -108,6 +108,22 @@ private struct PeriodTotals {
     var net:     Decimal { income - expense }
 }
 
+private struct CashFlowSlice: Identifiable {
+    let id: String
+    let label: String
+    let amount: Double
+    let color: Color
+}
+
+private struct CashFlowTrendPoint: Identifiable {
+    let id: String
+    let month: String
+    let income: Double
+    let expenses: Double
+    let savings: Double
+    let transfer: Double
+}
+
 private func totals(for range: PeriodRange, in transactions: [Transaction]) -> PeriodTotals {
     var income:  Decimal = .zero
     var expense: Decimal = .zero
@@ -127,6 +143,8 @@ struct ChartsView: View {
     @Query private var categories: [Category]
     @Query private var accounts: [Account]
     @Query private var budgets: [Budget]
+    @Query private var debts: [Debt]
+    @Query(filter: #Predicate<Subscription> { $0.isActive == true }) private var activeSubscriptions: [Subscription]
 
     @State private var selectedPeriod: AnalyticsPeriod = .month
 
@@ -294,6 +312,44 @@ struct ChartsView: View {
         let f = DateFormatter(); f.dateFormat = "MMM"; return f
     }
 
+    // MARK: - Vitals Summary
+
+    private var currentMonth: Int { calendar.component(.month, from: Date()) }
+    private var currentYear:  Int { calendar.component(.year,  from: Date()) }
+
+    private var vitalsSummary: FinancialVitalsAnalyticsSummary {
+        let vitals = FinancialVitalsEngine.compute(
+            accounts: accounts,
+            transactions: postedTransactions,
+            categories: categories,
+            budgets: budgets,
+            debts: debts,
+            subscriptions: activeSubscriptions,
+            month: currentMonth,
+            year: currentYear
+        )
+        let timeline = FinancialVitalsAnalyticsEngine.timeline(
+            transactions: postedTransactions,
+            period: selectedPeriod
+        )
+        let drivers = FinancialVitalsDriverEngine.drivers(
+            vitals: vitals,
+            transactions: postedTransactions,
+            categories: categories,
+            budgets: budgets,
+            debts: debts,
+            month: currentMonth,
+            year: currentYear
+        )
+        return FinancialVitalsAnalyticsSummary(
+            vitals: vitals,
+            timeline: timeline,
+            drivers: drivers,
+            acuteLoadIndex: Double(vitals.acuteLoadIndex),
+            acuteIsElevated: vitals.acuteLoadIndex > 70
+        )
+    }
+
     // MARK: - body
 
     var body: some View {
@@ -303,17 +359,27 @@ struct ChartsView: View {
                     .ignoresSafeArea()
 
                 ScrollView {
-                    VStack(spacing: 18) {
-                        analyticsHeroCard
+                    VStack(spacing: 20) {
+                        analyticsOverviewHeader
                         periodPicker
+                        VitalsAnalyticsView(
+                            summary: vitalsSummary,
+                            period: selectedPeriod,
+                            onDriverCTA: handleDriverCTA
+                        )
+                        groupHeader(
+                            title: String(localized: "Cash Flow"),
+                            subtitle: String(localized: "See how money is moving through the current period.")
+                        )
+                        cashFlowsStudioCard
                         periodContentView
                     }
                     .padding(16)
                 }
             }
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Analytics"))
-            .toolbarBackground(.visible, for: .navigationBar)
-            .toolbarBackground(AppTheme.surface, for: .navigationBar)
+            .navigationBarTitleDisplayMode(.inline)
         }
     }
 
@@ -496,15 +562,306 @@ struct ChartsView: View {
         .cockpitSurface(cornerRadius: 20, elevated: true, compact: true)
     }
 
-    private var analyticsHeroCard: some View {
-        HeroMetricCard(
-            title: String(localized: "Analytics"),
-            value: currentRange.label,
-            supportingTitle: String(localized: "Net"),
-            supportingValue: CurrencyFormatter.string(from: currentTotals.net),
-            note: selectedPeriod.title,
-            badgeText: compareBadgeText
+    private var analyticsOverviewHeader: some View {
+        let firstDriver = vitalsSummary.drivers.first
+        return VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "Financial Cockpit"))
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(AppTheme.heroCardLabel)
+                    Text(String(localized: "Understand the state of your money"))
+                        .font(.system(.title2, design: .rounded).weight(.bold))
+                        .foregroundStyle(AppTheme.heroCardTitle)
+                    Text(String(localized: "Readiness, pressure and reserve for the current period."))
+                        .font(.subheadline)
+                        .foregroundStyle(AppTheme.heroCardTitle.opacity(0.70))
+                }
+                Spacer(minLength: 12)
+                Text(currentRange.label)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(AppTheme.surface.opacity(0.72))
+                    .clipShape(Capsule())
+            }
+
+            HStack(spacing: 10) {
+                analyticsHeaderPill(
+                    title: String(localized: "Readiness"),
+                    value: "\(vitalsSummary.vitals.readiness)",
+                    tint: AppTheme.primaryAccent
+                )
+                analyticsHeaderPill(
+                    title: String(localized: "Pressure"),
+                    value: "\(vitalsSummary.vitals.pressure)",
+                    tint: AppTheme.warning
+                )
+                analyticsHeaderPill(
+                    title: String(localized: "Reserve"),
+                    value: "\(vitalsSummary.vitals.reserve)",
+                    tint: AppTheme.success
+                )
+            }
+
+            if let firstDriver {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: firstDriver.impact == .helps ? "arrow.up.right.circle.fill" : "exclamationmark.circle.fill")
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundStyle(firstDriver.impact == .helps ? AppTheme.success : AppTheme.warning)
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text(firstDriver.title)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(AppTheme.heroCardTitle)
+                        Text(firstDriver.explanation)
+                            .font(.caption)
+                            .foregroundStyle(AppTheme.heroCardTitle.opacity(0.70))
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .padding(12)
+                .background(AppTheme.surface.opacity(0.64))
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+        }
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(AppTheme.heroGradient)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.55), lineWidth: 1)
+                )
+                .shadow(color: AppTheme.shadowSoft, radius: 16, x: 0, y: 10)
         )
+    }
+
+    private func analyticsHeaderPill(title: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(AppTheme.heroCardTitle.opacity(0.70))
+            Text(value)
+                .font(.headline.monospacedDigit().weight(.bold))
+                .foregroundStyle(AppTheme.heroCardTitle)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(tint.opacity(0.10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(tint.opacity(0.18), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+
+    private var currentPeriodTransferAmount: Decimal {
+        periodTransactions
+            .filter { $0.type == .transfer }
+            .reduce(Decimal.zero) { $0 + $1.amount }
+    }
+
+    private var cashFlowSlices: [CashFlowSlice] {
+        let income = max(0, NSDecimalNumber(decimal: currentTotals.income).doubleValue)
+        let expense = max(0, NSDecimalNumber(decimal: currentTotals.expense).doubleValue)
+        let savings = max(0, NSDecimalNumber(decimal: currentTotals.net).doubleValue)
+        let transfer = max(0, NSDecimalNumber(decimal: currentPeriodTransferAmount).doubleValue)
+
+        let values: [CashFlowSlice] = [
+            CashFlowSlice(id: "income", label: String(localized: "Income"), amount: income, color: AppTheme.success),
+            CashFlowSlice(id: "expense", label: String(localized: "Expenses"), amount: expense, color: AppTheme.danger),
+            CashFlowSlice(id: "savings", label: String(localized: "Savings"), amount: savings, color: AppTheme.warning),
+            CashFlowSlice(id: "transfer", label: String(localized: "Transfer"), amount: transfer, color: AppTheme.info)
+        ]
+        return values.filter { $0.amount > 0 }
+    }
+
+    private var cashFlowTrendData: [CashFlowTrendPoint] {
+        let now = Date()
+        return (0..<7).reversed().compactMap { offset in
+            guard let monthDate = calendar.date(byAdding: .month, value: -offset, to: now) else { return nil }
+            let comps = calendar.dateComponents([.year, .month], from: monthDate)
+
+            var income: Decimal = .zero
+            var expense: Decimal = .zero
+            var transfer: Decimal = .zero
+
+            for txn in postedTransactions {
+                let tc = calendar.dateComponents([.year, .month], from: txn.date)
+                guard tc.year == comps.year, tc.month == comps.month else { continue }
+                switch txn.type {
+                case .income:
+                    income += txn.amount
+                case .expense:
+                    expense += txn.amount
+                case .transfer:
+                    transfer += txn.amount
+                }
+            }
+
+            let savings = max(.zero, income - expense)
+            let label = shortMonthFormatter.string(from: monthDate)
+            return CashFlowTrendPoint(
+                id: "\(comps.year ?? 0)-\(comps.month ?? 0)",
+                month: label,
+                income: NSDecimalNumber(decimal: income).doubleValue,
+                expenses: NSDecimalNumber(decimal: expense).doubleValue,
+                savings: NSDecimalNumber(decimal: savings).doubleValue,
+                transfer: NSDecimalNumber(decimal: transfer).doubleValue
+            )
+        }
+    }
+
+    private var cashFlowsStudioCard: some View {
+        let slices = cashFlowSlices
+        let trend = cashFlowTrendData
+
+        return VStack(alignment: .leading, spacing: 14) {
+            HStack {
+                Text(String(localized: "Cash Flows"))
+                    .font(.system(.title2, design: .rounded).weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                HStack(spacing: 4) {
+                    cashFlowModeChip(title: String(localized: "Month"), selected: selectedPeriod != .year) {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedPeriod = .month }
+                    }
+                    cashFlowModeChip(title: String(localized: "Year"), selected: selectedPeriod == .year) {
+                        withAnimation(.easeInOut(duration: 0.2)) { selectedPeriod = .year }
+                    }
+                }
+                .padding(4)
+                .background(AppTheme.surfaceMuted.opacity(0.65))
+                .clipShape(Capsule())
+            }
+
+            HStack {
+                Image(systemName: "chevron.left")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(AppTheme.surfaceMuted.opacity(0.7))
+                    .clipShape(Circle())
+                Spacer()
+                Text(currentRange.label)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.caption.bold())
+                    .foregroundStyle(.secondary)
+                    .frame(width: 24, height: 24)
+                    .background(AppTheme.surfaceMuted.opacity(0.7))
+                    .clipShape(Circle())
+            }
+
+            if slices.isEmpty {
+                Text(String(localized: "No cash flow data for selected period"))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, minHeight: 150)
+            } else {
+                Chart(slices) { slice in
+                    SectorMark(
+                        angle: .value("Amount", slice.amount),
+                        innerRadius: .ratio(0.54),
+                        angularInset: 4
+                    )
+                    .foregroundStyle(slice.color)
+                    .cornerRadius(6)
+                }
+                .frame(height: 230)
+                .chartLegend(.hidden)
+
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 8) {
+                    ForEach(slices) { slice in
+                        HStack(spacing: 8) {
+                            Circle()
+                                .fill(slice.color)
+                                .frame(width: 8, height: 8)
+                            Text(slice.label)
+                                .font(.subheadline.weight(.medium))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+                            Spacer(minLength: 4)
+                            Text(NumberAbbreviator.string(from: Decimal(slice.amount)))
+                                .font(.subheadline.monospacedDigit().weight(.semibold))
+                                .foregroundStyle(.primary)
+                        }
+                    }
+                }
+            }
+
+            if !trend.isEmpty {
+                Chart {
+                    ForEach(trend) { item in
+                        LineMark(x: .value("Month", item.month), y: .value("Income", item.income))
+                            .foregroundStyle(AppTheme.success)
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                        LineMark(x: .value("Month", item.month), y: .value("Expenses", item.expenses))
+                            .foregroundStyle(AppTheme.danger)
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                        LineMark(x: .value("Month", item.month), y: .value("Savings", item.savings))
+                            .foregroundStyle(AppTheme.warning)
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                        LineMark(x: .value("Month", item.month), y: .value("Transfer", item.transfer))
+                            .foregroundStyle(AppTheme.info)
+                            .lineStyle(StrokeStyle(lineWidth: 2.6, lineCap: .round))
+                    }
+                }
+                .frame(height: 122)
+                .chartYAxis(.hidden)
+                .chartXAxis {
+                    AxisMarks(position: .bottom) { _ in
+                        AxisValueLabel()
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .chartPlotStyle { plot in
+                    plot
+                        .background(.clear)
+                }
+            }
+
+            HStack {
+                Spacer()
+                Button(String(localized: "History")) {
+                    selectedTab = .transactions
+                }
+                .font(.headline.weight(.medium))
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 26)
+                .padding(.vertical, 8)
+                .background(AppTheme.surfaceMuted.opacity(0.7))
+                .clipShape(Capsule())
+                Spacer()
+            }
+            .padding(.top, 2)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 26, style: .continuous)
+                .fill(AppTheme.elevatedSurface)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 26, style: .continuous)
+                        .stroke(AppTheme.outline.opacity(0.55), lineWidth: 1)
+                )
+                .shadow(color: AppTheme.shadowSoft, radius: 14, x: 0, y: 8)
+        )
+    }
+
+    private func cashFlowModeChip(title: String, selected: Bool, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(selected ? .white : .secondary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 6)
+                .background(selected ? AppTheme.primaryAccent : Color.clear)
+                .clipShape(Capsule())
+        }
+        .buttonStyle(.plain)
     }
 
     private func groupHeader(title: String, subtitle: String) -> some View {
@@ -585,6 +942,15 @@ struct ChartsView: View {
             }
             .buttonStyle(.plain)
             .accessibilityIdentifier("analytics.planning.annualOverview")
+        }
+    }
+
+    private func handleDriverCTA(_ cta: CoachAdviceCTA) {
+        switch cta {
+        case .transactions:  selectedTab = .transactions
+        case .analytics:     selectedTab = .analytics
+        case .budgets, .debts, .goals, .subscriptions: selectedTab = .dashboard
+        case .none:          break
         }
     }
 

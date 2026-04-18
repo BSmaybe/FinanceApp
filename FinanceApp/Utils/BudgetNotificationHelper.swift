@@ -71,6 +71,15 @@ enum BudgetNotificationHelper {
                              CurrencyFormatter.string(from: limit)),
                 id: "budget-over-\(categoryId)-\(month)-\(year)"
             )
+#if canImport(ActivityKit)
+            if #available(iOS 16.2, *) {
+                LiveActivityManager.triggerCelebration(
+                    .budgetWarning,
+                    amount: nil,
+                    detail: categoryName
+                )
+            }
+#endif
         } else if ratio >= 0.8 {
             let percent = Int(ratio * 100)
             sendNotification(
@@ -80,6 +89,15 @@ enum BudgetNotificationHelper {
                              CurrencyFormatter.string(from: limit)),
                 id: "budget-warn-\(categoryId)-\(month)-\(year)"
             )
+#if canImport(ActivityKit)
+            if #available(iOS 16.2, *) {
+                LiveActivityManager.triggerCelebration(
+                    .budgetWarning,
+                    amount: nil,
+                    detail: categoryName
+                )
+            }
+#endif
         }
     }
 

@@ -4,36 +4,90 @@ import SwiftData
 struct HeroProfileView: View {
     let stats: HeroStats
 
-    @AppStorage("heroName") private var heroName = "Trader"
-    @AppStorage("heroEmoji") private var heroEmoji = "🦸"
+    @AppStorage("heroName") private var heroName = "You"
     @AppStorage("unlockedAchievements") private var unlockedAchievements = ""
 
+    @Query private var accounts: [Account]
     @Query(sort: \Transaction.date, order: .reverse) private var transactions: [Transaction]
+    @Query private var categories: [Category]
+    @Query private var budgets: [Budget]
+    @Query(sort: \Goal.createdDate, order: .reverse) private var goals: [Goal]
+    @Query private var debts: [Debt]
+    @Query(filter: #Predicate<Subscription> { $0.isActive == true }) private var activeSubscriptions: [Subscription]
 
     @Environment(\.dismiss) private var dismiss
 
     @State private var editingName = false
     @State private var nameInput = ""
 
-    private let emojiOptions = ["🦸", "🧙", "🦊", "🐉", "🤖", "🎩", "🦁", "🦄", "🐺", "🔱"]
-
     private var unlockedSet: Set<String> {
         Set(unlockedAchievements.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) })
     }
 
+    private var currentMonth: Int {
+        Calendar.current.component(.month, from: Date())
+    }
+
+    private var currentYear: Int {
+        Calendar.current.component(.year, from: Date())
+    }
+
+    private var summary: CoachProgressSummary {
+        CoachAdviceEngine.progressSummary(
+            transactions: transactions,
+            categories: categories,
+            budgets: budgets,
+            goals: goals,
+            debts: debts,
+            month: currentMonth,
+            year: currentYear
+        )
+    }
+
+    private var vitals: FinancialVitals {
+        FinancialVitalsEngine.compute(
+            accounts: accounts,
+            transactions: transactions,
+            categories: categories,
+            budgets: budgets,
+            debts: debts,
+            subscriptions: activeSubscriptions,
+            month: currentMonth,
+            year: currentYear
+        )
+    }
+
+    private var adviceHistory: [CoachAdvice] {
+        CoachAdviceEngine.recommendations(
+            transactions: transactions,
+            categories: categories,
+            budgets: budgets,
+            goals: goals,
+            debts: debts,
+            subscriptions: activeSubscriptions,
+            month: currentMonth,
+            year: currentYear
+        )
+    }
+
+    private var unlockedAchievementsList: [Achievement] {
+        AchievementStore.all.filter { unlockedSet.contains($0.id) }
+    }
+
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 18) {
                     profileHeader
-                    levelSection
-                    streakSection
-                    achievementsSection
+                    thisWeekSection
+                    progressSection
+                    milestonesSection
+                    adviceHistorySection
                 }
                 .padding(16)
             }
             .background(AppTheme.canvas)
-            .navigationTitle(String(localized: "Hero Profile"))
+            .navigationTitle(String(localized: "Coach & Progress"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -44,59 +98,43 @@ struct HeroProfileView: View {
         }
     }
 
-    // MARK: - Profile Header
-
     private var profileHeader: some View {
-        VStack(spacing: 12) {
-            Text(heroEmoji)
-                .font(.system(size: 64))
-                .frame(width: 90, height: 90)
-                .background(AppTheme.primaryAccent.opacity(0.15))
-                .clipShape(Circle())
+        VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .center, spacing: 12) {
+                Image(systemName: "person.crop.circle.badge.checkmark")
+                    .font(.system(size: 34, weight: .semibold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .frame(width: 58, height: 58)
+                    .background(AppTheme.primaryAccent.opacity(0.14))
+                    .clipShape(Circle())
 
-            emojiPicker
-
-            if editingName {
-                nameEditField
-            } else {
-                nameDisplay
-            }
-
-            Text(stats.title)
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(20)
-        .cockpitSurface()
-    }
-
-    private var emojiPicker: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(emojiOptions, id: \.self) { emoji in
-                    Button {
-                        heroEmoji = emoji
-                    } label: {
-                        Text(emoji)
-                            .font(.title2)
-                            .frame(width: 40, height: 40)
-                            .background(heroEmoji == emoji
-                                ? AppTheme.primaryAccent.opacity(0.2)
-                                : AppTheme.surfaceMuted)
-                            .clipShape(Circle())
-                            .overlay(
-                                Circle().stroke(
-                                    heroEmoji == emoji ? AppTheme.primaryAccent : Color.clear,
-                                    lineWidth: 2
-                                )
-                            )
+                VStack(alignment: .leading, spacing: 4) {
+                    if editingName {
+                        nameEditField
+                    } else {
+                        nameDisplay
                     }
-                    .buttonStyle(.plain)
+                    Text(stats.title)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
                 }
+
+                Spacer()
             }
-            .padding(.horizontal, 4)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(String(localized: "Current focus"))
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(AppTheme.primaryAccent)
+                    .textCase(.uppercase)
+                Text(String(localized: "Progress is measured by consistency, healthy planning and calmer decisions."))
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(18)
+        .cockpitSurface()
     }
 
     private var nameDisplay: some View {
@@ -115,13 +153,14 @@ struct HeroProfileView: View {
     }
 
     private var nameEditField: some View {
-        HStack {
+        HStack(spacing: 8) {
             TextField(String(localized: "Your name"), text: $nameInput)
                 .textFieldStyle(.roundedBorder)
-                .frame(maxWidth: 200)
             Button(String(localized: "Save")) {
                 let trimmed = nameInput.trimmingCharacters(in: .whitespaces)
-                if !trimmed.isEmpty { heroName = trimmed }
+                if !trimmed.isEmpty {
+                    heroName = trimmed
+                }
                 editingName = false
             }
             .buttonStyle(.borderedProminent)
@@ -129,161 +168,191 @@ struct HeroProfileView: View {
         }
     }
 
-    // MARK: - Level Section
+    private var thisWeekSection: some View {
+        let leadAdvice = adviceHistory.first
 
-    private var levelSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(String(localized: "Level Progress"), systemImage: "star.fill")
-                .font(.headline.weight(.semibold))
-
-            HStack {
-                Text(String(format: String(localized: "Level %d"), stats.level))
-                    .font(.subheadline.weight(.bold))
-                    .foregroundStyle(AppTheme.primaryAccent)
-                Spacer()
-                Text(String(format: String(localized: "%d / %d XP"), stats.xp, stats.xpToNextLevel))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
-
-            xpProgressBar
-        }
-        .padding(16)
-        .cockpitSurface()
-    }
-
-    private var xpProgressBar: some View {
-        let progress = stats.xpToNextLevel > 0
-            ? Double(stats.xp) / Double(stats.xpToNextLevel)
-            : 1.0
-        return GeometryReader { geo in
-            ZStack(alignment: .leading) {
-                Capsule()
-                    .fill(AppTheme.outline.opacity(0.3))
-                    .frame(height: 10)
-                Capsule()
-                    .fill(
-                        LinearGradient(
-                            colors: [AppTheme.primaryAccent, AppTheme.secondaryAccent],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .frame(width: geo.size.width * min(1, max(0, progress)), height: 10)
-            }
-        }
-        .frame(height: 10)
-    }
-
-    // MARK: - Streak Section
-
-    private var streakSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(
-                String(format: String(localized: "%d Day Streak 🔥"), stats.streak),
-                systemImage: "flame.fill"
-            )
-            .font(.headline.weight(.semibold))
-            .foregroundStyle(AppTheme.warning)
-
-            streakDots
-        }
-        .padding(16)
-        .cockpitSurface()
-    }
-
-    private var streakDots: some View {
-        let cal = Calendar.current
-        let today = Date()
-        let txnDays: Set<Int> = Set(transactions.map {
-            cal.ordinality(of: .day, in: .era, for: $0.date) ?? 0
-        })
-
-        return HStack(spacing: 8) {
-            ForEach(0..<7, id: \.self) { offset in
-                let date = cal.date(byAdding: .day, value: -(6 - offset), to: today) ?? today
-                let ord = cal.ordinality(of: .day, in: .era, for: date) ?? 0
-                let hasTx = txnDays.contains(ord)
-                let isToday = offset == 6
-
-                VStack(spacing: 4) {
-                    Circle()
-                        .fill(hasTx ? AppTheme.warning : AppTheme.outline.opacity(0.3))
-                        .frame(width: 28, height: 28)
-                        .overlay(
-                            Text(hasTx ? "🔥" : "")
-                                .font(.caption2)
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(isToday ? AppTheme.primaryAccent : Color.clear, lineWidth: 2)
-                        )
-                    Text(dayLabel(date))
-                        .font(.system(size: 9).weight(.medium))
+        return sectionShell(title: String(localized: "This Week"), systemImage: "calendar") {
+            VStack(alignment: .leading, spacing: 10) {
+                if let leadAdvice {
+                    Text(leadAdvice.title)
+                        .font(.headline.weight(.semibold))
+                    Text(leadAdvice.message)
+                        .font(.subheadline)
+                        .foregroundStyle(.primary)
+                    Divider()
+                    detailRow(label: String(localized: "Why it matters"), value: leadAdvice.reason)
+                    detailRow(label: String(localized: "Safer option"), value: leadAdvice.alternative)
+                    detailRow(label: String(localized: "Next step"), value: leadAdvice.cta.title)
+                } else {
+                    Text(String(localized: "No sharp intervention today. Stay on plan and keep capture clean."))
+                        .font(.subheadline)
                         .foregroundStyle(.secondary)
                 }
             }
         }
-        .frame(maxWidth: .infinity)
     }
 
-    private func dayLabel(_ date: Date) -> String {
-        let fmt = DateFormatter()
-        fmt.dateFormat = "EEE"
-        return fmt.string(from: date)
-    }
+    private var progressSection: some View {
+        sectionShell(title: String(localized: "Progress"), systemImage: "chart.line.uptrend.xyaxis") {
+            VStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    progressMetric(
+                        metric: .readiness,
+                        score: vitals.readiness
+                    )
+                    progressMetric(
+                        metric: .pressure,
+                        score: vitals.pressure
+                    )
+                    progressMetric(
+                        metric: .reserve,
+                        score: vitals.reserve
+                    )
+                }
 
-    // MARK: - Achievements Section
-
-    private struct BadgeInfo: Identifiable {
-        let id: String
-        let icon: String
-        let name: String
-    }
-
-    private let badgePlaceholders: [BadgeInfo] = [
-        BadgeInfo(id: "first_transaction", icon: "🥇", name: "First Transaction"),
-        BadgeInfo(id: "first_goal", icon: "🎯", name: "First Goal"),
-        BadgeInfo(id: "debt_slayer", icon: "💪", name: "Debt Slayer"),
-        BadgeInfo(id: "seven_day_streak", icon: "📅", name: "7-Day Streak"),
-        BadgeInfo(id: "budget_hero", icon: "💰", name: "Budget Hero"),
-        BadgeInfo(id: "wealth_master", icon: "🏆", name: "Wealth Master"),
-    ]
-
-    private var achievementsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Label(String(localized: "Achievements"), systemImage: "trophy.fill")
-                .font(.headline.weight(.semibold))
-
-            LazyVGrid(columns: [GridItem(.adaptive(minimum: 90))], spacing: 12) {
-                ForEach(badgePlaceholders) { badge in
-                    let unlocked = unlockedSet.contains(badge.id)
-                    badgeView(badge: badge, unlocked: unlocked)
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Text(String(localized: "Runway"))
+                            .font(.subheadline.weight(.semibold))
+                        Spacer()
+                        Text(String(format: String(localized: "%d days"), vitals.runwayDays))
+                            .font(.subheadline.weight(.bold).monospacedDigit())
+                            .foregroundStyle(AppTheme.primaryAccent)
+                    }
+                    ProgressView(value: Double(min(vitals.runwayDays, 30)), total: 30)
+                        .tint(AppTheme.primaryAccent)
+                    HStack {
+                        Text(String(localized: "Left to pay"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text(CurrencyFormatter.string(from: vitals.leftToPayNext7Days))
+                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.primary)
+                    }
+                    HStack {
+                        Text(String(localized: "Budget stability"))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Spacer()
+                        Text("\(vitals.budgetStability)%")
+                            .font(.caption.weight(.semibold).monospacedDigit())
+                            .foregroundStyle(.primary)
+                    }
                 }
             }
         }
+    }
+
+    private func progressMetric(metric: FinancialVitalMetric, score: Int) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text(metric.title)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("\(score)")
+                .font(.title3.weight(.bold).monospacedDigit())
+                .foregroundStyle(.primary)
+            Text("\(metric.stateLabel(for: score)) · \(metric.directionLabel)")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(AppTheme.surfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private var milestonesSection: some View {
+        sectionShell(title: String(localized: "Milestones"), systemImage: "checkmark.seal") {
+            if unlockedAchievementsList.isEmpty {
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(String(localized: "No milestones yet"))
+                        .font(.subheadline.weight(.semibold))
+                    Text(String(localized: "Milestones will appear as you build healthy habits."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                VStack(spacing: 10) {
+                    ForEach(unlockedAchievementsList) { achievement in
+                        HStack(spacing: 12) {
+                            Image(systemName: achievement.symbolName)
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(AppTheme.primaryAccent)
+                                .frame(width: 36, height: 36)
+                                .background(AppTheme.primaryAccent.opacity(0.12))
+                                .clipShape(Circle())
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(achievement.title)
+                                    .font(.subheadline.weight(.semibold))
+                                Text(achievement.description)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(12)
+                        .background(AppTheme.surfaceMuted)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    }
+                }
+            }
+        }
+    }
+
+    private var adviceHistorySection: some View {
+        sectionShell(title: String(localized: "Advice History"), systemImage: "text.bubble") {
+            VStack(spacing: 10) {
+                ForEach(adviceHistory.prefix(3)) { advice in
+                    VStack(alignment: .leading, spacing: 8) {
+                        HStack {
+                            Text(advice.title)
+                                .font(.subheadline.weight(.semibold))
+                            Spacer()
+                            Text(advice.cta.title)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(AppTheme.primaryAccent)
+                        }
+                        Text(advice.message)
+                            .font(.subheadline)
+                        Text(advice.reason)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Text(advice.alternative)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(12)
+                    .background(AppTheme.surfaceMuted)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+            }
+        }
+    }
+
+    private func sectionShell<Content: View>(title: String, systemImage: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Label(title, systemImage: systemImage)
+                .font(.headline.weight(.semibold))
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .cockpitSurface()
     }
 
-    private func badgeView(badge: BadgeInfo, unlocked: Bool) -> some View {
-        VStack(spacing: 6) {
-            Text(badge.icon)
-                .font(.title)
-                .opacity(unlocked ? 1.0 : 0.3)
-                .frame(width: 52, height: 52)
-                .background(
-                    Circle().fill(
-                        unlocked
-                            ? AppTheme.primaryAccent.opacity(0.15)
-                            : AppTheme.surfaceMuted
-                    )
-                )
-            Text(badge.name)
-                .font(.system(size: 10).weight(.medium))
-                .foregroundStyle(unlocked ? .primary : .secondary)
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
+    private func detailRow(label: String, value: String) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text(label)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.subheadline)
+                .foregroundStyle(.primary)
         }
     }
 }

@@ -32,7 +32,8 @@ struct RecurringTransactionsView: View {
                 .onDelete(perform: delete)
             }
         }
-        .listStyle(.insetGrouped)
+        .listStyle(.plain)
+        .financeNavigationSurface()
         .navigationTitle(String(localized: "Recurring Transactions"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -184,88 +185,142 @@ struct AddEditRecurringTransactionView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
-                Section(String(localized: "Title")) {
-                    TextField(String(localized: "Title"), text: $title)
-                }
+            ZStack {
+                AppTheme.canvas.ignoresSafeArea()
 
-                Section(String(localized: "Type")) {
-                    Picker(String(localized: "Type"), selection: $type) {
-                        ForEach(TransactionType.allCases, id: \.self) { t in
-                            Text(t.localizedName).tag(t)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                    .onChange(of: type) { _, _ in
-                        selectedCategoryId = nil
-                    }
-                }
+                ScrollView {
+                    VStack(spacing: 18) {
+                        HeroMetricCard(
+                            title: existingRecurring == nil ? String(localized: "Add Recurring") : String(localized: "Edit Recurring"),
+                            value: amount > 0 ? CurrencyFormatter.string(from: amount) : String(localized: "Set amount"),
+                            supportingTitle: String(localized: "Frequency"),
+                            supportingValue: frequency.localizedName,
+                            note: title.isEmpty ? String(localized: "Set a recurring title, amount, and routing before saving.") : title,
+                            badgeText: type.localizedName
+                        )
 
-                Section(String(localized: "Amount")) {
-                    TextField("0.00", text: $amountText)
-                        .financeNumericKeyboard()
-                }
-
-                Section(String(localized: "Account")) {
-                    if accounts.isEmpty {
-                        Text(String(localized: "No accounts. Add one in Accounts tab."))
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Picker(String(localized: "Account"), selection: $selectedAccountId) {
-                            Text(String(localized: "Select account")).tag(Optional<UUID>.none)
-                            ForEach(accounts) { account in
-                                Text(account.name).tag(Optional(account.id))
-                            }
-                        }
-                    }
-                }
-
-                if type == .transfer {
-                    Section(String(localized: "To Account")) {
-                        Picker(String(localized: "To Account"), selection: $selectedToAccountId) {
-                            Text(String(localized: "Select account")).tag(Optional<UUID>.none)
-                            ForEach(accounts.filter { $0.id != selectedAccountId }) { account in
-                                Text(account.name).tag(Optional(account.id))
-                            }
-                        }
-                    }
-                }
-
-                if type != .transfer {
-                    Section(String(localized: "Category")) {
-                        if filteredCategories.isEmpty {
-                            Text(String(localized: "No categories available."))
-                                .foregroundStyle(.secondary)
-                        } else {
-                            Picker(String(localized: "Category"), selection: $selectedCategoryId) {
-                                Text(String(localized: "None")).tag(Optional<UUID>.none)
-                                ForEach(filteredCategories) { cat in
-                                    HStack {
-                                        Circle()
-                                            .fill(Color(hex: cat.colorHex))
-                                            .frame(width: 10, height: 10)
-                                        Text(cat.name)
+                        SectionShell(
+                            title: String(localized: "Details"),
+                            subtitle: String(localized: "Set the title, type, and amount before scheduling the recurring flow.")
+                        ) {
+                            VStack(spacing: 14) {
+                                recurringField(title: String(localized: "Title"), text: $title, prompt: String(localized: "Title"))
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text(String(localized: "Type"))
+                                        .font(.caption.weight(.semibold))
+                                        .foregroundStyle(.secondary)
+                                    Picker(String(localized: "Type"), selection: $type) {
+                                        ForEach(TransactionType.allCases, id: \.self) { transactionType in
+                                            Text(transactionType.localizedName).tag(transactionType)
+                                        }
                                     }
-                                    .tag(Optional(cat.id))
+                                    .pickerStyle(.segmented)
+                                    .onChange(of: type) { _, _ in
+                                        selectedCategoryId = nil
+                                    }
+                                }
+                                recurringAmountField
+                            }
+                        }
+
+                        SectionShell(
+                            title: String(localized: type == .transfer ? "Accounts" : "Account"),
+                            subtitle: String(localized: type == .transfer
+                                ? "Choose source and destination accounts for the transfer."
+                                : "Choose the account where this recurring transaction belongs.")
+                        ) {
+                            VStack(spacing: 12) {
+                                if accounts.isEmpty {
+                                    Text(String(localized: "No accounts. Add one in Accounts tab."))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    recurringMenu(
+                                        title: String(localized: "Account"),
+                                        value: accounts.first(where: { $0.id == selectedAccountId })?.name ?? String(localized: "Select account"),
+                                        systemImage: "creditcard",
+                                        tint: AppTheme.info
+                                    ) {
+                                        Button(String(localized: "Select account")) { selectedAccountId = nil }
+                                        ForEach(accounts) { account in
+                                            Button(account.name) { selectedAccountId = account.id }
+                                        }
+                                    }
+
+                                    if type == .transfer {
+                                        recurringMenu(
+                                            title: String(localized: "To Account"),
+                                            value: accounts.first(where: { $0.id == selectedToAccountId })?.name ?? String(localized: "Select account"),
+                                            systemImage: "arrow.left.arrow.right",
+                                            tint: AppTheme.primaryAccent
+                                        ) {
+                                            Button(String(localized: "Select account")) { selectedToAccountId = nil }
+                                            ForEach(accounts.filter { $0.id != selectedAccountId }) { account in
+                                                Button(account.name) { selectedToAccountId = account.id }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
-                    }
-                }
 
-                Section(String(localized: "Frequency")) {
-                    Picker(String(localized: "Frequency"), selection: $frequency) {
-                        ForEach(RecurringFrequency.allCases, id: \.self) { f in
-                            Text(f.localizedName).tag(f)
+                        if type != .transfer {
+                            SectionShell(
+                                title: String(localized: "Category"),
+                                subtitle: String(localized: "Assign the recurring transaction so budgets and analytics stay consistent.")
+                            ) {
+                                if filteredCategories.isEmpty {
+                                    Text(String(localized: "No categories available."))
+                                        .font(.subheadline)
+                                        .foregroundStyle(.secondary)
+                                } else {
+                                    recurringMenu(
+                                        title: String(localized: "Category"),
+                                        value: filteredCategories.first(where: { $0.id == selectedCategoryId })?.name ?? String(localized: "None"),
+                                        systemImage: filteredCategories.first(where: { $0.id == selectedCategoryId })?.iconName ?? "tag",
+                                        tint: filteredCategories.first(where: { $0.id == selectedCategoryId }).map { Color(hex: $0.colorHex) } ?? AppTheme.primaryAccent
+                                    ) {
+                                        Button(String(localized: "None")) { selectedCategoryId = nil }
+                                        ForEach(filteredCategories) { category in
+                                            Button(category.name) { selectedCategoryId = category.id }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                        SectionShell(
+                            title: String(localized: "Schedule"),
+                            subtitle: String(localized: "Frequency and start date determine when new transactions are generated.")
+                        ) {
+                            VStack(spacing: 14) {
+                                recurringMenu(
+                                    title: String(localized: "Frequency"),
+                                    value: frequency.localizedName,
+                                    systemImage: "calendar",
+                                    tint: AppTheme.success
+                                ) {
+                                    ForEach(RecurringFrequency.allCases, id: \.self) { value in
+                                        Button(value.localizedName) { frequency = value }
+                                    }
+                                }
+
+                                DatePicker(String(localized: "Start Date"), selection: $startDate, displayedComponents: .date)
+                                    .datePickerStyle(.compact)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 14)
+                                    .background(AppTheme.elevatedSurface)
+                                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                            }
                         }
                     }
-                }
-
-                Section(String(localized: "Start Date")) {
-                    DatePicker(String(localized: "Start Date"), selection: $startDate, displayedComponents: .date)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
             }
             .keyboardDismissable()
+            .financeNavigationSurface()
             .navigationTitle(existingRecurring == nil ? String(localized: "Add Recurring") : String(localized: "Edit Recurring"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -285,6 +340,72 @@ struct AddEditRecurringTransactionView: View {
                 }
             }
         }
+    }
+
+    private var recurringAmountField: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(String(localized: "Amount"))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            TextField("0.00", text: $amountText)
+                .financeNumericKeyboard()
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .background(AppTheme.elevatedSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    private func recurringField(title: String, text: Binding<String>, prompt: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text(title)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            TextField(prompt, text: text)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 14)
+                .background(AppTheme.elevatedSurface)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+    }
+
+    private func recurringMenu<Content: View>(
+        title: String,
+        value: String,
+        systemImage: String,
+        tint: Color,
+        @ViewBuilder content: () -> Content
+    ) -> some View {
+        Menu {
+            content()
+        } label: {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(tint)
+                    .frame(width: 30, height: 30)
+                    .background(tint.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.secondary)
+                    Text(value)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(1)
+                }
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(AppTheme.elevatedSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private func save() {

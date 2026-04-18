@@ -4,6 +4,8 @@
 <dict>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Camera access is needed to scan receipts and barcodes for quick transaction capture.</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>

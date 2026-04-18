@@ -4,9 +4,30 @@ import Foundation
 @available(iOS 16.2, *)
 struct DailyBudgetAttributes: ActivityAttributes {
     public struct ContentState: Codable, Hashable {
+        enum Signal: String, Codable, Hashable {
+            case noBudget
+            case onTrack
+            case warning
+            case overBudget
+        }
+
+        enum Celebration: String, Codable, Hashable {
+            case none
+            case goalReached
+            case debtPaidOff
+            case incomeAdded
+            case expenseLogged
+            case budgetWarning
+        }
+
         var spentToday: Double
         var dailyBudget: Double
         var currencySymbol: String
+        var signal: Signal
+        var pulseToken: Int
+        var celebration: Celebration
+        var celebrationAmount: Double?
+        var celebrationDetail: String?
 
         var progress: Double {
             guard dailyBudget > 0 else { return 0 }

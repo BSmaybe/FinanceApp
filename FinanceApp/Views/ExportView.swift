@@ -10,7 +10,6 @@ struct ExportView: View {
     @State private var startDate = Calendar.current.date(byAdding: .month, value: -1, to: Date()) ?? Date()
     @State private var endDate = Date()
     @State private var format: ExportFormat = .csv
-    @State private var isExporting = false
 
     enum ExportFormat: String, CaseIterable {
         case csv = "CSV"
@@ -23,62 +22,88 @@ struct ExportView: View {
         return allTransactions.filter { $0.date >= start && $0.date < end }
     }
 
+    private var incomeTotal: Decimal {
+        filteredTransactions.filter { $0.type == .income }.reduce(.zero) { $0 + $1.amount }
+    }
+
+    private var expenseTotal: Decimal {
+        filteredTransactions.filter { $0.type == .expense }.reduce(.zero) { $0 + $1.amount }
+    }
+
     var body: some View {
         NavigationStack {
-            Form {
-                Section(String(localized: "Date Range")) {
-                    DatePicker(String(localized: "From"), selection: $startDate, displayedComponents: .date)
-                    DatePicker(String(localized: "To"), selection: $endDate, displayedComponents: .date)
-                }
+            ZStack {
+                AppTheme.canvas.ignoresSafeArea()
 
-                Section(String(localized: "Format")) {
-                    Picker(String(localized: "Format"), selection: $format) {
-                        ForEach(ExportFormat.allCases, id: \.self) { f in
-                            Text(f.rawValue).tag(f)
-                        }
-                    }
-                    .pickerStyle(.segmented)
-                }
+                ScrollView {
+                    VStack(spacing: 18) {
+                        HeroMetricCard(
+                            title: String(localized: "Export Data"),
+                            value: "\(filteredTransactions.count)",
+                            supportingTitle: String(localized: "Format"),
+                            supportingValue: format.rawValue,
+                            note: String(localized: "Choose a clean date range before sharing transactions out of the app."),
+                            badgeText: String(localized: "Share")
+                        )
 
-                Section(String(localized: "Preview")) {
-                    HStack {
-                        Text(String(localized: "Transactions"))
-                        Spacer()
-                        Text("\(filteredTransactions.count)")
-                            .foregroundStyle(.secondary)
-                    }
-                    if !filteredTransactions.isEmpty {
-                        let income = filteredTransactions.filter { $0.type == .income }.reduce(Decimal.zero) { $0 + $1.amount }
-                        let expense = filteredTransactions.filter { $0.type == .expense }.reduce(Decimal.zero) { $0 + $1.amount }
-                        HStack {
-                            Text(String(localized: "Income"))
-                            Spacer()
-                            Text(CurrencyFormatter.string(from: income))
-                                .foregroundStyle(.green)
+                        SectionShell(
+                            title: String(localized: "Date Range"),
+                            subtitle: String(localized: "Export only the period you actually want to review or archive.")
+                        ) {
+                            VStack(spacing: 12) {
+                                exportDatePicker(title: String(localized: "From"), selection: $startDate)
+                                exportDatePicker(title: String(localized: "To"), selection: $endDate)
+                            }
                         }
-                        HStack {
-                            Text(String(localized: "Expenses"))
-                            Spacer()
-                            Text(CurrencyFormatter.string(from: expense))
-                                .foregroundStyle(.red)
-                        }
-                    }
-                }
 
-                Section {
-                    Button {
-                        exportData()
-                    } label: {
-                        HStack {
-                            Spacer()
+                        SectionShell(
+                            title: String(localized: "Format"),
+                            subtitle: String(localized: "Choose CSV for analysis or PDF for a readable snapshot.")
+                        ) {
+                            Picker(String(localized: "Format"), selection: $format) {
+                                ForEach(ExportFormat.allCases, id: \.self) { value in
+                                    Text(value.rawValue).tag(value)
+                                }
+                            }
+                            .pickerStyle(.segmented)
+                        }
+
+                        SectionShell(
+                            title: String(localized: "Preview"),
+                            subtitle: String(localized: "Check the range before exporting.")
+                        ) {
+                            VStack(spacing: 12) {
+                                metricRow(title: String(localized: "Transactions"), value: "\(filteredTransactions.count)")
+                                metricRow(
+                                    title: String(localized: "Income"),
+                                    value: CurrencyFormatter.string(from: incomeTotal),
+                                    tint: AppTheme.success
+                                )
+                                metricRow(
+                                    title: String(localized: "Expenses"),
+                                    value: CurrencyFormatter.string(from: expenseTotal),
+                                    tint: AppTheme.warning
+                                )
+                            }
+                        }
+
+                        Button(action: exportData) {
                             Label(String(localized: "Export"), systemImage: "square.and.arrow.up")
                                 .font(.headline)
-                            Spacer()
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 16)
                         }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.white)
+                        .background(filteredTransactions.isEmpty ? AppTheme.chartNeutral : AppTheme.primaryAccent)
+                        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                        .disabled(filteredTransactions.isEmpty)
                     }
-                    .disabled(filteredTransactions.isEmpty)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
                 }
             }
+            .financeNavigationSurface()
             .navigationTitle(String(localized: "Export Data"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -87,6 +112,33 @@ struct ExportView: View {
                 }
             }
         }
+    }
+
+    private func exportDatePicker(title: String, selection: Binding<Date>) -> some View {
+        DatePicker(title, selection: selection, displayedComponents: .date)
+            .datePickerStyle(.compact)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 14)
+            .background(AppTheme.elevatedSurface)
+            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+
+    private func metricRow(title: String, value: String, tint: Color = .primary) -> some View {
+        HStack {
+            Text(title)
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+            Spacer()
+            Text(value)
+                .font(.subheadline.weight(.semibold))
+                .monospacedDigit()
+                .foregroundStyle(tint)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(AppTheme.elevatedSurface)
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
 
     private func exportData() {
@@ -115,7 +167,6 @@ struct ExportView: View {
 
         let activityVC = UIActivityViewController(activityItems: [url], applicationActivities: nil)
 
-        // Find the topmost presented view controller
         var topVC = rootVC
         while let presented = topVC.presentedViewController {
             topVC = presented

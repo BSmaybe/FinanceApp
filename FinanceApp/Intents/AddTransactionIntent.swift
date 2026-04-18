@@ -38,6 +38,10 @@ struct PendingCapturePayload: Codable, Equatable, Identifiable {
             return String(localized: "Shortcut Capture")
         case "deep_link", "deeplink":
             return String(localized: "Deep Link Capture")
+        case "receipt_scan", "receipt", "check_scan":
+            return String(localized: "Receipt Scan")
+        case "barcode_scan", "barcode", "qr_scan", "qr":
+            return String(localized: "Barcode Scan")
         default:
             return String(localized: "Shortcut Capture")
         }
@@ -49,6 +53,10 @@ struct PendingCapturePayload: Codable, Equatable, Identifiable {
             return "apple.logo"
         case "deep_link", "deeplink":
             return "link.circle.fill"
+        case "receipt_scan", "receipt", "check_scan":
+            return "text.viewfinder"
+        case "barcode_scan", "barcode", "qr_scan", "qr":
+            return "barcode.viewfinder"
         default:
             return "bolt.horizontal.circle.fill"
         }
