@@ -286,6 +286,48 @@ extension ThemePalette {
         timelineDot: Color(hex: "#1A1A1A")
     )
 
+    // 7. Ocean Graphite — premium dark slate with aqua + lime signals
+    static let oceanGraphite = ThemePalette(
+        id: "ocean_graphite",
+        name: String(localized: "Ocean Graphite"),
+        isDark: true,
+        canvas: Color(hex: "#0B1523"),
+        surface: Color(hex: "#15253A"),
+        outline: Color(hex: "#293C57"),
+        primaryAccent: Color(hex: "#74E1FF"),
+        secondaryAccent: Color(hex: "#8CE06C"),
+        danger: Color(hex: "#F38A8A"),
+        success: Color(hex: "#8CE06C"),
+        heroCardTitle: Color(hex: "#ECF3FF"),
+        heroCardLabel: Color(hex: "#74E1FF"),
+        heroGradient: LinearGradient(
+            colors: [Color(hex: "#16263C"), Color(hex: "#1A304A")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        incomeGradient: LinearGradient(
+            colors: [Color(hex: "#8CE06C").opacity(0.26), Color(hex: "#5EEAD4").opacity(0.12)],
+            startPoint: .leading, endPoint: .trailing
+        ),
+        expenseGradient: LinearGradient(
+            colors: [Color(hex: "#F38A8A").opacity(0.26), Color(hex: "#FB923C").opacity(0.12)],
+            startPoint: .leading, endPoint: .trailing
+        ),
+        debtGradient: LinearGradient(
+            colors: [Color(hex: "#3F1A1F"), Color(hex: "#3E2322")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        subscriptionGradient: LinearGradient(
+            colors: [Color(hex: "#1F2B45"), Color(hex: "#1A304A")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        fabGradient: LinearGradient(
+            colors: [Color(hex: "#3EB8D8"), Color(hex: "#4F8BFF")],
+            startPoint: .topLeading, endPoint: .bottomTrailing
+        ),
+        timelineLine: Color(hex: "#324863"),
+        timelineDot: Color(hex: "#74E1FF")
+    )
+
     static let all: [String: ThemePalette] = [
         financeBlue.id:    .financeBlue,
         midnightGreen.id:  .midnightGreen,
@@ -293,9 +335,10 @@ extension ThemePalette {
         lavender.id:       .lavender,
         midnight.id:       .midnight,
         warmMinimal.id:    .warmMinimal,
+        oceanGraphite.id:  .oceanGraphite,
     ]
 
-    static let allCases: [ThemePalette] = [.warmMinimal, .financeBlue, .midnightGreen, .sunset, .lavender, .midnight]
+    static let allCases: [ThemePalette] = [.warmMinimal, .financeBlue, .midnightGreen, .sunset, .lavender, .midnight, .oceanGraphite]
 
     var surfaceMuted: Color {
         switch id {
@@ -305,6 +348,7 @@ extension ThemePalette {
         case "sunset":         return Color(hex: "#FFF7EF")
         case "lavender":       return Color(hex: "#FCF8FF")
         case "midnight":       return Color(hex: "#162033")
+        case "ocean_graphite": return Color(hex: "#101D31")
         default: return surface
         }
     }
@@ -317,6 +361,7 @@ extension ThemePalette {
         case "sunset":         return Color(hex: "#FFFFFF")
         case "lavender":       return Color(hex: "#FFFFFF")
         case "midnight":       return Color(hex: "#1B2840")
+        case "ocean_graphite": return Color(hex: "#1A2A42")
         default: return surface
         }
     }
