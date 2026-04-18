@@ -26,6 +26,20 @@ struct BudgetManagerView: View {
         return formatter.string(from: date)
     }
 
+    private var configuredBudgetCount: Int {
+        expenseCategories.filter { budget(for: $0) != nil }.count
+    }
+
+    private var unconfiguredBudgetCount: Int {
+        max(expenseCategories.count - configuredBudgetCount, 0)
+    }
+
+    private var coverageLabel: String {
+        guard !expenseCategories.isEmpty else { return "0%" }
+        let ratio = Double(configuredBudgetCount) / Double(expenseCategories.count)
+        return "\(Int((ratio * 100).rounded()))%"
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -35,22 +49,62 @@ struct BudgetManagerView: View {
                 ScrollView {
                     VStack(spacing: 18) {
                         HeroMetricCard(
-                            title: String(localized: "Budgets"),
-                            value: "\(expenseCategories.count)",
+                            title: String(localized: "Budget setup"),
+                            value: "\(configuredBudgetCount)",
                             supportingTitle: String(localized: "Month"),
                             supportingValue: monthLabel,
-                            note: String(localized: "Category limits"),
+                            note: String(localized: "Monthly limits across your expense categories."),
                             badgeText: configuredBudgetCountLabel
                         )
 
+                        LazyVGrid(
+                            columns: [
+                                GridItem(.flexible(), spacing: 12),
+                                GridItem(.flexible(), spacing: 12)
+                            ],
+                            spacing: 12
+                        ) {
+                            CompactSummaryCard(
+                                title: String(localized: "Ready"),
+                                value: "\(configuredBudgetCount)",
+                                detail: String(localized: "Categories with limits"),
+                                systemImage: "checkmark.seal.fill",
+                                tint: AppTheme.success
+                            )
+
+                            CompactSummaryCard(
+                                title: String(localized: "Open"),
+                                value: "\(unconfiguredBudgetCount)",
+                                detail: String(localized: "Still missing a limit"),
+                                systemImage: "clock.badge.exclamationmark.fill",
+                                tint: AppTheme.warning
+                            )
+
+                            CompactSummaryCard(
+                                title: String(localized: "Coverage"),
+                                value: coverageLabel,
+                                detail: String(localized: "Current budget setup progress"),
+                                systemImage: "chart.bar.fill",
+                                tint: AppTheme.info
+                            )
+
+                            CompactSummaryCard(
+                                title: String(localized: "Categories"),
+                                value: "\(expenseCategories.count)",
+                                detail: String(localized: "Expense groups available"),
+                                systemImage: "square.grid.2x2.fill",
+                                tint: AppTheme.primaryAccent
+                            )
+                        }
+
                         SectionShell(
-                            title: String(localized: "Manage Budgets"),
-                            subtitle: String(localized: "Choose a category and set its monthly limit")
+                            title: String(localized: "Budget categories"),
+                            subtitle: String(localized: "Choose a category and set the monthly limit you want to hold.")
                         ) {
                             if expenseCategories.isEmpty {
                                 InsightCard(
                                     title: String(localized: "No expense categories"),
-                                    value: String(localized: "Setup Needed"),
+                                    value: String(localized: "Setup needed"),
                                     message: String(localized: "Create expense categories first, then assign budget limits here."),
                                     systemImage: "tray.fill",
                                     tint: AppTheme.info
@@ -90,8 +144,7 @@ struct BudgetManagerView: View {
     }
 
     private var configuredBudgetCountLabel: String {
-        let count = expenseCategories.filter { budget(for: $0) != nil }.count
-        return String(format: String(localized: "%lld set"), count)
+        String(format: String(localized: "%lld set"), configuredBudgetCount)
     }
 
     private func budget(for category: Category) -> Budget? {
@@ -121,7 +174,11 @@ struct BudgetManagerView: View {
                     Text(category.name)
                         .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
-                    Text(existingBudget.map { CurrencyFormatter.string(from: $0.limitAmount) } ?? String(localized: "Not set"))
+                    Text(
+                        existingBudget.map {
+                            String(format: String(localized: "Limit %@"), CurrencyFormatter.string(from: $0.limitAmount))
+                        } ?? String(localized: "No monthly limit yet")
+                    )
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

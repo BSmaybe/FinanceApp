@@ -9,9 +9,16 @@ enum LiveActivityManager {
     enum CelebrationKind {
         case goalReached
         case debtPaidOff
+        case incomeAdded
+        case expenseLogged
+        case budgetWarning
     }
 
-    static func start(spentToday: Double, dailyBudget: Double, currencySymbol: String) {
+    static func start(
+        spentToday: Double,
+        dailyBudget: Double,
+        currencySymbol: String
+    ) {
         guard isEnabled else { return }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
 
@@ -35,7 +42,11 @@ enum LiveActivityManager {
         }
     }
 
-    static func update(spentToday: Double, dailyBudget: Double, currencySymbol: String) {
+    static func update(
+        spentToday: Double,
+        dailyBudget: Double,
+        currencySymbol: String
+    ) {
         guard isEnabled else { return }
         let state = buildState(
             spentToday: spentToday,
@@ -50,6 +61,14 @@ enum LiveActivityManager {
     }
 
     static func triggerCelebration(_ kind: CelebrationKind) {
+        triggerCelebration(kind, amount: nil, detail: nil)
+    }
+
+    static func triggerCelebration(
+        _ kind: CelebrationKind,
+        amount: Double?,
+        detail: String?
+    ) {
         guard isEnabled else { return }
         let celebration: DailyBudgetAttributes.ContentState.Celebration = {
             switch kind {
@@ -57,6 +76,20 @@ enum LiveActivityManager {
                 return .goalReached
             case .debtPaidOff:
                 return .debtPaidOff
+            case .incomeAdded:
+                return .incomeAdded
+            case .expenseLogged:
+                return .expenseLogged
+            case .budgetWarning:
+                return .budgetWarning
+            }
+        }()
+        let resetDelay: Duration = {
+            switch kind {
+            case .goalReached, .debtPaidOff:
+                return .seconds(4)
+            case .incomeAdded, .expenseLogged, .budgetWarning:
+                return .seconds(3)
             }
         }()
 
@@ -66,17 +99,20 @@ enum LiveActivityManager {
                 pulseToken = max(pulseToken, activity.content.state.pulseToken) + 1
                 UserDefaults.standard.set(pulseToken, forKey: pulseTokenKey)
 
+                let current = activity.content.state
                 let state = DailyBudgetAttributes.ContentState(
-                    spentToday: activity.content.state.spentToday,
-                    dailyBudget: activity.content.state.dailyBudget,
-                    currencySymbol: activity.content.state.currencySymbol,
-                    signal: activity.content.state.signal,
+                    spentToday: current.spentToday,
+                    dailyBudget: current.dailyBudget,
+                    currencySymbol: current.currencySymbol,
+                    signal: current.signal,
                     pulseToken: pulseToken,
-                    celebration: celebration
+                    celebration: celebration,
+                    celebrationAmount: amount,
+                    celebrationDetail: detail
                 )
                 await activity.update(ActivityContent(state: state, staleDate: nil))
 
-                try? await Task.sleep(for: .seconds(4))
+                try? await Task.sleep(for: resetDelay)
 
                 let resetState = DailyBudgetAttributes.ContentState(
                     spentToday: state.spentToday,
@@ -84,7 +120,9 @@ enum LiveActivityManager {
                     currencySymbol: state.currencySymbol,
                     signal: state.signal,
                     pulseToken: state.pulseToken,
-                    celebration: .none
+                    celebration: .none,
+                    celebrationAmount: nil,
+                    celebrationDetail: nil
                 )
                 await activity.update(ActivityContent(state: resetState, staleDate: nil))
             }
@@ -132,7 +170,9 @@ enum LiveActivityManager {
             currencySymbol: currencySymbol,
             signal: signal,
             pulseToken: pulseToken,
-            celebration: .none
+            celebration: .none,
+            celebrationAmount: nil,
+            celebrationDetail: nil
         )
     }
 

@@ -80,6 +80,8 @@
 		F1V002000000000000000002 /* EmptyStateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1V001000000000000000001 /* EmptyStateView.swift */; };
 		F1W002000000000000000002 /* SkeletonView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1W001000000000000000001 /* SkeletonView.swift */; };
 		F1X002000000000000000002 /* FeaturesSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1X001000000000000000001 /* FeaturesSettingsView.swift */; };
+		F1Y002000000000000000002 /* VitalsAnalyticsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1Y001000000000000000001 /* VitalsAnalyticsView.swift */; };
+		F1Z002000000000000000002 /* FinancialVitalsAnalyticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1Z001000000000000000001 /* FinancialVitalsAnalyticsEngine.swift */; };
 		F2B100000000000000000001 /* FinanceAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000001 /* FinanceAppUITests.swift */; };
 		F2B100000000000000000002 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000003 /* XCTest.framework */; };
 /* End PBXBuildFile section */
@@ -193,6 +195,8 @@
 		F1V001000000000000000001 /* EmptyStateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyStateView.swift; sourceTree = "<group>"; };
 		F1W001000000000000000001 /* SkeletonView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkeletonView.swift; sourceTree = "<group>"; };
 		F1X001000000000000000001 /* FeaturesSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturesSettingsView.swift; sourceTree = "<group>"; };
+		F1Y001000000000000000001 /* VitalsAnalyticsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VitalsAnalyticsView.swift; sourceTree = "<group>"; };
+		F1Z001000000000000000001 /* FinancialVitalsAnalyticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinancialVitalsAnalyticsEngine.swift; sourceTree = "<group>"; };
 		F2A100000000000000000001 /* FinanceAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceAppUITests.swift; sourceTree = "<group>"; };
 		F2A100000000000000000002 /* FinanceAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FinanceAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2A100000000000000000003 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
@@ -302,6 +306,7 @@
 				F1P001000000000000000001 /* DailyQuoteStore.swift */,
 				F1R001000000000000000001 /* GamificationEngine.swift */,
 				F1U001000000000000000001 /* AchievementStore.swift */,
+				F1Z001000000000000000001 /* FinancialVitalsAnalyticsEngine.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -344,6 +349,7 @@
 				F1V001000000000000000001 /* EmptyStateView.swift */,
 				F1W001000000000000000001 /* SkeletonView.swift */,
 				F1X001000000000000000001 /* FeaturesSettingsView.swift */,
+				F1Y001000000000000000001 /* VitalsAnalyticsView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -610,6 +616,8 @@
 				F1V002000000000000000002 /* EmptyStateView.swift in Sources */,
 				F1W002000000000000000002 /* SkeletonView.swift in Sources */,
 				F1X002000000000000000002 /* FeaturesSettingsView.swift in Sources */,
+				F1Y002000000000000000002 /* VitalsAnalyticsView.swift in Sources */,
+				F1Z002000000000000000002 /* FinancialVitalsAnalyticsEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
