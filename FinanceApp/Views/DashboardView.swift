@@ -49,7 +49,7 @@ struct DashboardView: View {
     @State private var showingGoals = false
     @State private var showingSubscriptions = false
     @State private var showingDebts = false
-    @State private var showingForecast = false
+    @State private var showingCalendar = false
     @State private var showingBudgetManager = false
     @State private var showingDashboardSettings = false
     @State private var showingCaptureScanner = false
@@ -487,8 +487,8 @@ struct DashboardView: View {
                     .presentationCornerRadius(24)
                     .presentationDragIndicator(.visible)
             }
-            .sheet(isPresented: $showingForecast) {
-                CashFlowForecastView()
+            .sheet(isPresented: $showingCalendar) {
+                CashCalendarView()
                     .presentationCornerRadius(24)
                     .presentationDragIndicator(.visible)
             }
@@ -777,7 +777,7 @@ struct DashboardView: View {
                 focusStripSection(
                     section: .primaryActions,
                     title: String(localized: "Primary Actions"),
-                    summary: "\(String(localized: "Quick Add")) · \(String(localized: "Budgets")) · \(String(localized: "Forecast"))",
+                    summary: "\(String(localized: "Quick Add")) · \(String(localized: "Budgets")) · \(String(localized: "Calendar"))",
                     icon: "square.grid.2x2.fill",
                     accessibilityId: "dashboard.primaryActions.section"
                 ) {
@@ -1149,12 +1149,12 @@ struct DashboardView: View {
             }
 
             ActionTile(
-                title: String(localized: "Forecast"),
-                subtitle: String(localized: "Look ahead before bills land"),
-                systemImage: "chart.line.uptrend.xyaxis",
+                title: String(localized: "Calendar"),
+                subtitle: String(localized: "Review actual and planned cash days"),
+                systemImage: "calendar.badge.clock",
                 tint: AppTheme.success
             ) {
-                showingForecast = true
+                showingCalendar = true
             }
 
             ActionTile(
@@ -2032,7 +2032,7 @@ struct DashboardView: View {
                 if featureSubscriptions {
                     shortcutChip(icon: "repeat", label: String(localized: "Subscriptions")) { showingSubscriptions = true }
                 }
-                shortcutChip(icon: "chart.line.uptrend.xyaxis", label: String(localized: "Forecast")) { showingForecast = true }
+                shortcutChip(icon: "calendar.badge.clock", label: String(localized: "Calendar")) { showingCalendar = true }
             }
             .padding(.horizontal, 2)
             .padding(.vertical, 2)

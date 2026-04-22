@@ -1,6 +1,7 @@
 import SwiftUI
 import SwiftData
 import UserNotifications
+import UIKit
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
@@ -45,6 +46,15 @@ struct SettingsView: View {
         ("ru",     "Russian",  "Русский"),
         ("kk",     "Kazakh",   "Қазақша")
     ]
+
+    private var liveActivitySettingsSymbolName: String {
+        for candidate in ["capsule.portrait", "capsule", "app.badge"] {
+            if UIImage(systemName: candidate) != nil {
+                return candidate
+            }
+        }
+        return "app"
+    }
 
     var body: some View {
         NavigationStack {
@@ -359,7 +369,7 @@ struct SettingsView: View {
                 SettingsAccessoryRow(
                     title: String(localized: "Daily Budget in Dynamic Island"),
                     subtitle: String(localized: "Show the current budget state outside the app."),
-                    systemImage: "dynamicisland",
+                    systemImage: liveActivitySettingsSymbolName,
                     tint: liveActivityEnabled ? AppTheme.success : AppTheme.info
                 ) {
                     Toggle("", isOn: $liveActivityEnabled)

@@ -860,6 +860,9 @@
 "Budgets" = "Бюджеты";
 "Review limits and pressure" = "Проверить лимиты и давление";
 "Forecast" = "Прогноз";
+"Calendar" = "Календарь";
+"Cash Calendar" = "Календарь денег";
+"Review actual and planned cash days" = "Смотреть фактические и плановые денежные дни";
 "Look ahead before bills land" = "Заглянуть вперёд до списаний";
 "Scan" = "Скан";
 "Receipt or code capture" = "Скан чека или кода";

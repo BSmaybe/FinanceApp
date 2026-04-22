@@ -850,6 +850,9 @@
 "Budgets" = "Бюджеттер";
 "Review limits and pressure" = "Лимиттер мен қысымды тексеру";
 "Forecast" = "Болжам";
+"Calendar" = "Күнтізбе";
+"Cash Calendar" = "Ақша күнтізбесі";
+"Review actual and planned cash days" = "Нақты және жоспарланған ақша күндерін қарау";
 "Look ahead before bills land" = "Төлемдер түспей тұрып алға қарау";
 "Scan" = "Скан";
 "Receipt or code capture" = "Чек не кодты сканерлеу";

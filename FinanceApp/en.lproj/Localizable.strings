@@ -863,6 +863,9 @@
 "Budgets" = "Budgets";
 "Review limits and pressure" = "Review limits and pressure";
 "Forecast" = "Forecast";
+"Calendar" = "Calendar";
+"Cash Calendar" = "Cash Calendar";
+"Review actual and planned cash days" = "Review actual and planned cash days";
 "Look ahead before bills land" = "Look ahead before bills land";
 "Scan" = "Scan";
 "Receipt or code capture" = "Receipt or code capture";
