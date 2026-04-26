@@ -62,7 +62,6 @@
 "Total Income" = "Total Income";
 "Total Expense" = "Total Expense";
 "Net" = "Net";
-"Income" = "Income";
 "Expenses by Category" = "Expenses by Category";
 
 /* Alerts */
@@ -484,7 +483,6 @@
 "Debt Details" = "Debt Details";
 "Remaining Balance" = "Remaining Balance";
 "Annual Interest Rate (%)" = "Annual Interest Rate (%)";
-"Minimum Payment" = "Minimum Payment";
 "Manual Entry" = "Manual Entry";
 "Min Payment" = "Min Payment";
 "Use actual" = "Use actual";
@@ -541,7 +539,6 @@
 "Over by %@" = "Over by %@";
 "%@ left · %lld days" = "%@ left · %lld days";
 "of %@" = "of %@";
-"Dashboard" = "Dashboard";
 "Dashboard Settings" = "Dashboard Settings";
 "Dashboard Sections" = "Dashboard Sections";
 "Quick Actions" = "Quick Actions";
@@ -596,7 +593,6 @@
 "Good afternoon 👋" = "Good afternoon 👋";
 "Good evening 👋" = "Good evening 👋";
 "Good night 🌙" = "Good night 🌙";
-"Accounts" = "Accounts";
 
 /* Daily Quote Card */
 "Anime" = "Anime";
@@ -658,9 +654,6 @@
 "Add a loan or installment to track payments" = "Add a loan or installment to track payments";
 "Drag to reorder" = "Drag to reorder";
 "Tap anywhere to continue" = "Tap anywhere to continue";
-"Anime" = "Anime";
-"Game" = "Game";
-"Movie" = "Movie";
 "Opening Balance" = "Opening Balance";
 "Annual Interest %" = "Annual Interest %";
 "Balance & Interest" = "Balance & Interest";
@@ -713,7 +706,6 @@
 "Open coach" = "Open coach";
 "Current focus" = "Current focus";
 "Progress is measured by consistency, healthy planning and calmer decisions." = "Progress is measured by consistency, healthy planning and calmer decisions.";
-"This Week" = "This Week";
 "Progress" = "Progress";
 "Milestones" = "Milestones";
 "Advice History" = "Advice History";
@@ -729,7 +721,6 @@
 "No milestones yet" = "No milestones yet";
 "Milestones will appear as you build healthy habits." = "Milestones will appear as you build healthy habits.";
 "Milestone recorded" = "Milestone recorded";
-"Remaining" = "Remaining";
 "Status" = "Status";
 "Essential" = "Essential";
 "Fixed" = "Fixed";
@@ -858,21 +849,16 @@
 "Month net" = "Month net";
 "Where the money lives" = "Where the money lives";
 "Move quickly through daily money tasks" = "Move quickly through daily money tasks";
-"Quick Add" = "Quick Add";
 "Capture income or expense" = "Capture income or expense";
-"Budgets" = "Budgets";
 "Review limits and pressure" = "Review limits and pressure";
-"Forecast" = "Forecast";
 "Calendar" = "Calendar";
 "Cash Calendar" = "Cash Calendar";
 "Review actual and planned cash days" = "Review actual and planned cash days";
 "Look ahead before bills land" = "Look ahead before bills land";
 "Scan" = "Scan";
 "Receipt or code capture" = "Receipt or code capture";
-"Recent Activity" = "Recent Activity";
 "Latest posted transactions and fast access to the full journal." = "Latest posted transactions and fast access to the full journal.";
 "No recent activity yet" = "No recent activity yet";
-"This Month" = "This Month";
 "Signals worth reviewing before the month slips." = "Signals worth reviewing before the month slips.";
 "Budget pressure" = "Budget pressure";
 "Upcoming bills" = "Upcoming bills";
@@ -1064,7 +1050,6 @@
 "%lld months with activity" = "%lld months with activity";
 "Average Month" = "Average Month";
 "Track every active month in one place." = "Track every active month in one place.";
-"Month" = "Month";
 "Largest expense categories for the selected year." = "Largest expense categories for the selected year.";
 "Compare monthly inflow and outflow before planning next year." = "Compare monthly inflow and outflow before planning next year.";
 "Peak spending" = "Peak spending";
@@ -1094,7 +1079,6 @@
 "Billing" = "Billing";
 "Keep the next billing date accurate so due reminders and planning stay trustworthy." = "Keep the next billing date accurate so due reminders and planning stay trustworthy.";
 "Optional context for plan, provider, or renewal terms." = "Optional context for plan, provider, or renewal terms.";
-"Recurring" = "Recurring";
 "Choose the method and any extra monthly payment before comparing the order." = "Choose the method and any extra monthly payment before comparing the order.";
 "%lld debts in plan" = "%lld debts in plan";
 "The order below reflects your current balances, rates, and extra payment." = "The order below reflects your current balances, rates, and extra payment.";
@@ -1210,14 +1194,12 @@
 "%lld near limit" = "%lld near limit";
 /* Cash Flows redesign */
 "Cash Flows" = "Cash Flows";
-"History" = "History";
 "Transfers" = "Transfers";
 
 /* Dashboard redesign */
 "Hi %@" = "Hi %@";
 "there" = "there";
 "Latest Transactions" = "Latest Transactions";
-"See all" = "See all";
 "Over budget!" = "Over budget!";
 "Over income this month" = "Over income this month";
 "Saved %lld%% of income" = "Saved %lld%% of income";

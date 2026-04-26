@@ -120,7 +120,7 @@
 "Note..." = "Заметка...";
 
 /* Recurring transactions */
-"Recurring" = "Повторяющиеся";
+"Recurring" = "Регулярные";
 "Recurring Transactions" = "Повторяющиеся транзакции";
 "Add Recurring" = "Добавить повторяющуюся";
 "Frequency" = "Периодичность";
@@ -271,13 +271,12 @@
 "No scheduled events in the next 30 days" = "Нет запланированных событий в ближайшие 30 дней";
 
 /* Dashboard reference redesign */
-"Dashboard" = "Обзор";
 "👋 Hi" = "👋 Привет";
 "Net worth" = "Капитал";
 "Funds" = "Бюджет";
 "History" = "История";
 "Latest transaction" = "Последняя транзакция";
-"See all" = "См. все";
+"See all" = "Все";
 "Scan QR" = "Скан QR";
 "SPENDING" = "РАСХОДЫ";
 "BILLS" = "ПЛАТЕЖИ";
@@ -484,7 +483,6 @@
 "Debt Details" = "Параметры долга";
 "Remaining Balance" = "Остаток долга";
 "Annual Interest Rate (%)" = "Годовая ставка (%)";
-"Minimum Payment" = "Минимальный платёж";
 "Manual Entry" = "Ввести вручную";
 "Min Payment" = "Мин. платёж";
 "Use actual" = "Использовать факт";
@@ -541,7 +539,6 @@
 "Over by %@" = "Перерасход %@";
 "%@ left · %lld days" = "осталось %@ · %lld дн.";
 "of %@" = "из %@";
-"Dashboard" = "Обзор";
 "Dashboard Settings" = "Настройки дашборда";
 "Dashboard Sections" = "Разделы дашборда";
 "Quick Actions" = "Быстрые действия";
@@ -596,7 +593,6 @@
 "Good afternoon 👋" = "Добрый день 👋";
 "Good evening 👋" = "Добрый вечер 👋";
 "Good night 🌙" = "Спокойной ночи 🌙";
-"Accounts" = "Счета";
 
 /* Daily Quote Card */
 "Anime" = "Аниме";
@@ -710,7 +706,6 @@
 "Open coach" = "Открыть коуч";
 "Current focus" = "Текущий фокус";
 "Progress is measured by consistency, healthy planning and calmer decisions." = "Прогресс здесь измеряется последовательностью, здоровым планированием и более спокойными решениями.";
-"This Week" = "Эта неделя";
 "Progress" = "Прогресс";
 "Milestones" = "Вехи";
 "Advice History" = "История советов";
@@ -726,7 +721,6 @@
 "No milestones yet" = "Пока нет вех";
 "Milestones will appear as you build healthy habits." = "Вехи появятся по мере формирования здоровых финансовых привычек.";
 "Milestone recorded" = "Веха зафиксирована";
-"Remaining" = "Остаток";
 "Status" = "Статус";
 "Essential" = "Базовое";
 "Fixed" = "Фиксированное";
@@ -855,21 +849,16 @@
 "Month net" = "Чистый итог месяца";
 "Where the money lives" = "Где лежат деньги";
 "Move quickly through daily money tasks" = "Быстро переходите к ежедневным финансовым действиям";
-"Quick Add" = "Быстро добавить";
 "Capture income or expense" = "Зафиксировать доход или расход";
-"Budgets" = "Бюджеты";
 "Review limits and pressure" = "Проверить лимиты и давление";
-"Forecast" = "Прогноз";
 "Calendar" = "Календарь";
 "Cash Calendar" = "Календарь денег";
 "Review actual and planned cash days" = "Смотреть фактические и плановые денежные дни";
 "Look ahead before bills land" = "Заглянуть вперёд до списаний";
 "Scan" = "Скан";
 "Receipt or code capture" = "Скан чека или кода";
-"Recent Activity" = "Последняя активность";
 "Latest posted transactions and fast access to the full journal." = "Последние проведённые транзакции и быстрый доступ ко всему журналу.";
 "No recent activity yet" = "Пока нет недавней активности";
-"This Month" = "Этот месяц";
 "Signals worth reviewing before the month slips." = "Сигналы, которые стоит проверить до того, как месяц уйдёт.";
 "Budget pressure" = "Давление бюджета";
 "Upcoming bills" = "Ближайшие платежи";
@@ -1061,7 +1050,6 @@
 "%lld months with activity" = "%lld месяцев с операциями";
 "Average Month" = "Средний месяц";
 "Track every active month in one place." = "Следите за каждым активным месяцем в одном месте.";
-"Month" = "Месяц";
 "Largest expense categories for the selected year." = "Самые крупные расходные категории за выбранный год.";
 "Compare monthly inflow and outflow before planning next year." = "Сравните ежемесячные поступления и расходы перед планированием следующего года.";
 "Peak spending" = "Пик расходов";
@@ -1091,7 +1079,6 @@
 "Billing" = "Списание";
 "Keep the next billing date accurate so due reminders and planning stay trustworthy." = "Держите дату следующего списания точной, чтобы напоминания и планирование оставались надёжными.";
 "Optional context for plan, provider, or renewal terms." = "Необязательный контекст по тарифу, провайдеру или условиям продления.";
-"Recurring" = "Регулярно";
 "Choose the method and any extra monthly payment before comparing the order." = "Выберите метод и дополнительный ежемесячный платёж перед сравнением порядка погашения.";
 "%lld debts in plan" = "%lld долгов в плане";
 "The order below reflects your current balances, rates, and extra payment." = "Порядок ниже учитывает текущие остатки, ставки и дополнительный платёж.";
@@ -1207,14 +1194,12 @@
 "%lld near limit" = "%lld у предела";
 /* Cash Flows redesign */
 "Cash Flows" = "Денежные потоки";
-"History" = "История";
 "Transfers" = "Переводы";
 
 /* Dashboard redesign */
 "Hi %@" = "Привет, %@";
 "there" = "друг";
 "Latest Transactions" = "Последние транзакции";
-"See all" = "Все";
 "Over budget!" = "Превышен бюджет!";
 "Over income this month" = "Расходы превышают доходы";
 "Saved %lld%% of income" = "Сохранено %lld%% дохода";

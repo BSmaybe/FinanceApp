@@ -280,13 +280,12 @@
 "Other" = "Басқа";
 
 /* Dashboard reference redesign */
-"Dashboard" = "Басты бет";
 "👋 Hi" = "👋 Сәлем";
 "Net worth" = "Таза капитал";
 "Funds" = "Бюджет";
 "History" = "Тарих";
 "Latest transaction" = "Соңғы транзакция";
-"See all" = "Барлығын көру";
+"See all" = "Барлығы";
 "Scan QR" = "QR сканерлеу";
 "SPENDING" = "ШЫҒЫН";
 "BILLS" = "ТӨЛЕМДЕР";
@@ -480,7 +479,6 @@
 "Debt Details" = "Қарыз мәліметтері";
 "Remaining Balance" = "Қалдық қарыз";
 "Annual Interest Rate (%)" = "Жылдық пайыз мөлшерлемесі (%)";
-"Minimum Payment" = "Ең аз төлем";
 "Manual Entry" = "Қолмен енгізу";
 "Min Payment" = "Мин. төлем";
 "Use actual" = "Нақты пайдалану";
@@ -528,7 +526,6 @@
 "Over by %@" = "%@ асып кетті";
 "%@ left · %lld days" = "%@ қалды · %lld күн";
 "of %@" = "%@ ішінен";
-"Dashboard" = "Басты бет";
 "Dashboard Settings" = "Бақылау тақтасы параметрлері";
 "Dashboard Sections" = "Бақылау тақтасы бөлімдері";
 "Quick Actions" = "Жылдам әрекеттер";
@@ -583,7 +580,6 @@
 "Good afternoon 👋" = "Қайырлы күн 👋";
 "Good evening 👋" = "Қайырлы кеш 👋";
 "Good night 🌙" = "Тәтті ұйқы 🌙";
-"Accounts" = "Шоттар";
 
 /* Daily Quote Card */
 "Anime" = "Аниме";
@@ -645,9 +641,6 @@
 "Add a loan or installment to track payments" = "Төлемдерді бақылау үшін несие немесе бөліп төлеу қосыңыз";
 "Drag to reorder" = "Ретін өзгерту үшін сүйреңіз";
 "Tap anywhere to continue" = "Жалғастыру үшін кез келген жерді басыңыз";
-"Anime" = "Аниме";
-"Game" = "Ойын";
-"Movie" = "Фильм";
 "Opening Balance" = "Бастапқы баланс";
 "Annual Interest %" = "Жылдық пайыз %";
 "Balance & Interest" = "Баланс және пайыз";
@@ -700,7 +693,6 @@
 "Open coach" = "Коучты ашу";
 "Current focus" = "Қазіргі фокус";
 "Progress is measured by consistency, healthy planning and calmer decisions." = "Прогресс мұнда тұрақтылықпен, сау жоспарлаумен және сабырлырақ шешімдермен өлшенеді.";
-"This Week" = "Осы апта";
 "Progress" = "Прогресс";
 "Milestones" = "Кезеңдер";
 "Advice History" = "Кеңестер тарихы";
@@ -716,7 +708,6 @@
 "No milestones yet" = "Әзірге кезеңдер жоқ";
 "Milestones will appear as you build healthy habits." = "Салауатты қаржылық әдеттер қалыптасқан сайын кезеңдер пайда болады.";
 "Milestone recorded" = "Кезең белгіленді";
-"Remaining" = "Қалды";
 "Status" = "Күйі";
 "Essential" = "Негізгі";
 "Fixed" = "Тұрақты";
@@ -845,21 +836,16 @@
 "Month net" = "Айдың таза нәтижесі";
 "Where the money lives" = "Ақша қайда жатыр";
 "Move quickly through daily money tasks" = "Күнделікті қаржы әрекеттерінен тез өтіңіз";
-"Quick Add" = "Жылдам қосу";
 "Capture income or expense" = "Кіріс не шығысты тіркеу";
-"Budgets" = "Бюджеттер";
 "Review limits and pressure" = "Лимиттер мен қысымды тексеру";
-"Forecast" = "Болжам";
 "Calendar" = "Күнтізбе";
 "Cash Calendar" = "Ақша күнтізбесі";
 "Review actual and planned cash days" = "Нақты және жоспарланған ақша күндерін қарау";
 "Look ahead before bills land" = "Төлемдер түспей тұрып алға қарау";
 "Scan" = "Скан";
 "Receipt or code capture" = "Чек не кодты сканерлеу";
-"Recent Activity" = "Соңғы белсенділік";
 "Latest posted transactions and fast access to the full journal." = "Соңғы өткізілген транзакциялар және толық журналға жылдам қолжетім.";
 "No recent activity yet" = "Әзірге соңғы белсенділік жоқ";
-"This Month" = "Осы ай";
 "Signals worth reviewing before the month slips." = "Ай сырғып кетпей тұрып қарап шығуға тұратын сигналдар.";
 "Budget pressure" = "Бюджет қысымы";
 "Upcoming bills" = "Жақын төлемдер";
@@ -1051,7 +1037,6 @@
 "%lld months with activity" = "%lld айда операция болды";
 "Average Month" = "Орташа ай";
 "Track every active month in one place." = "Әр белсенді айды бір жерден бақылаңыз.";
-"Month" = "Ай";
 "Largest expense categories for the selected year." = "Таңдалған жылдағы ең ірі шығыс санаттары.";
 "Compare monthly inflow and outflow before planning next year." = "Келесі жылды жоспарламас бұрын айлық түсім мен шығысты салыстырыңыз.";
 "Peak spending" = "Шығын шыңы";
@@ -1081,7 +1066,6 @@
 "Billing" = "Төлем";
 "Keep the next billing date accurate so due reminders and planning stay trustworthy." = "Келесі төлем күнін дәл ұстаңыз, сонда еске салғыштар мен жоспарлау сенімді болады.";
 "Optional context for plan, provider, or renewal terms." = "Тариф, провайдер немесе ұзарту шарттары туралы қосымша контекст.";
-"Recurring" = "Тұрақты";
 "Choose the method and any extra monthly payment before comparing the order." = "Ретті салыстырмас бұрын әдіс пен қосымша айлық төлемді таңдаңыз.";
 "%lld debts in plan" = "%lld қарыз жоспарға кірді";
 "The order below reflects your current balances, rates, and extra payment." = "Төмендегі рет ағымдағы қалдықтарды, мөлшерлемелерді және қосымша төлемді ескереді.";
@@ -1197,14 +1181,12 @@
 "%lld near limit" = "%lld шекке жақын";
 /* Cash Flows redesign */
 "Cash Flows" = "Ақша ағыны";
-"History" = "Тарих";
 "Transfers" = "Аударымдар";
 
 /* Dashboard redesign */
 "Hi %@" = "Сәлем, %@";
 "there" = "досым";
 "Latest Transactions" = "Соңғы транзакциялар";
-"See all" = "Барлығы";
 "Over budget!" = "Бюджет асып кетті!";
 "Over income this month" = "Шығыс кірістен асты";
 "Saved %lld%% of income" = "Кірістің %lld%% сақталды";
