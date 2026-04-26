@@ -17,6 +17,7 @@ struct DashboardView: View {
     @Query(filter: #Predicate<Subscription> { $0.isActive == true })
     private var activeSubscriptions: [Subscription]
     @Query private var debts: [Debt]
+    @Query private var recurringTransactions: [RecurringTransaction]
 
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("budgetNotificationsEnabled") private var budgetNotificationsEnabled = true
@@ -50,6 +51,7 @@ struct DashboardView: View {
     @State private var showingGoals = false
     @State private var showingSubscriptions = false
     @State private var showingDebts = false
+    @State private var showingCommitmentsHub = false
     @State private var showingCalendar = false
     @State private var showingBudgetManager = false
     @State private var showingDashboardSettings = false
@@ -91,6 +93,12 @@ struct DashboardView: View {
     private var expandedSection: DashboardSection? {
         get { DashboardSection(rawValue: expandedSectionRaw) }
         set { expandedSectionRaw = newValue?.rawValue ?? "" }
+    }
+
+    private var activeRecurringTransactionsList: [RecurringTransaction] {
+        recurringTransactions
+            .filter(\.isActive)
+            .sorted { $0.startDate < $1.startDate }
     }
 
     private struct FocusStripRow<Content: View>: View {
@@ -500,6 +508,11 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $showingDebts) {
                 DebtsView()
+                    .presentationCornerRadius(24)
+                    .presentationDragIndicator(.visible)
+            }
+            .sheet(isPresented: $showingCommitmentsHub) {
+                CommitmentsHubView()
                     .presentationCornerRadius(24)
                     .presentationDragIndicator(.visible)
             }
@@ -1349,8 +1362,11 @@ struct DashboardView: View {
         let monthNet = dashboardStats.monthlyIncome - dashboardStats.monthlyExpense
         let topRisk = budgetPressures.first
         let topRiskPercent = Int((topRisk?.ratio ?? 0) * 100)
-        let monthlyBills = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount } +
-            activeDebts.reduce(Decimal.zero) { $0 + $1.minimumPayment }
+        let monthlyBills = CommitmentsPlanner.monthlyOutflow(
+            debts: activeDebts,
+            subscriptions: activeSubscriptions,
+            recurringTransactions: activeRecurringTransactionsList
+        )
 
         return VStack(spacing: 12) {
             HStack(spacing: 8) {
@@ -1397,18 +1413,14 @@ struct DashboardView: View {
             .accessibilityIdentifier("dashboard.thisMonth.openBudgets")
 
             Button {
-                if featureSubscriptions {
-                    showingSubscriptions = true
-                } else if featureDebts {
-                    showingDebts = true
-                }
+                showingCommitmentsHub = true
             } label: {
                 InsightCard(
                     title: String(localized: "Upcoming bills"),
                     value: CurrencyFormatter.string(from: monthlyBills),
                     message: String(
                         format: String(localized: "%lld active bills this month"),
-                        Int64(activeSubscriptions.count + activeDebts.count)
+                        Int64(activeSubscriptions.count + activeDebts.count + activeRecurringTransactionsList.filter { $0.type == .expense }.count)
                     ),
                     systemImage: "calendar.badge.clock",
                     tint: AppTheme.info
@@ -1640,6 +1652,11 @@ struct DashboardView: View {
     private var commitmentMiniRow: some View {
         let subscriptionTotal = activeSubscriptions.reduce(Decimal.zero) { $0 + $1.amount }
         let debtTotal = activeDebts.reduce(Decimal.zero) { $0 + $1.remainingAmount }
+        let recurringTotal = activeRecurringTransactionsList
+            .filter { $0.type == .expense }
+            .reduce(Decimal.zero) { total, recurring in
+                total + CommitmentsPlanner.monthlyEquivalent(amount: recurring.amount, frequency: recurring.frequency)
+            }
 
         return HStack(spacing: 10) {
             if featureSubscriptions {
@@ -1666,15 +1683,15 @@ struct DashboardView: View {
                 }
             }
 
-            if featureGoals {
+            if !activeRecurringTransactionsList.isEmpty {
                 commitmentMiniCard(
-                    title: String(localized: "Goals"),
-                    value: "\(activeGoals.count)",
-                    subtitle: String(localized: "in progress"),
-                    icon: "flag.checkered",
-                    tint: AppTheme.success
+                    title: String(localized: "Recurring"),
+                    value: CurrencyFormatter.string(from: recurringTotal),
+                    subtitle: "\(activeRecurringTransactionsList.count)",
+                    icon: "arrow.clockwise",
+                    tint: AppTheme.info
                 ) {
-                    showingGoals = true
+                    showingCommitmentsHub = true
                 }
             }
         }
@@ -2234,12 +2251,7 @@ struct DashboardView: View {
                 if featureGoals {
                     shortcutChip(icon: "target", label: String(localized: "Goals")) { showingGoals = true }
                 }
-                if featureDebts {
-                    shortcutChip(icon: "creditcard.fill", label: String(localized: "Debts")) { showingDebts = true }
-                }
-                if featureSubscriptions {
-                    shortcutChip(icon: "repeat", label: String(localized: "Subscriptions")) { showingSubscriptions = true }
-                }
+                shortcutChip(icon: "tray.full.fill", label: String(localized: "Commitments")) { showingCommitmentsHub = true }
                 shortcutChip(icon: "calendar.badge.clock", label: String(localized: "Calendar")) { showingCalendar = true }
             }
             .padding(.horizontal, 2)
@@ -2494,14 +2506,7 @@ struct DashboardView: View {
                 Text(String(localized: "Upcoming Payments"))
                     .font(.headline.weight(.semibold))
                 Spacer()
-                Button(String(localized: "Debts")) { showingDebts = true }
-                    .font(.caption.weight(.semibold))
-                    .foregroundStyle(AppTheme.warning)
-                    .buttonStyle(.plain)
-                Text("·")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                Button(String(localized: "Subscriptions")) { showingSubscriptions = true }
+                Button(String(localized: "View All")) { showingCommitmentsHub = true }
                     .font(.caption.weight(.semibold))
                     .foregroundStyle(AppTheme.primaryAccent)
                     .buttonStyle(.plain)
@@ -2539,7 +2544,7 @@ struct DashboardView: View {
     }
 
     private struct UpcomingItem: Identifiable {
-        let id: UUID
+        let id: String
         let name: String
         let amount: Decimal
         let date: Date
@@ -2549,47 +2554,47 @@ struct DashboardView: View {
     }
 
     private func buildUpcomingItems() -> [UpcomingItem] {
-        var items: [UpcomingItem] = []
-
-        let cal = Calendar.current
-        let now = Date()
-
-        // Next subscription billing dates
-        let sortedSubs = activeSubscriptions
-            .sorted { $0.nextBillingDate < $1.nextBillingDate }
-            .prefix(3)
-        for sub in sortedSubs {
-            items.append(UpcomingItem(
-                id: sub.id,
-                name: sub.name,
-                amount: sub.amount,
-                date: sub.nextBillingDate,
-                icon: "repeat.circle.fill",
-                tint: AppTheme.primaryAccent,
-                subtitle: sub.nextBillingDate.formatted(date: .abbreviated, time: .omitted)
-            ))
+        CommitmentsPlanner.upcomingItems(
+            debts: activeDebts,
+            subscriptions: activeSubscriptions,
+            recurringTransactions: activeRecurringTransactionsList,
+            limit: 6,
+            includeRecurringIncome: false
+        )
+        .filter { $0.isExpense }
+        .map { item in
+            UpcomingItem(
+                id: item.id,
+                name: item.title,
+                amount: item.amount,
+                date: item.date,
+                icon: upcomingIcon(for: item),
+                tint: upcomingTint(for: item),
+                subtitle: item.date.formatted(date: .abbreviated, time: .omitted)
+            )
         }
+    }
 
-        // Next debt payments this month
-        let sortedDebts = activeDebts
-            .sorted { $0.dueDay < $1.dueDay }
-            .prefix(3)
-        for debt in sortedDebts {
-            var comps = cal.dateComponents([.year, .month], from: now)
-            comps.day = debt.dueDay
-            let dueDate = cal.date(from: comps) ?? now
-            items.append(UpcomingItem(
-                id: debt.id,
-                name: debt.name,
-                amount: debt.minimumPayment,
-                date: dueDate,
-                icon: "creditcard.fill",
-                tint: AppTheme.warning,
-                subtitle: dueDate.formatted(date: .abbreviated, time: .omitted)
-            ))
+    private func upcomingIcon(for item: CommitmentScheduleItem) -> String {
+        switch item.source {
+        case .debt:
+            return "creditcard.fill"
+        case .subscription:
+            return "repeat.circle.fill"
+        case .recurring:
+            return "arrow.clockwise.circle.fill"
         }
+    }
 
-        return items.sorted { $0.date < $1.date }
+    private func upcomingTint(for item: CommitmentScheduleItem) -> Color {
+        switch item.source {
+        case .debt:
+            return AppTheme.warning
+        case .subscription:
+            return AppTheme.primaryAccent
+        case .recurring:
+            return AppTheme.danger
+        }
     }
 
     private func upcomingPaymentCard(item: UpcomingItem) -> some View {
@@ -2952,9 +2957,9 @@ struct DashboardView: View {
         case .budgets:
             showingBudgetManager = true
         case .subscriptions:
-            showingSubscriptions = true
+            showingCommitmentsHub = true
         case .debts:
-            showingDebts = true
+            showingCommitmentsHub = true
         case .goals:
             showingGoals = true
         case .transactions:

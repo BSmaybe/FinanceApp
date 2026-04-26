@@ -1221,3 +1221,9 @@
 "Over budget!" = "Over budget!";
 "Over income this month" = "Over income this month";
 "Saved %lld%% of income" = "Saved %lld%% of income";
+"Planned inflow" = "Planned inflow";
+"Debt minimums, subscriptions and recurring rules in one operating view." = "Debt minimums, subscriptions and recurring rules in one operating view.";
+"No active obligations" = "No active obligations";
+"Upcoming obligations" = "Upcoming obligations";
+"Nothing scheduled yet" = "Nothing scheduled yet";
+"Upcoming debt, subscription and recurring events will appear here." = "Upcoming debt, subscription and recurring events will appear here.";

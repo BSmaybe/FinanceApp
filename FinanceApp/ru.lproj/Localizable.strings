@@ -1218,3 +1218,9 @@
 "Over budget!" = "Превышен бюджет!";
 "Over income this month" = "Расходы превышают доходы";
 "Saved %lld%% of income" = "Сохранено %lld%% дохода";
+"Planned inflow" = "Плановый приток";
+"Debt minimums, subscriptions and recurring rules in one operating view." = "Минимальные платежи по долгам, подписки и регулярные правила в одном рабочем экране.";
+"No active obligations" = "Нет активных обязательств";
+"Upcoming obligations" = "Ближайшие обязательства";
+"Nothing scheduled yet" = "Пока ничего не запланировано";
+"Upcoming debt, subscription and recurring events will appear here." = "Здесь появятся ближайшие события по долгам, подпискам и регулярным операциям.";

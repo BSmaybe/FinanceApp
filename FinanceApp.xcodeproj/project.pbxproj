@@ -85,6 +85,8 @@
 		F3B001000000000000000001 /* CashCalendarAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A001000000000000000001 /* CashCalendarAssembler.swift */; };
 		F3B002000000000000000002 /* WeeklyBudgetCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A002000000000000000002 /* WeeklyBudgetCalculator.swift */; };
 		F3B003000000000000000003 /* CashCalendarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A003000000000000000003 /* CashCalendarView.swift */; };
+		F3B004000000000000000004 /* CommitmentsPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A004000000000000000004 /* CommitmentsPlanner.swift */; };
+		F3B005000000000000000005 /* CommitmentsHubView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F3A005000000000000000005 /* CommitmentsHubView.swift */; };
 		F2B100000000000000000001 /* FinanceAppUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000001 /* FinanceAppUITests.swift */; };
 		F2B100000000000000000002 /* XCTest.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2A100000000000000000003 /* XCTest.framework */; };
 /* End PBXBuildFile section */
@@ -203,6 +205,8 @@
 		F3A001000000000000000001 /* CashCalendarAssembler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashCalendarAssembler.swift; sourceTree = "<group>"; };
 		F3A002000000000000000002 /* WeeklyBudgetCalculator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeeklyBudgetCalculator.swift; sourceTree = "<group>"; };
 		F3A003000000000000000003 /* CashCalendarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CashCalendarView.swift; sourceTree = "<group>"; };
+		F3A004000000000000000004 /* CommitmentsPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommitmentsPlanner.swift; sourceTree = "<group>"; };
+		F3A005000000000000000005 /* CommitmentsHubView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CommitmentsHubView.swift; sourceTree = "<group>"; };
 		F2A100000000000000000001 /* FinanceAppUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinanceAppUITests.swift; sourceTree = "<group>"; };
 		F2A100000000000000000002 /* FinanceAppUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = FinanceAppUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2A100000000000000000003 /* XCTest.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = XCTest.framework; path = System/Library/Frameworks/XCTest.framework; sourceTree = SDKROOT; };
@@ -295,6 +299,7 @@
 				F1A014000000000000000014 /* BudgetNotificationHelper.swift */,
 				F1A019000000000000000019 /* CashFlowForecast.swift */,
 				F3A001000000000000000001 /* CashCalendarAssembler.swift */,
+				F3A004000000000000000004 /* CommitmentsPlanner.swift */,
 				77AC493C69C34F24AFD0E501 /* CurrencyFormatter.swift */,
 				F1A01C00000000000000001C /* DebtPayoffCalculator.swift */,
 				F1A020000000000000000020 /* ExportService.swift */,
@@ -339,6 +344,7 @@
 				F1A018000000000000000018 /* AddEditSubscriptionView.swift */,
 				F1A01A00000000000000001A /* CashFlowForecastView.swift */,
 				F3A003000000000000000003 /* CashCalendarView.swift */,
+				F3A005000000000000000005 /* CommitmentsHubView.swift */,
 				F1A01D00000000000000001D /* DebtsView.swift */,
 				F1A01E00000000000000001E /* AddEditDebtView.swift */,
 				F1A01F00000000000000001F /* DebtPayoffView.swift */,
@@ -591,8 +597,10 @@
 				F1B018000000000000000018 /* AddEditSubscriptionView.swift in Sources */,
 				F1B019000000000000000019 /* CashFlowForecast.swift in Sources */,
 				F3B001000000000000000001 /* CashCalendarAssembler.swift in Sources */,
+				F3B004000000000000000004 /* CommitmentsPlanner.swift in Sources */,
 				F1B01A00000000000000001A /* CashFlowForecastView.swift in Sources */,
 				F3B003000000000000000003 /* CashCalendarView.swift in Sources */,
+				F3B005000000000000000005 /* CommitmentsHubView.swift in Sources */,
 				F1B01B00000000000000001B /* Debt.swift in Sources */,
 				F1B01C00000000000000001C /* DebtPayoffCalculator.swift in Sources */,
 				F1B01D00000000000000001D /* DebtsView.swift in Sources */,

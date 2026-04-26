@@ -1208,3 +1208,9 @@
 "Over budget!" = "Бюджет асып кетті!";
 "Over income this month" = "Шығыс кірістен асты";
 "Saved %lld%% of income" = "Кірістің %lld%% сақталды";
+"Planned inflow" = "Жоспарланған түсім";
+"Debt minimums, subscriptions and recurring rules in one operating view." = "Қарыздың ең төменгі төлемдері, жазылымдар және қайталанатын ережелер бір жұмыс экранында.";
+"No active obligations" = "Белсенді міндеттемелер жоқ";
+"Upcoming obligations" = "Алдағы міндеттемелер";
+"Nothing scheduled yet" = "Әзірге ештеңе жоспарланбаған";
+"Upcoming debt, subscription and recurring events will appear here." = "Мұнда қарыздар, жазылымдар және қайталанатын операциялар бойынша алдағы оқиғалар шығады.";
