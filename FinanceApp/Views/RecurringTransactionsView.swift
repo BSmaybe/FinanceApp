@@ -10,54 +10,276 @@ struct RecurringTransactionsView: View {
     @State private var showingAdd = false
     @State private var editingRecurring: RecurringTransaction? = nil
 
+    private let summaryColumns = [
+        GridItem(.flexible(), spacing: 12),
+        GridItem(.flexible(), spacing: 12)
+    ]
+
+    private var activeRecurrings: [RecurringTransaction] {
+        recurrings
+            .filter(\.isActive)
+            .sorted { lhs, rhs in
+                let leftDate = CommitmentsPlanner.nextOccurrence(for: lhs) ?? lhs.startDate
+                let rightDate = CommitmentsPlanner.nextOccurrence(for: rhs) ?? rhs.startDate
+                if leftDate != rightDate { return leftDate < rightDate }
+                return lhs.title.localizedCaseInsensitiveCompare(rhs.title) == .orderedAscending
+            }
+    }
+
+    private var pausedRecurrings: [RecurringTransaction] {
+        recurrings
+            .filter { !$0.isActive }
+            .sorted { $0.title.localizedCaseInsensitiveCompare($1.title) == .orderedAscending }
+    }
+
+    private var monthlyExpenseLoad: Decimal {
+        activeRecurrings
+            .filter { $0.type == .expense }
+            .reduce(Decimal.zero) { total, recurring in
+                total + CommitmentsPlanner.monthlyEquivalent(amount: recurring.amount, frequency: recurring.frequency)
+            }
+    }
+
+    private var monthlyIncomeLoad: Decimal {
+        activeRecurrings
+            .filter { $0.type == .income }
+            .reduce(Decimal.zero) { total, recurring in
+                total + CommitmentsPlanner.monthlyEquivalent(amount: recurring.amount, frequency: recurring.frequency)
+            }
+    }
+
+    private var nextRunCount: Int {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let inSevenDays = calendar.date(byAdding: .day, value: 7, to: today) ?? today
+
+        return activeRecurrings.filter { recurring in
+            guard let next = CommitmentsPlanner.nextOccurrence(for: recurring, referenceDate: today) else { return false }
+            return next >= today && next <= inSevenDays
+        }.count
+    }
+
+    private var statusBadge: String {
+        if activeRecurrings.isEmpty {
+            return String(localized: "No active obligations")
+        }
+        if nextRunCount > 0 {
+            return String(format: String(localized: "%lld due soon"), Int64(nextRunCount))
+        }
+        return String(localized: "Payments in rhythm")
+    }
+
     var body: some View {
-        List {
-            if recurrings.isEmpty {
-                ContentUnavailableView(
-                    String(localized: "Recurring Transactions"),
-                    systemImage: "arrow.clockwise",
-                    description: Text(String(localized: "Tap + to add your first transaction."))
-                )
-            } else {
-                ForEach(recurrings) { recurring in
-                    RecurringRow(
-                        recurring: recurring,
-                        account: accounts.first { $0.id == recurring.accountId },
-                        category: categories.first { $0.id == recurring.categoryId }
-                    )
-                    .contextMenu {
-                        Button("Edit") { editingRecurring = recurring }
+        NavigationStack {
+            ZStack {
+                AppTheme.canvas
+                    .ignoresSafeArea()
+
+                ScrollView {
+                    VStack(spacing: 18) {
+                        heroSection
+
+                        if recurrings.isEmpty {
+                            emptyStateSection
+                        } else {
+                            overviewSection
+                            activeSection
+
+                            if !pausedRecurrings.isEmpty {
+                                pausedSection
+                            }
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 12)
+                }
+            }
+            .financeNavigationSurface()
+            .navigationTitle(String(localized: "Recurring Transactions"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showingAdd = true
+                    } label: {
+                        Image(systemName: "plus")
                     }
                 }
-                .onDelete(perform: delete)
             }
-        }
-        .listStyle(.plain)
-        .financeNavigationSurface()
-        .navigationTitle(String(localized: "Recurring Transactions"))
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .primaryAction) {
-                Button {
-                    showingAdd = true
-                } label: {
-                    Image(systemName: "plus")
-                }
+            .sheet(isPresented: $showingAdd) {
+                AddEditRecurringTransactionView()
             }
-        }
-        .sheet(isPresented: $showingAdd) {
-            AddEditRecurringTransactionView()
-        }
-        .sheet(item: $editingRecurring) { item in
-            AddEditRecurringTransactionView(recurring: item)
+            .sheet(item: $editingRecurring) { item in
+                AddEditRecurringTransactionView(recurring: item)
+            }
         }
     }
 
-    private func delete(at offsets: IndexSet) {
-        HapticManager.impact(.medium)
-        for index in offsets {
-            modelContext.delete(recurrings[index])
+    private var heroSection: some View {
+        HeroMetricCard(
+            title: String(localized: "Recurring Transactions"),
+            value: CurrencyFormatter.string(from: monthlyExpenseLoad),
+            supportingTitle: String(localized: "Planned inflow"),
+            supportingValue: CurrencyFormatter.string(from: monthlyIncomeLoad),
+            note: String(localized: "Automation rules for income, expenses and transfers in one operating view."),
+            badgeText: statusBadge
+        )
+    }
+
+    private var overviewSection: some View {
+        LazyVGrid(columns: summaryColumns, spacing: 12) {
+            CompactSummaryCard(
+                title: String(localized: "Active"),
+                value: "\(activeRecurrings.count)",
+                detail: String(localized: "Rules currently generating transactions"),
+                systemImage: "arrow.clockwise.circle.fill",
+                tint: AppTheme.info
+            )
+
+            CompactSummaryCard(
+                title: String(localized: "Due soon"),
+                value: "\(nextRunCount)",
+                detail: String(localized: "Next 7 days"),
+                systemImage: "calendar.badge.clock",
+                tint: AppTheme.warning
+            )
+
+            CompactSummaryCard(
+                title: String(localized: "Expense"),
+                value: CurrencyFormatter.string(from: monthlyExpenseLoad),
+                detail: String(localized: "Monthly scheduled outflow"),
+                systemImage: "arrow.up.circle.fill",
+                tint: AppTheme.danger
+            )
+
+            CompactSummaryCard(
+                title: String(localized: "Income"),
+                value: CurrencyFormatter.string(from: monthlyIncomeLoad),
+                detail: String(localized: "Monthly scheduled inflow"),
+                systemImage: "arrow.down.circle.fill",
+                tint: AppTheme.success
+            )
         }
+    }
+
+    private var emptyStateSection: some View {
+        SectionShell(
+            title: String(localized: "Build your recurring rules"),
+            subtitle: String(localized: "Keep salaries, bills and transfers running on a predictable schedule.")
+        ) {
+            VStack(spacing: 12) {
+                InsightCard(
+                    title: String(localized: "No recurring transactions yet"),
+                    value: String(localized: "Add your first rule"),
+                    message: String(localized: "Recurring transactions generate future entries for income, expenses or transfers without re-entering them each time."),
+                    systemImage: "arrow.clockwise.circle",
+                    tint: AppTheme.info
+                )
+
+                ActionTile(
+                    title: String(localized: "Add Recurring"),
+                    subtitle: String(localized: "Create a salary, bill, transfer, or other repeating rule."),
+                    systemImage: "plus.circle.fill",
+                    tint: AppTheme.info
+                ) {
+                    showingAdd = true
+                }
+            }
+        }
+    }
+
+    private var activeSection: some View {
+        SectionShell(
+            title: String(localized: "Active rules"),
+            subtitle: String(localized: "Review the next run, route and amount for each recurring rule.")
+        ) {
+            VStack(spacing: 12) {
+                if activeRecurrings.isEmpty {
+                    InsightCard(
+                        title: String(localized: "No active rules"),
+                        value: String(localized: "Nothing is scheduled"),
+                        message: String(localized: "Paused recurring rules stay below until you reactivate them."),
+                        systemImage: "pause.circle.fill",
+                        tint: AppTheme.warning
+                    )
+                } else {
+                    ForEach(activeRecurrings) { recurring in
+                        recurringCard(recurring)
+                    }
+                }
+            }
+        }
+    }
+
+    private var pausedSection: some View {
+        SectionShell(
+            title: String(localized: "Paused rules"),
+            subtitle: String(localized: "Keep inactive recurring rules for reuse instead of recreating them.")
+        ) {
+            VStack(spacing: 12) {
+                ForEach(pausedRecurrings) { recurring in
+                    recurringCard(recurring)
+                }
+            }
+        }
+    }
+
+    private func recurringCard(_ recurring: RecurringTransaction) -> some View {
+        let account = accounts.first { $0.id == recurring.accountId }
+        let toAccount = recurring.toAccountId.flatMap { id in
+            accounts.first { $0.id == id }
+        }
+        let category = categories.first { $0.id == recurring.categoryId }
+
+        return Button {
+            editingRecurring = recurring
+        } label: {
+            RecurringRuleCard(
+                recurring: recurring,
+                account: account,
+                toAccount: toAccount,
+                category: category,
+                nextRun: CommitmentsPlanner.nextOccurrence(for: recurring),
+                onToggleActive: { value in
+                    setActive(recurring, isActive: value)
+                }
+            )
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button(String(localized: "Edit")) {
+                editingRecurring = recurring
+            }
+
+            if recurring.isActive {
+                Button(String(localized: "Pause")) {
+                    setActive(recurring, isActive: false)
+                }
+            } else {
+                Button(String(localized: "Activate")) {
+                    setActive(recurring, isActive: true)
+                }
+            }
+
+            Button(String(localized: "Delete"), role: .destructive) {
+                delete(recurring)
+            }
+        }
+    }
+
+    private func setActive(_ recurring: RecurringTransaction, isActive: Bool) {
+        recurring.isActive = isActive
+        do {
+            try modelContext.save()
+        } catch {
+            print("RecurringTransactions toggle error: \(error)")
+        }
+        HapticManager.impact(.light)
+    }
+
+    private func delete(_ recurring: RecurringTransaction) {
+        HapticManager.impact(.medium)
+        modelContext.delete(recurring)
         do {
             try modelContext.save()
         } catch {
@@ -66,64 +288,135 @@ struct RecurringTransactionsView: View {
     }
 }
 
-// MARK: - RecurringRow
+// MARK: - RecurringRuleCard
 
-private struct RecurringRow: View {
-    @Bindable var recurring: RecurringTransaction
+private struct RecurringRuleCard: View {
+    let recurring: RecurringTransaction
     let account: Account?
+    let toAccount: Account?
     let category: Category?
+    let nextRun: Date?
+    let onToggleActive: (Bool) -> Void
 
     private var amountColor: Color {
         switch recurring.type {
-        case .income: return .green
-        case .expense: return .red
-        case .transfer: return .secondary
+        case .income: return AppTheme.success
+        case .expense: return AppTheme.danger
+        case .transfer: return AppTheme.info
         }
     }
 
     var body: some View {
-        HStack(spacing: 12) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(recurring.title.isEmpty ? recurring.type.localizedName : recurring.title)
-                    .font(.body)
-                HStack(spacing: 4) {
-                    Text(recurring.frequency.localizedName)
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if let account {
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(alignment: .top, spacing: 12) {
+                Image(systemName: iconName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(amountColor)
+                    .frame(width: 38, height: 38)
+                    .background(amountColor.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 4) {
+                    Text(recurring.title.isEmpty ? recurring.type.localizedName : recurring.title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                        .lineLimit(2)
+
+                    HStack(spacing: 4) {
+                        Text(recurring.frequency.localizedName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
                         Text("·")
                             .font(.caption)
                             .foregroundStyle(.secondary)
-                        Text(account.name)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    if let category {
-                        Text("·")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                        Circle()
-                            .fill(Color(hex: category.colorHex))
-                            .frame(width: 6, height: 6)
-                        Text(category.name)
+                        Text(routeLabel)
                             .font(.caption)
                             .foregroundStyle(.secondary)
                     }
                 }
+
+                Spacer(minLength: 10)
+
+                Text(CurrencyFormatter.string(from: recurring.amount))
+                    .font(.subheadline.weight(.bold).monospacedDigit())
+                    .foregroundStyle(amountColor)
             }
 
-            Spacer()
+            HStack(spacing: 8) {
+                infoPill(
+                    label: nextRun == nil
+                        ? String(localized: "Start Date")
+                        : String(localized: "Next run"),
+                    value: (nextRun ?? recurring.startDate).formatted(date: .abbreviated, time: .omitted),
+                    tint: AppTheme.warning
+                )
 
-            VStack(alignment: .trailing, spacing: 4) {
-                Text(CurrencyFormatter.string(from: recurring.amount))
-                    .font(.body.monospacedDigit())
-                    .foregroundStyle(amountColor)
-                Toggle(String(localized: "Active"), isOn: $recurring.isActive)
-                    .labelsHidden()
-                    .scaleEffect(0.75)
+                if let category, recurring.type != .transfer {
+                    infoPill(
+                        label: String(localized: "Category"),
+                        value: category.name,
+                        tint: Color(hex: category.colorHex)
+                    )
+                }
+
+                Spacer(minLength: 0)
+
+                Toggle(String(localized: "Active"), isOn: Binding(
+                    get: { recurring.isActive },
+                    set: onToggleActive
+                ))
+                .labelsHidden()
+                .toggleStyle(.switch)
+                .scaleEffect(0.86)
             }
         }
-        .padding(.vertical, 2)
+        .padding(14)
+        .background(AppTheme.surface)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(AppTheme.outline.opacity(0.45), lineWidth: 0.5)
+        )
+    }
+
+    private var iconName: String {
+        switch recurring.type {
+        case .income:
+            return "arrow.down.circle.fill"
+        case .expense:
+            return "arrow.up.circle.fill"
+        case .transfer:
+            return "arrow.left.arrow.right.circle.fill"
+        }
+    }
+
+    private var routeLabel: String {
+        if recurring.type == .transfer {
+            if let account, let toAccount {
+                return "\(account.name) → \(toAccount.name)"
+            }
+            if let account {
+                return account.name
+            }
+            return recurring.type.localizedName
+        }
+        return account?.name ?? recurring.type.localizedName
+    }
+
+    private func infoPill(label: String, value: String, tint: Color) -> some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(label)
+                .font(.caption2.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Text(value)
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(tint)
+                .lineLimit(1)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 8)
+        .background(AppTheme.surfaceMuted)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
 }
 

@@ -20,6 +20,15 @@ struct CommitmentScheduleItem: Identifiable {
 }
 
 enum CommitmentsPlanner {
+    static func nextOccurrence(
+        for recurring: RecurringTransaction,
+        referenceDate: Date = Date(),
+        calendar: Calendar = .current
+    ) -> Date? {
+        let today = calendar.startOfDay(for: referenceDate)
+        return nextRecurringDate(recurring: recurring, from: today, calendar: calendar)
+    }
+
     static func monthlyEquivalent(amount: Decimal, frequency: RecurringFrequency) -> Decimal {
         switch frequency {
         case .daily:
