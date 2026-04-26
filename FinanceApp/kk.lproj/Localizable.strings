@@ -1113,6 +1113,14 @@
 "Keep the dashboard glanceable. Hide sections you do not need every day." = "Басты экранды бір қарағанда түсінікті ұстаңыз. Күн сайын керек емес бөлімдерді жасырыңыз.";
 "Choose which blocks appear on the dashboard." = "Басты экранда қай блоктар көрінетінін таңдаңыз.";
 "Fast entrypoints for capture, budgets, and forecast." = "Енгізу, бюджеттер және болжам үшін жылдам кіру нүктелері.";
+"Fast entrypoints for capture, budgets, and calendar." = "Енгізу, бюджеттер және күнтізбе үшін жылдам кіру нүктелері.";
+"Current week spending by category and remaining headroom." = "Ағымдағы аптадағы санат шығыны және қалған қор.";
+"Spent %@ of %@" = "%@ / %@ жұмсалды";
+"No weekly budgets yet" = "Апталық бюджеттер әлі жоқ";
+"Weekly left %@" = "Аптаға %@ қалды";
+"Left %@" = "%@ қалды";
+"Weekly Budget vs Actual" = "Апталық бюджет пен нақты";
+"%lld categories are over budget this week." = "Осы аптада %lld санат бюджеттен асып кетті.";
 "Reflective coach insight and money progress signals." = "Көмекші кеңесі мен қаржылық прогресс сигналдары.";
 "Separate debt snapshot if you still want it pinned." = "Қаласаңыз, қарыздар үшін бөлек бекітілген блок.";
 "Goals, subscriptions, and recurring obligations." = "Мақсаттар, жазылымдар және тұрақты міндеттемелер.";

@@ -30,6 +30,7 @@ struct DashboardView: View {
     @AppStorage("dash.showThisMonth") private var showThisMonth = true
     @AppStorage("dash.showDebts") private var showDebts = true
     @AppStorage("dash.showCommitments") private var showCommitments = true
+    @AppStorage("dash.showWeeklyBudget") private var showWeeklyBudget = true
     @AppStorage("dash.showRecentActivity") private var showRecentActivity = true
 
     @AppStorage("feature.budgets")       private var featureBudgets = true
@@ -83,6 +84,7 @@ struct DashboardView: View {
         case coach
         case thisMonth
         case commitments
+        case weeklyBudget
         case recentActivity
     }
 
@@ -304,6 +306,16 @@ struct DashboardView: View {
         return base + unused
     }
 
+    private var currentWeeklyBudgetItems: [WeeklyBudgetItem] {
+        WeeklyBudgetCalculator.items(
+            referenceDate: Date(),
+            categories: categories,
+            budgets: budgets,
+            transactions: transactions,
+            rolloverEnabled: rolloverEnabled
+        )
+    }
+
     private var hasVisibleDashboardSections: Bool {
         [
             showOverview,
@@ -313,6 +325,7 @@ struct DashboardView: View {
             showHeroCard,
             showThisMonth,
             showCommitments,
+            showWeeklyBudget,
             showRecentActivity
         ].contains(true)
     }
@@ -325,6 +338,7 @@ struct DashboardView: View {
             showHeroCard,
             showThisMonth,
             showCommitments,
+            showWeeklyBudget,
             showRecentActivity
         ].contains(true)
     }
@@ -366,6 +380,7 @@ struct DashboardView: View {
             current: current,
             previousMonth: previousMonth
         )
+        let weeklyBudgetItems = currentWeeklyBudgetItems
 
         return NavigationStack {
             ZStack {
@@ -394,6 +409,7 @@ struct DashboardView: View {
                                 focusStripSections(
                                     balances: dashboardStats.netWorthByAccount,
                                     budgetPressures: budgetPressures,
+                                    weeklyBudgetItems: weeklyBudgetItems,
                                     vitals: financialVitals,
                                     recentTransactions: recentTransactionsList,
                                     categoryById: categoryById
@@ -532,6 +548,7 @@ struct DashboardView: View {
                 }
                 expandedSectionRaw = autoExpandedSectionRaw(
                     budgetPressures: budgetPressures,
+                    weeklyBudgetItems: weeklyBudgetItems,
                     vitals: financialVitals,
                     recentTransactions: recentTransactionsList
                 )
@@ -585,6 +602,9 @@ struct DashboardView: View {
                 expandedSectionRaw = normalizedExpandedSectionRaw()
             }
             .onChange(of: showCommitments) { _, _ in
+                expandedSectionRaw = normalizedExpandedSectionRaw()
+            }
+            .onChange(of: showWeeklyBudget) { _, _ in
                 expandedSectionRaw = normalizedExpandedSectionRaw()
             }
             .onChange(of: showRecentActivity) { _, _ in
@@ -737,6 +757,7 @@ struct DashboardView: View {
         if showHeroCard { sections.append(.coach) }
         if showThisMonth { sections.append(.thisMonth) }
         if showCommitments { sections.append(.commitments) }
+        if showWeeklyBudget { sections.append(.weeklyBudget) }
         if showRecentActivity { sections.append(.recentActivity) }
         return sections
     }
@@ -744,6 +765,7 @@ struct DashboardView: View {
     private func focusStripSections(
         balances: [UUID: Decimal],
         budgetPressures: [BudgetRisk],
+        weeklyBudgetItems: [WeeklyBudgetItem],
         vitals: FinancialVitals,
         recentTransactions: [Transaction],
         categoryById: [UUID: Category]
@@ -823,6 +845,18 @@ struct DashboardView: View {
                 }
             }
 
+            if showWeeklyBudget {
+                focusStripSection(
+                    section: .weeklyBudget,
+                    title: String(localized: "Weekly Budget"),
+                    summary: weeklyBudgetSummary(items: weeklyBudgetItems),
+                    icon: "calendar.badge.clock",
+                    accessibilityId: "dashboard.weeklyBudget.section"
+                ) {
+                    weeklyBudgetFocusContent(items: weeklyBudgetItems)
+                }
+            }
+
             if showRecentActivity {
                 focusStripSection(
                     section: .recentActivity,
@@ -872,6 +906,7 @@ struct DashboardView: View {
 
     private func autoExpandedSectionRaw(
         budgetPressures: [BudgetRisk],
+        weeklyBudgetItems: [WeeklyBudgetItem],
         vitals: FinancialVitals,
         recentTransactions: [Transaction]
     ) -> String {
@@ -884,6 +919,7 @@ struct DashboardView: View {
         }
         return autoFocusSection(
             budgetPressures: budgetPressures,
+            weeklyBudgetItems: weeklyBudgetItems,
             vitals: vitals,
             recentTransactions: recentTransactions,
             visibleSections: visible
@@ -892,10 +928,15 @@ struct DashboardView: View {
 
     private func autoFocusSection(
         budgetPressures: [BudgetRisk],
+        weeklyBudgetItems: [WeeklyBudgetItem],
         vitals: FinancialVitals,
         recentTransactions: [Transaction],
         visibleSections: [DashboardSection]
     ) -> DashboardSection {
+        let hasWeeklyBudgetRisk = weeklyBudgetItems.contains { $0.overrun > 0 || $0.ratio >= 0.8 }
+        if hasWeeklyBudgetRisk, showWeeklyBudget, visibleSections.contains(.weeklyBudget) {
+            return .weeklyBudget
+        }
         let hasBudgetRisk = budgetPressures.contains { $0.isOverBudget || $0.ratio >= 0.8 }
         if hasBudgetRisk, showThisMonth, visibleSections.contains(.thisMonth) {
             return .thisMonth
@@ -1114,6 +1155,7 @@ struct DashboardView: View {
         showThisMonth = true
         showDebts = true
         showCommitments = true
+        showWeeklyBudget = true
         showRecentActivity = true
         showHeroCard = true
     }
@@ -1427,6 +1469,172 @@ struct DashboardView: View {
             commitmentMiniRow
             upcomingPaymentsContent
         }
+    }
+
+    private func weeklyBudgetSummary(items: [WeeklyBudgetItem]) -> String {
+        guard !items.isEmpty else { return String(localized: "No weekly budgets yet") }
+
+        let totalOverrun = items.reduce(Decimal.zero) { $0 + $1.overrun }
+        if totalOverrun > 0 {
+            return String(format: String(localized: "Over by %@"), CurrencyFormatter.string(from: totalOverrun))
+        }
+
+        let totalRemaining = items.reduce(Decimal.zero) { $0 + $1.remaining }
+        return String(format: String(localized: "Weekly left %@"), CurrencyFormatter.string(from: totalRemaining))
+    }
+
+    @ViewBuilder
+    private func weeklyBudgetFocusContent(items: [WeeklyBudgetItem]) -> some View {
+        if items.isEmpty {
+            VStack(alignment: .leading, spacing: 12) {
+                Text(String(localized: "No weekly budgets yet"))
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.primary)
+                Text(String(localized: "Create monthly category limits to track overspend pressure."))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Button(String(localized: "Set limits")) {
+                    showingBudgetManager = true
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(AppTheme.primaryAccent)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.vertical, 4)
+        } else {
+            let totalLimit = items.reduce(Decimal.zero) { $0 + $1.weeklyLimit }
+            let totalSpent = items.reduce(Decimal.zero) { $0 + $1.weeklySpent }
+            let totalRemaining = items.reduce(Decimal.zero) { $0 + $1.remaining }
+            let totalOverrun = items.reduce(Decimal.zero) { $0 + $1.overrun }
+            let topItems = Array(items.prefix(4))
+
+            VStack(spacing: 12) {
+                HStack(alignment: .top, spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(
+                            String(
+                                format: String(localized: "Spent %@ of %@"),
+                                CurrencyFormatter.string(from: totalSpent),
+                                CurrencyFormatter.string(from: totalLimit)
+                            )
+                        )
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+
+                        Text(weekRangeText(start: items[0].weekStart, end: items[0].weekEnd))
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    Spacer(minLength: 12)
+
+                    Text(
+                        totalOverrun > 0
+                            ? String(format: String(localized: "Over by %@"), CurrencyFormatter.string(from: totalOverrun))
+                            : String(format: String(localized: "Weekly left %@"), CurrencyFormatter.string(from: totalRemaining))
+                    )
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(totalOverrun > 0 ? AppTheme.danger : AppTheme.success)
+                    .multilineTextAlignment(.trailing)
+                }
+
+                VStack(spacing: 10) {
+                    ForEach(topItems) { item in
+                        weeklyBudgetRow(item)
+                    }
+                }
+
+                Button(String(localized: "Open Analytics")) {
+                    selectedTab = .analytics
+                }
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(AppTheme.primaryAccent)
+                .buttonStyle(.plain)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+            }
+        }
+    }
+
+    private func weeklyBudgetRow(_ item: WeeklyBudgetItem) -> some View {
+        let categoryColor = Color(hex: item.colorHex)
+        let statusColor = weeklyBudgetStatusColor(for: item)
+        let progress = min(max(item.ratio, 0), 1)
+
+        return Button {
+            guard let category = categories.first(where: { $0.id == item.categoryId }) else { return }
+            quickAddCategory = category
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: item.iconName)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(categoryColor)
+                    .frame(width: 34, height: 34)
+                    .background(categoryColor.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+
+                VStack(alignment: .leading, spacing: 7) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(item.categoryName)
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.primary)
+                            .lineLimit(1)
+
+                        Spacer(minLength: 8)
+
+                        Text("\(CurrencyFormatter.string(from: item.weeklySpent)) / \(CurrencyFormatter.string(from: item.weeklyLimit))")
+                            .font(.caption.monospacedDigit().weight(.semibold))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
+
+                    ProgressView(value: progress)
+                        .tint(statusColor)
+
+                    HStack(spacing: 8) {
+                        Text(
+                            item.overrun > 0
+                                ? String(format: String(localized: "Over by %@"), CurrencyFormatter.string(from: item.overrun))
+                                : String(format: String(localized: "Left %@"), CurrencyFormatter.string(from: item.remaining))
+                        )
+                        .font(.caption)
+                        .foregroundStyle(statusColor)
+                        .lineLimit(1)
+
+                        Spacer(minLength: 8)
+
+                        Text(item.overrun > 0 ? String(localized: "Over") : "\(Int((item.ratio * 100).rounded()))%")
+                            .font(.caption2.weight(.bold))
+                            .foregroundStyle(statusColor)
+                            .padding(.horizontal, 7)
+                            .padding(.vertical, 4)
+                            .background(statusColor.opacity(0.12))
+                            .clipShape(Capsule())
+                    }
+                }
+            }
+            .padding(12)
+            .background(AppTheme.surfaceMuted)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func weeklyBudgetStatusColor(for item: WeeklyBudgetItem) -> Color {
+        if item.overrun > 0 {
+            return AppTheme.danger
+        }
+        if item.ratio >= 0.8 {
+            return AppTheme.warning
+        }
+        return AppTheme.success
+    }
+
+    private func weekRangeText(start: Date, end: Date) -> String {
+        let formatter = DateIntervalFormatter()
+        formatter.locale = Locale.current
+        formatter.dateTemplate = Calendar.current.isDate(start, equalTo: end, toGranularity: .year) ? "MMM d" : "MMM d, yyyy"
+        return formatter.string(from: start, to: end)
     }
 
     private var commitmentMiniRow: some View {

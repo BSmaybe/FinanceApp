@@ -1126,6 +1126,14 @@
 "Keep the dashboard glanceable. Hide sections you do not need every day." = "Keep the dashboard glanceable. Hide sections you do not need every day.";
 "Choose which blocks appear on the dashboard." = "Choose which blocks appear on the dashboard.";
 "Fast entrypoints for capture, budgets, and forecast." = "Fast entrypoints for capture, budgets, and forecast.";
+"Fast entrypoints for capture, budgets, and calendar." = "Fast entrypoints for capture, budgets, and calendar.";
+"Current week spending by category and remaining headroom." = "Current week spending by category and remaining headroom.";
+"Spent %@ of %@" = "Spent %@ of %@";
+"No weekly budgets yet" = "No weekly budgets yet";
+"Weekly left %@" = "Weekly left %@";
+"Left %@" = "Left %@";
+"Weekly Budget vs Actual" = "Weekly Budget vs Actual";
+"%lld categories are over budget this week." = "%lld categories are over budget this week.";
 "Reflective coach insight and money progress signals." = "Reflective coach insight and money progress signals.";
 "Separate debt snapshot if you still want it pinned." = "Separate debt snapshot if you still want it pinned.";
 "Goals, subscriptions, and recurring obligations." = "Goals, subscriptions, and recurring obligations.";

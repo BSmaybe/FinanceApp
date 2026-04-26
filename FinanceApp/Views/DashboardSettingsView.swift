@@ -10,6 +10,7 @@ struct DashboardSettingsView: View {
     @AppStorage("dash.showThisMonth") private var showThisMonth = true
     @AppStorage("dash.showDebts") private var showDebts = true
     @AppStorage("dash.showCommitments") private var showCommitments = true
+    @AppStorage("dash.showWeeklyBudget") private var showWeeklyBudget = true
     @AppStorage("dash.showRecentActivity") private var showRecentActivity = true
     @AppStorage("dash.showHeroCard") private var showHeroCard = true
     @Environment(\.dismiss) private var dismiss
@@ -24,7 +25,7 @@ struct DashboardSettingsView: View {
                         title: String(localized: "Dashboard Settings"),
                         value: "\(enabledCount)",
                         supportingTitle: String(localized: "Available Sections"),
-                        supportingValue: "9",
+                        supportingValue: "10",
                         note: String(localized: "Keep the dashboard glanceable. Hide sections you do not need every day."),
                         badgeText: String(localized: "Layout")
                     )
@@ -76,7 +77,7 @@ struct DashboardSettingsView: View {
                             )
                             toggleCard(
                                 title: String(localized: "Primary Actions"),
-                                subtitle: String(localized: "Fast entrypoints for capture, budgets, and forecast."),
+                                subtitle: String(localized: "Fast entrypoints for capture, budgets, and calendar."),
                                 systemImage: "square.grid.2x2.fill",
                                 tint: AppTheme.primaryAccent,
                                 isOn: $showQuickActions
@@ -108,6 +109,13 @@ struct DashboardSettingsView: View {
                                 systemImage: "tray.full",
                                 tint: AppTheme.primaryAccent,
                                 isOn: $showCommitments
+                            )
+                            toggleCard(
+                                title: String(localized: "Weekly Budget"),
+                                subtitle: String(localized: "Current week spending by category and remaining headroom."),
+                                systemImage: "calendar.badge.clock",
+                                tint: AppTheme.warning,
+                                isOn: $showWeeklyBudget
                             )
                             toggleCard(
                                 title: String(localized: "Recent Activity"),
@@ -144,6 +152,7 @@ struct DashboardSettingsView: View {
             showThisMonth,
             showDebts,
             showCommitments,
+            showWeeklyBudget,
             showRecentActivity,
             showHeroCard
         ]
@@ -159,6 +168,7 @@ struct DashboardSettingsView: View {
         showThisMonth = isVisible
         showDebts = isVisible
         showCommitments = isVisible
+        showWeeklyBudget = isVisible
         showRecentActivity = isVisible
         showHeroCard = isVisible
     }

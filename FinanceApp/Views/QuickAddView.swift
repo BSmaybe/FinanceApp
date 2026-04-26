@@ -40,6 +40,8 @@ struct QuickAddView: View {
 
     var capturePayload: PendingCapturePayload?
     var onOpenDetailed: ((QuickAddDetailedDraft) -> Void)?
+    var prefillType: TransactionType?
+    var prefillDate: Date?
     var prefillAmount: Decimal?
     var prefillNote: String?
     var prefillCategoryId: UUID?
@@ -79,7 +81,7 @@ struct QuickAddView: View {
     }
 
     private var transactionDateForSave: Date {
-        isCaptureFlow ? captureDate : Date()
+        isCaptureFlow ? captureDate : (prefillDate ?? Date())
     }
 
     private var duplicateAlertMessage: String {
@@ -185,6 +187,9 @@ struct QuickAddView: View {
                 }
             }
             .onAppear {
+                if let prefillType {
+                    type = prefillType
+                }
                 selectedAccountId = accounts.first?.id
                 selectedCategoryId = filteredCategories.first?.id
                 let incomingAmount = capturePayload?.amount ?? prefillAmount

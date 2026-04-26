@@ -145,6 +145,7 @@ struct ChartsView: View {
     @Query private var budgets: [Budget]
     @Query private var debts: [Debt]
     @Query(filter: #Predicate<Subscription> { $0.isActive == true }) private var activeSubscriptions: [Subscription]
+    @AppStorage("budgetRollover") private var rolloverEnabled = false
 
     @State private var selectedPeriod: AnalyticsPeriod = .month
 
@@ -401,14 +402,14 @@ struct ChartsView: View {
         let txns        = periodTransactions
         let bars        = barData(from: txns)
         let hasExpenses = txns.contains { $0.type == .expense }
-        let budgetActual = budgetVsActualData(monthTransactions: txns)
+        let weeklyItems = weeklyBudgetItems(referenceDate: currentRange.start)
         return VStack(spacing: 18) {
             groupHeader(
                 title: String(localized: "Compare"),
                 subtitle: compareSectionTakeaway
             )
             periodComparisonCard
-            budgetVsActualChart(data: budgetActual)
+            weeklyBudgetVsActualChart(items: weeklyItems)
             groupHeader(
                 title: String(localized: "Trends"),
                 subtitle: expenseBarTakeaway(hasExpenses: hasExpenses, barData: bars)
@@ -1442,6 +1443,122 @@ struct ChartsView: View {
             return String(localized: "Every tracked budget category remains within plan.")
         }
         return String(format: String(localized: "%lld categories are currently over budget."), overspent)
+    }
+
+    private func weeklyBudgetItems(referenceDate: Date) -> [WeeklyBudgetItem] {
+        WeeklyBudgetCalculator.items(
+            referenceDate: referenceDate,
+            categories: categories,
+            budgets: budgets,
+            transactions: postedTransactions,
+            rolloverEnabled: rolloverEnabled
+        )
+    }
+
+    private func weeklyBudgetTakeaway(_ items: [WeeklyBudgetItem]) -> String {
+        guard !items.isEmpty else { return String(localized: "No weekly budgets yet") }
+
+        let overspent = items.filter { $0.overrun > 0 }.count
+        let totalOverrun = items.reduce(Decimal.zero) { $0 + $1.overrun }
+        if overspent > 0 {
+            let countText = String(
+                format: String(localized: "%lld categories are over budget this week."),
+                Int64(overspent)
+            )
+            let amountText = String(
+                format: String(localized: "Over by %@"),
+                CurrencyFormatter.string(from: totalOverrun)
+            )
+            return "\(countText) \(amountText)"
+        }
+
+        let totalRemaining = items.reduce(Decimal.zero) { $0 + $1.remaining }
+        return String(format: String(localized: "Weekly left %@"), CurrencyFormatter.string(from: totalRemaining))
+    }
+
+    @ViewBuilder
+    private func weeklyBudgetVsActualChart(items: [WeeklyBudgetItem]) -> some View {
+        analyticsCard(
+            title: String(localized: "Weekly Budget vs Actual"),
+            takeaway: weeklyBudgetTakeaway(items),
+            actionTitle: String(localized: "Open Dashboard"),
+            action: { selectedTab = .dashboard }
+        ) {
+            if items.isEmpty {
+                VStack(alignment: .leading, spacing: 10) {
+                    Text(String(localized: "No weekly budgets yet"))
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(String(localized: "Create monthly category limits to track overspend pressure."))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.vertical, 4)
+            } else {
+                Chart {
+                    ForEach(items) { item in
+                        BarMark(
+                            x: .value("Category", item.categoryName),
+                            y: .value("Amount", NSDecimalNumber(decimal: item.weeklyLimit).doubleValue)
+                        )
+                        .foregroundStyle(Color.blue.opacity(0.28))
+                        .position(by: .value("Type", String(localized: "Budget")))
+
+                        BarMark(
+                            x: .value("Category", item.categoryName),
+                            y: .value("Amount", NSDecimalNumber(decimal: item.weeklySpent).doubleValue)
+                        )
+                        .foregroundStyle(
+                            item.overrun > 0
+                                ? Color.red
+                                : Color(hex: item.colorHex)
+                        )
+                        .position(by: .value("Type", String(localized: "Actual")))
+                    }
+                }
+                .frame(height: 220)
+
+                Divider()
+
+                VStack(spacing: 10) {
+                    ForEach(items) { item in
+                        HStack(spacing: 10) {
+                            Image(systemName: item.iconName)
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color(hex: item.colorHex))
+                                .frame(width: 28, height: 28)
+                                .background(Color(hex: item.colorHex).opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(item.categoryName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                                Text(
+                                    "\(CurrencyFormatter.string(from: item.weeklySpent)) / \(CurrencyFormatter.string(from: item.weeklyLimit))"
+                                )
+                                .font(.caption.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                            }
+
+                            Spacer(minLength: 8)
+
+                            Text(
+                                item.overrun > 0
+                                    ? String(format: String(localized: "Over by %@"), CurrencyFormatter.string(from: item.overrun))
+                                    : String(format: String(localized: "Left %@"), CurrencyFormatter.string(from: item.remaining))
+                            )
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(item.overrun > 0 ? AppTheme.danger : AppTheme.success)
+                            .multilineTextAlignment(.trailing)
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Budget vs Actual (always uses current calendar month)

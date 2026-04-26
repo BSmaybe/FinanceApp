@@ -1123,6 +1123,14 @@
 "Keep the dashboard glanceable. Hide sections you do not need every day." = "Оставьте главную быстро читаемой. Скройте блоки, которые не нужны каждый день.";
 "Choose which blocks appear on the dashboard." = "Выберите, какие блоки показывать на главной.";
 "Fast entrypoints for capture, budgets, and forecast." = "Быстрые входы для добавления, бюджетов и прогноза.";
+"Fast entrypoints for capture, budgets, and calendar." = "Быстрые входы для добавления, бюджетов и календаря.";
+"Current week spending by category and remaining headroom." = "Траты по категориям за текущую неделю и оставшийся запас.";
+"Spent %@ of %@" = "Потрачено %@ из %@";
+"No weekly budgets yet" = "Недельных бюджетов пока нет";
+"Weekly left %@" = "Осталось на неделю %@";
+"Left %@" = "Осталось %@";
+"Weekly Budget vs Actual" = "Недельный бюджет и факт";
+"%lld categories are over budget this week." = "В перерасходе на этой неделе: %lld категорий.";
 "Reflective coach insight and money progress signals." = "Совет помощника и сигналы финансового прогресса.";
 "Separate debt snapshot if you still want it pinned." = "Отдельный блок долгов, если вы хотите держать его закреплённым.";
 "Goals, subscriptions, and recurring obligations." = "Цели, подписки и регулярные обязательства.";
